@@ -11,10 +11,14 @@
             "id": "e24ce425a8f606eb",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "misc ideas.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "misc ideas"
             }
           }
         ]
