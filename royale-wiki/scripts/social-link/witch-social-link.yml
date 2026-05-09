@@ -1,0 +1,64 @@
+# Goals 
+# exposition: Introduce Witch, Potion Shop, Services, establish Dom Mentorshop Relationship, plant seed for witches storyline 
+# witch seeds -> she has a motherly instinct to raise things? wants impregnation 
+# inspects your body
+# conflict naive, arrogant dog wants potions... 
+# dom should be attuned to subs needs at all times 
+
+# this first draft is pure exposition
+# give more personality to both characters
+# world building opportunities.. jokes
+# need hooks... maybe review  other  media (plays?) for dialogue
+social-link-1: 
+- scene potionshop
+- show witch neutral  
+- says witch | Welcome to the Potion Shop!
+- says witch | Can I help you with anything?
+- says berserker | I want something to help me win the next Tier Progression match. 
+- show witch smug
+- says witch | You're going to have to be a liiittle more specific.
+- says witch | Give me your hand, Little Pup.
+- says berserker | ... Little Pup?
+- show witch angry
+- says witch | Your hand.
+- choice give-hand refuse-hand # YOU DON'T HAVE ENOUGH COURAGE BIIIIIITCH
+
+give-hand: 
+- says witch | Good boy.
+- says witch | You're weak. # examines player stats
+- says witch | You clumsy.
+- says witch | Little endurance. 
+- says witch | No social skills to speak of.
+- says witch | And worst of all...
+- says berserker | ...
+- says witch | You've no pride. 
+- says witch | Drop out, Little Pup. Before you make an ass of yourself. 
+- says witch | Well not that you haven't already.
+- says berserker | Please. Wait. I need any advantage I can if I am going to be <macguffin numbah 1 in school> 
+- says witch | And what will you do to achieve this dream. 
+- says berserker | Anything.
+- says witch | Oh, maybe there is something you can do for me then. 
+- says witch | There are certain herbs I've been meaning to gather from the Royale grounds. 
+- says witch | However, I can never seem to get enough myself. Fetch them for me and I'll teach you the basics of potions. 
+- says berserker | Yes! Thank you. You won't regret this. 
+- says witch | I know I won't. The stars have told me so already. 
+- says witch | Alright Little Pup.
+- says witch | Go fetch. 
+
+refuse-hand: 
+- show witch angry 
+- says witch | Oh? That's no good. Good boys should do as their master says. 
+# add more content 
+
+# makes potion from herbs she gives you
+# gives it to you
+# she gets annoyed at you so she puts you under to experiment (fertility potion?) on you
+# inner mf dawg rages allowing you to break stupor 
+# impressed by your ability to stay sane under potions effect
+# starts domming you to see more of that inner nature 
+# you learn recipes for basic potions 
+social-link-2: 
+- scene potionship
+- show witch neutral
+- says witch | Welcome back, Little Pup. 
+- says berserker | Stop calling me that.
