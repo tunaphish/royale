@@ -5,6 +5,8 @@ import { BattleView } from './BattleView';
 import { BattleStore } from './battleStore';
 
 import { toJS } from 'mobx';
+import { samplePlayerCombatant } from '../../data/sample-player';
+import { PlayerCombatant } from '../../model/playerCombatant';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -14,16 +16,20 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
 
 export class Battle extends Phaser.Scene {
   reactOverlay: ReactOverlay;
+  store: BattleStore;
 
   constructor() {
     super(sceneConfig);
   }
 
   init(data: {  }): void {
-    
+    this.store = new BattleStore(samplePlayerCombatant);
   }
 
   create(): void {
+    shuffle(this.store.playerCombatant.deck);
+    drawCards(this.store.playerCombatant, 5);
+    
     this.reactOverlay.create(<BattleView battle={this}/>, this);
   }
 
@@ -32,3 +38,29 @@ export class Battle extends Phaser.Scene {
   }
   
 }
+
+const drawCards = (playerCombatant: PlayerCombatant, amount: number): void => {
+    for (let i = 0; i < amount; i++) {
+        if (playerCombatant.deck.length === 0) {
+            if (playerCombatant.discard.length === 0) return;
+
+            playerCombatant.deck = shuffle(playerCombatant.discard);
+            playerCombatant.discard = [];
+        }
+
+        const card = playerCombatant.deck.pop();
+
+        if (!card) continue;
+        playerCombatant.hand.push(card);
+    }
+};
+
+const shuffle = <T,>(array: T[]): T[] => {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+
+    return array;
+};

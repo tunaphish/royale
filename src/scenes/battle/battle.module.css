@@ -1,14 +1,38 @@
 .container {
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
     position: relative;
 
     height: 100%;
     width: 100%;
-    pointer-events: none !important;
 }
 
-.container > * {
-    pointer-events: auto;
+.enemyContainer {
+    flex: 3;
+}
+
+.playerContainer { 
+    flex: 3;
+}
+
+.cardsContainer {
+    flex: 1;
+    display: flex;
+    gap: 32px;
+}
+
+.pileSelector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.cardSelector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    /* force scrolling  */
+    overflow-y: auto;
 }
