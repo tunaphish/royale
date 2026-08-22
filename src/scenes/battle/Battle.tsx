@@ -7,6 +7,7 @@ import { BattleStore } from './battleStore';
 import { toJS } from 'mobx';
 import { samplePlayerCombatant } from '../../data/sample-player';
 import { PlayerCombatant } from '../../model/playerCombatant';
+import { Card } from '../../model/card';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -18,12 +19,18 @@ export class Battle extends Phaser.Scene {
   reactOverlay: ReactOverlay;
   store: BattleStore;
 
+  choiceSelectSound: Phaser.Sound.BaseSound;
+  choiceDisabledSound: Phaser.Sound.BaseSound;
+
   constructor() {
     super(sceneConfig);
   }
 
   init(data: {  }): void {
     this.store = new BattleStore(samplePlayerCombatant);
+
+    this.choiceSelectSound = this.sound.add('choice-select');
+    this.choiceDisabledSound = this.sound.add('stamina-depleted');
   }
 
   create(): void {
@@ -37,6 +44,17 @@ export class Battle extends Phaser.Scene {
 
   }
   
+  // #region handle events
+  selectPile(pile: Pile) {
+    this.choiceSelectSound.play();
+  }
+
+  selectCard(card: Card) {
+    this.choiceSelectSound.play();
+    this.store.setSelectedCard(card);
+  }
+
+  // #endregion
 }
 
 const drawCards = (playerCombatant: PlayerCombatant, amount: number): void => {
@@ -64,3 +82,5 @@ const shuffle = <T,>(array: T[]): T[] => {
 
     return array;
 };
+
+

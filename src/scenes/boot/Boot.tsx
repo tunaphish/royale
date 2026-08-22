@@ -62,6 +62,8 @@ export class Boot extends Phaser.Scene {
     this.load.audio('choice-select', '/royale/sounds/choice-select.wav');
     this.load.audio('window-advance', '/royale/sounds/window-advance.wav');
     this.load.audio('battle-start', '/royale/sounds/battle-start-2.mp3');
+    this.load.audio('stamina-depleted', '/royale/sounds/stamina-depleted.wav');
+
 
     this.load.audio('heal', '/royale/sounds/heal.mp3');
     this.load.audio('block', '/royale/sounds/block.wav');
