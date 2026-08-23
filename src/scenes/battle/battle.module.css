@@ -9,7 +9,10 @@
 
 .enemyContainer {
     flex: 2;
+    
     display: flex;
+    flex-direction: column;
+    gap: 8px;
     justify-content: center;
     align-items: center;
 }
@@ -36,6 +39,7 @@
     flex-direction: column;
     gap: 4px;
     flex-shrink: 0;
+    padding-left: 8px;
 }
 
 .cardSelector {
@@ -43,6 +47,8 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+
+    padding-left: 8px;
 
     border-left: 1px solid white;
     /* force scrolling  */

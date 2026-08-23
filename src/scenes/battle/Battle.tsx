@@ -28,7 +28,7 @@ export class Battle extends Phaser.Scene {
   }
 
   init(data: {  }): void {
-    const TEST_ENEMY_COMBATANTS = [SAMPLE_ENEMY];
+    const TEST_ENEMY_COMBATANTS = [SAMPLE_ENEMY, SAMPLE_ENEMY, SAMPLE_ENEMY];
     this.store = new BattleStore(samplePlayerCombatant, TEST_ENEMY_COMBATANTS);
 
     this.choiceSelectSound = this.sound.add('choice-select');
@@ -47,7 +47,7 @@ export class Battle extends Phaser.Scene {
   }
   
   // #region handle events
-  selectPile(pile: Pile) {
+  selectPile(pile: Card[]) {
     this.choiceSelectSound.play();
   }
 

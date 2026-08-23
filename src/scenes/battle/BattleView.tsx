@@ -8,6 +8,7 @@ import { Card } from '../../model/card';
 import { Window } from './Window';
 import { Meter } from './Meter';
 import { Combatant } from '../../model/combatant';
+import { MenuOptionsView } from './MenuOptionsView';
 
 export const BattleView = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props;
@@ -68,32 +69,38 @@ export const Piles = observer((props: { battle: Battle }): JSX.Element => {
       exhaust: battle.store.playerCombatant.exhaust,
   };
 
-  const onClick = (pile) => {
+  const onClickPile = (pile) => {
     setSelectedPile(pile)
     battle.selectPile(pile);
   }
+
+  const onClickCard = (card) => {
+    battle.selectCard(card);
+  }
+
+  const pileItems = ['hand', 'deck', 'discard', 'exhaust'];
 
   const selectedCards = piles[selectedPile];
   return (
     <div className={classNames.cardsContainer}>
 
         <div className={classNames.pileSelector}>
-            {(['hand', 'deck', 'discard', 'exhaust'] as const).map(pile => (
-                <div
-                    key={pile}
-                    onClick={() => onClick(pile)}
-                    style={{
-                      fontWeight: selectedPile === pile ? 'bold' : 'normal',
-                    }}
-                >
-                    {pile.charAt(0).toUpperCase() + pile.slice(1)}
-                    {' '}({piles[pile].length})
-                </div>
-            ))}
+            <MenuOptionsView
+              items={pileItems}
+              getKey={pile => pile}
+              renderLabel={pile => pile + ' ' + '(' + piles[pile].length + ')'}
+              onSelect={pile => onClickPile(pile)}
+              initialIndex={0}
+            />
         </div>
 
         <div className={classNames.cardSelector}>
-            {selectedCards.map((card, index) => <CardSelection key={index} battle={battle} card={card} />)}
+            <MenuOptionsView
+              items={selectedCards}
+              getKey={card => card.name}
+              renderLabel={card => card.name}
+              onSelect={pile => onClickCard(pile)}
+            />
         </div>
 
         <SelectedCard battle={battle} />
@@ -101,19 +108,7 @@ export const Piles = observer((props: { battle: Battle }): JSX.Element => {
   );
 });
 
-export const CardSelection = observer((props: { battle: Battle, card: Card }): JSX.Element => {
-  const { battle, card } = props; 
 
-  const onClick = () => {
-    battle.selectCard(card);
-  }
-
-  return (
-    <div onClick={onClick}>
-      {card.name}
-    </div>
-  );
-});
 
 export const SelectedCard = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props; 
