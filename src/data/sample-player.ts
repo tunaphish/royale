@@ -3,7 +3,7 @@ import { PlayerCombatant } from "../model/playerCombatant";
 import * as Cards from './cards';
 
 export const samplePlayerCombatant: PlayerCombatant = {
-    health: 70,
+    health: 58,
     maxHealth: 70,
     block: 0,
     energy: 3, 

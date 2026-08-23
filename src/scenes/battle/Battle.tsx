@@ -8,6 +8,7 @@ import { toJS } from 'mobx';
 import { samplePlayerCombatant } from '../../data/sample-player';
 import { PlayerCombatant } from '../../model/playerCombatant';
 import { Card } from '../../model/card';
+import { SAMPLE_ENEMY } from '../../data/enemies';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -27,7 +28,8 @@ export class Battle extends Phaser.Scene {
   }
 
   init(data: {  }): void {
-    this.store = new BattleStore(samplePlayerCombatant);
+    const TEST_ENEMY_COMBATANTS = [SAMPLE_ENEMY];
+    this.store = new BattleStore(samplePlayerCombatant, TEST_ENEMY_COMBATANTS);
 
     this.choiceSelectSound = this.sound.add('choice-select');
     this.choiceDisabledSound = this.sound.add('stamina-depleted');

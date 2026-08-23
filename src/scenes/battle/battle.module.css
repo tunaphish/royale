@@ -9,10 +9,16 @@
 
 .enemyContainer {
     flex: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .playerContainer { 
     flex: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .cardsContainer {
@@ -50,6 +56,46 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    
+
     gap: 4px;
+}
+
+
+.window {
+  background: var(--ink-black);
+  
+  border: 2px outset var(--paper-offwhite);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 1);
+
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+}
+
+
+.meterBackground {
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: flex-end; 
+}
+
+.meter {
+  background: var(--paper-offwhite);
+  width: 100%;
+  height: 100%;
+}
+
+.meterContainer {
+  display: grid;
+  width: 100%;
+  height: 100%;
+}
+
+.meterContainer > * {
+  grid-column: 1;
+  grid-row: 1;
 }
