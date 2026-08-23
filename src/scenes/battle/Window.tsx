@@ -24,11 +24,9 @@ const expandFromCenterTransition = {
   },
 };
 
-type WindowProps = {
-  children: React.ReactNode;
+type WindowProps = React.HTMLAttributes<HTMLDivElement> & {
   style?: React.CSSProperties;
   delay?: number;
-  onClick?: () => void;
 };
 
 export const Window = ({ children, style, delay = 0, onClick }: WindowProps): JSX.Element => (

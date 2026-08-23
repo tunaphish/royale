@@ -4,11 +4,11 @@ import * as React from 'react';
 import classNames from './battle.module.css';
 import { Battle } from './Battle';
 import { observer } from 'mobx-react-lite';
-import { Card } from '../../model/card';
 import { Window } from './Window';
 import { Meter } from './Meter';
 import { Combatant } from '../../model/combatant';
 import { MenuOptionsView } from './MenuOptionsView';
+import { EnemyCombatant } from '../../model/enemyCombatant';
 
 export const BattleView = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props;
@@ -26,8 +26,15 @@ export const EnemyContainer = observer((props: { battle: Battle }): JSX.Element 
   const { battle } = props;
   return (
     <div className={classNames.enemyContainer}>
-      { battle.store.enemyCombatants.map(enemyCombatant => <CombatantView battle={battle} combatant={enemyCombatant} />)}
+      { battle.store.enemyCombatants.map(enemyCombatant => <EnemyView battle={battle} enemyCombatant={enemyCombatant} />)}
     </div>
+  )
+});
+
+export const EnemyView = observer((props: { battle: Battle, enemyCombatant: EnemyCombatant }): JSX.Element => {
+const { battle, enemyCombatant } = props;
+return (
+    <CombatantView battle={battle} combatant={enemyCombatant} />
   )
 });
 
@@ -44,8 +51,12 @@ export const PlayerContainer = observer((props: { battle: Battle }): JSX.Element
 
 export const CombatantView = observer((props: { battle: Battle, combatant: Combatant }): JSX.Element => { 
   const { battle, combatant } = props;
+  const onClick = () => {
+    battle.selectTarget(combatant);
+  }
+
   return (
-      <Window style={{ width: "50%", }}>
+      <Window onClick={onClick}>
         <div className={classNames.meterContainer}>
           <Meter value={ combatant.health } max={ combatant.maxHealth }/>
           <div>{combatant.health} / {combatant.maxHealth}</div>
@@ -118,7 +129,7 @@ export const SelectedCard = observer((props: { battle: Battle }): JSX.Element =>
 
   return (
     <div className={classNames.selectedCard}>
-      {selectedCard.name}
+      { selectedCard.name }
       { selectedCard.effects.map(effect => <div>{effect.descriptionTemplate}</div>) }
     </div>
   );

@@ -7,8 +7,9 @@ import { BattleStore } from './battleStore';
 import { toJS } from 'mobx';
 import { samplePlayerCombatant } from '../../data/sample-player';
 import { PlayerCombatant } from '../../model/playerCombatant';
-import { Card } from '../../model/card';
+import { Card, TargetType } from '../../model/card';
 import { SAMPLE_ENEMY } from '../../data/enemies';
+import { Combatant } from '../../model/combatant';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -28,7 +29,7 @@ export class Battle extends Phaser.Scene {
   }
 
   init(data: {  }): void {
-    const TEST_ENEMY_COMBATANTS = [SAMPLE_ENEMY, SAMPLE_ENEMY, SAMPLE_ENEMY];
+    const TEST_ENEMY_COMBATANTS = [SAMPLE_ENEMY];
     this.store = new BattleStore(samplePlayerCombatant, TEST_ENEMY_COMBATANTS);
 
     this.choiceSelectSound = this.sound.add('choice-select');
@@ -56,6 +57,47 @@ export class Battle extends Phaser.Scene {
     this.store.setSelectedCard(card);
   }
 
+  selectTarget(target: Combatant) {
+    if (!this.store.selectedCard) return;
+
+    const isEnemy = 'name' in target;
+    switch(this.store.selectedCard.targetType) {
+      case TargetType.SINGLE:
+      case TargetType.AOE:
+      case TargetType.RANDOM:
+        if (!isEnemy) {
+          this.choiceDisabledSound.play();
+          return;
+        }
+        this.choiceSelectSound.play();
+
+      case TargetType.SINGLE:
+        this.store.setTargets([target]);
+        break;
+      case TargetType.AOE:
+        this.store.setTargets(this.store.enemyCombatants);
+        break;
+      case TargetType.RANDOM: // might have to refactor this for multi hit 
+        this.store.setTargets([randomItem(this.store.enemyCombatants)]);
+        break;
+      case TargetType.SELF:
+        if (isEnemy) {
+          this.choiceDisabledSound.play();
+          return;
+        }
+        this.choiceSelectSound.play();
+        this.store.setTargets([target]);
+      default:
+        break;
+    }
+    // valid target
+    // if it's already target it's a confirmation
+    // 
+  }
+
+  endTurn() {
+    this.store.advanceTurnNumber();
+  }
   // #endregion
 }
 
@@ -85,4 +127,6 @@ const shuffle = <T,>(array: T[]): T[] => {
     return array;
 };
 
-
+const randomItem = <T,>(array: T[]): T => {
+  return array[Math.floor(Math.random() * array.length)];
+};
