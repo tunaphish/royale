@@ -11,6 +11,7 @@ import { MenuOptionsView } from './MenuOptionsView';
 import { EnemyCombatant } from '../../model/enemyCombatant';
 import { PileType } from './battleStore';
 import { toJS } from 'mobx';
+import { Card } from '../../model/card';
 
 export const BattleView = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props;
@@ -118,7 +119,12 @@ export const Piles = observer((props: { battle: Battle }): JSX.Element => {
             <MenuOptionsView
               items={selectedCards}
               getKey={card => card.name}
-              renderLabel={card => card.name}
+              renderLabel={(card: Card) => (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%'}}>
+                    <div>{card.name}</div>
+                    <div>{card.cost}</div>
+                  </div>
+              )}
               onSelect={(card, idx) => onClickCardIndex(idx)}
             />
         </div>
@@ -130,7 +136,7 @@ export const Piles = observer((props: { battle: Battle }): JSX.Element => {
 
 export const SelectedCard = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props; 
-  if (battle.store.selectedCardIndex === null) return null;
+  if (battle.store.selectedCardIndex === null) return <div className={classNames.selectedCard}></div>;
   const selectedCard = battle.store.playerCombatant.hand[battle.store.selectedCardIndex];
 
   return (

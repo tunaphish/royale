@@ -39,11 +39,13 @@
 }
 
 .pileSelector {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex-shrink: 0;
-    padding-left: 8px;
+  flex: 1;
+  
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-left: 8px;
 }
 
 .cardSelector {
@@ -60,14 +62,15 @@
 }
 
 .selectedCard {
-    border-left: 1px solid white;
-    
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+  flex: 1;
+  border-left: 1px solid white;
+  
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 
-    gap: 4px;
+  gap: 4px;
 }
 
 
