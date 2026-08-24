@@ -9,7 +9,7 @@ export const samplePlayerCombatant: PlayerCombatant = {
     energy: 3, 
     maxEnergy: 3,
 
-    deck: [Cards.strike, Cards.strike, Cards.strike, Cards.strike, Cards.defend, Cards.defend, Cards.defend, Cards.defend, Cards.twinStrike],
+    deck: [Cards.strike, Cards.strike, Cards.strike, Cards.strike, Cards.defend, Cards.defend, Cards.defend, Cards.defend, Cards.twinStrike, Cards.twinStrike, Cards.twinStrike, Cards.twinStrike],
     hand: [],
     discard: [],
     exhaust: [],

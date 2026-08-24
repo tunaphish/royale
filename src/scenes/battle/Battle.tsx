@@ -38,14 +38,29 @@ export class Battle extends Phaser.Scene {
 
   create(): void {
     shuffle(this.store.playerCombatant.deck);
-    drawCards(this.store.playerCombatant, 5);
-    
+    this.drawCards(5);
     this.reactOverlay.create(<BattleView battle={this}/>, this);
   }
 
   update(time: number, delta: number): void {
 
   }
+
+  drawCards(amount: number): void {
+    for (let i = 0; i < amount; i++) {
+        if (this.store.playerCombatant.deck.length === 0) {
+            if (this.store.playerCombatant.discard.length === 0) return;
+
+            this.store.playerCombatant.deck = shuffle(this.store.playerCombatant.discard);
+            this.store.playerCombatant.discard = [];
+        }
+
+        const card = this.store.playerCombatant.deck.pop();
+
+        if (!card) continue;
+        this.store.playerCombatant.hand.push(card);
+    }
+  };
   
   // #region handle events
   selectPile(pile: Card[]) {
@@ -124,27 +139,18 @@ export class Battle extends Phaser.Scene {
     this.store.appendCardToDiscard(card);
   }
 
-  endTurn() {
+  endTurn(): void {
+    this.store.discardHand();
+    // enemy action
+    
     this.store.advanceTurnNumber();
+    this.drawCards(5);
+    this.store.playerCombatant.energy = this.store.playerCombatant.maxEnergy;
   }
   // #endregion
 }
 
-const drawCards = (playerCombatant: PlayerCombatant, amount: number): void => {
-    for (let i = 0; i < amount; i++) {
-        if (playerCombatant.deck.length === 0) {
-            if (playerCombatant.discard.length === 0) return;
 
-            playerCombatant.deck = shuffle(playerCombatant.discard);
-            playerCombatant.discard = [];
-        }
-
-        const card = playerCombatant.deck.pop();
-
-        if (!card) continue;
-        playerCombatant.hand.push(card);
-    }
-};
 
 const shuffle = <T,>(array: T[]): T[] => {
     for (let i = array.length - 1; i > 0; i--) {

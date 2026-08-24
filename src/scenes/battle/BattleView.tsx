@@ -95,6 +95,10 @@ export const Piles = observer((props: { battle: Battle }): JSX.Element => {
     battle.selectPile(pile);
   }
 
+  const onClickEndTurn = () => {
+    battle.endTurn();
+  }
+
   const onClickCardIndex = (index) => {
     battle.selectCardIndex(index);
   }
@@ -113,6 +117,7 @@ export const Piles = observer((props: { battle: Battle }): JSX.Element => {
               onSelect={pile => onClickPile(pile)}
               initialIndex={0}
             />
+            <div onClick={onClickEndTurn}>End Turn</div>
         </div>
 
         <div className={classNames.cardSelector}>

@@ -42,6 +42,11 @@ export class BattleStore {
     this.selectedCardIndex = null;
   }
 
+  discardHand(): void {
+    this.playerCombatant.discard.push(...this.playerCombatant.hand);
+    this.playerCombatant.hand = [];
+  }
+
   appendCardToDiscard(card: Card): void {
     this.playerCombatant.discard.push(card);
   }
