@@ -10,6 +10,7 @@ import { Combatant } from '../../model/combatant';
 import { MenuOptionsView } from './MenuOptionsView';
 import { EnemyCombatant } from '../../model/enemyCombatant';
 import { PileType } from './battleStore';
+import { toJS } from 'mobx';
 
 export const BattleView = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props;
@@ -80,13 +81,13 @@ export const CombatantView = observer((props: { battle: Battle, combatant: Comba
 export const Piles = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props;
 
-
   const piles = {
       hand: battle.store.playerCombatant.hand,
       deck: battle.store.playerCombatant.deck,
       discard: battle.store.playerCombatant.discard,
       exhaust: battle.store.playerCombatant.exhaust,
   };
+
 
   const onClickPile = (pile) => {
     battle.store.setSelectedPile(pile);
@@ -98,6 +99,8 @@ export const Piles = observer((props: { battle: Battle }): JSX.Element => {
   }
 
   const selectedCards = piles[battle.store.selectedPile];
+  console.log(toJS(selectedCards)); // loading bearing console statement... triggers mobx to observe the cards lol
+
   return (
     <div className={classNames.cardsContainer}>
 
@@ -125,14 +128,10 @@ export const Piles = observer((props: { battle: Battle }): JSX.Element => {
   );
 });
 
-
-
 export const SelectedCard = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props; 
   if (battle.store.selectedCardIndex === null) return null;
-  
   const selectedCard = battle.store.playerCombatant.hand[battle.store.selectedCardIndex];
-  
 
   return (
     <div className={classNames.selectedCard}>
