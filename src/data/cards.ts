@@ -1,11 +1,34 @@
 import { Card, TargetType } from "../model/card";
+import { Combatant } from "../model/combatant";
+import { PlayerCombatant } from "../model/playerCombatant";
+import { clamp } from "../util";
+
+
+const dealDamage = (playerCombatant: PlayerCombatant, targets: Combatant[], potency: number): void => {
+  targets.forEach(target => {
+    let finalDamage = potency;
+
+    const blocked = Math.min(target.block, finalDamage);
+    target.block -= blocked;
+    finalDamage -= blocked;
+
+    target.health = clamp(0, target.health - finalDamage, target.maxHealth);
+  });
+}
+
+
+const gainBlock = (playerCombatant: PlayerCombatant, targets: Combatant[], potency: number): void => {
+  targets.forEach(target => {
+    target.block += potency
+  });
+}
 
 export const strike: Card = {
     name: 'Strike',
     cost: 1,
     targetType: TargetType.SINGLE,
     effects: [
-        { descriptionTemplate: "Deal 6 damage.", execute: (playerCombatant, targets) => { console.log("hi") }, potency: 6 }
+        { description: "Deal 6 damage.", execute: (playerCombatant, targets) => dealDamage(playerCombatant, targets, 6), }
     ],
 };
 
@@ -14,8 +37,8 @@ export const twinStrike: Card = {
     cost: 1,
     targetType: TargetType.SINGLE,
     effects: [
-        { descriptionTemplate: "Deal 5 damage.", execute: (playerCombatant, targets) => { console.log("hi") }, potency: 5 },
-        { descriptionTemplate: "Deal 5 damage.", execute: (playerCombatant, targets) => { console.log("hi") }, potency: 5 }
+        { description: "Deal 5 damage.", execute: (playerCombatant, targets) => dealDamage(playerCombatant, targets, 5), },
+        { description: "Deal 5 damage.", execute: (playerCombatant, targets) => dealDamage(playerCombatant, targets, 5), }
     ],
 };
 
@@ -24,7 +47,7 @@ export const defend: Card = {
     cost: 1,
     targetType: TargetType.SELF,
     effects: [
-        { descriptionTemplate: "Gain 5 block.", execute: (playerCombatant, targets) => { console.log("hi") }, potency: 5 },
+        { description: "Gain 5 block.", execute: (playerCombatant, targets) => gainBlock(playerCombatant, targets, 5), },
     ],
 };
 

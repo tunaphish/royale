@@ -52,16 +52,17 @@ export class Battle extends Phaser.Scene {
     this.choiceSelectSound.play();
   }
 
-  selectCard(card: Card) {
+  selectCardIndex(cardIndex: number) {
     this.choiceSelectSound.play();
-    this.store.setSelectedCard(card);
+    this.store.setSelectedCardIndex(cardIndex);
   }
 
   selectTarget(target: Combatant) {
-    if (!this.store.selectedCard) return;
+    const selectedCard = this.store.playerCombatant.hand[this.store.selectedCardIndex];
+    if (!selectedCard) return;
 
     const isEnemy = 'name' in target;
-    switch(this.store.selectedCard.targetType) {
+    switch(selectedCard.targetType) {
       case TargetType.SINGLE:
       case TargetType.AOE:
       case TargetType.RANDOM:
@@ -90,9 +91,24 @@ export class Battle extends Phaser.Scene {
       default:
         break;
     }
-    // valid target
-    // if it's already target it's a confirmation
-    // 
+
+    this.executeCard();
+  }
+
+  executeCard(): void {
+    const selectedCard = this.store.playerCombatant.hand[this.store.selectedCardIndex];
+    if (!selectedCard || !this.store.targets) return;
+    
+    this.store.playerCombatant.energy = Math.max(this.store.playerCombatant.energy-selectedCard.cost, 0);
+
+    selectedCard.effects.forEach(effect => {
+      effect.execute(this.store.playerCombatant, this.store.targets);
+    })
+
+    this.store.appendCardToDiscard(selectedCard)
+    this.store.removeSelectedCardFromHand()
+  
+    this.store.resetSelections();
   }
 
   endTurn() {
@@ -129,4 +145,8 @@ const shuffle = <T,>(array: T[]): T[] => {
 
 const randomItem = <T,>(array: T[]): T => {
   return array[Math.floor(Math.random() * array.length)];
+};
+
+export const clamp = (min: number, val: number, max: number): number => {
+  return Math.min(Math.max(val, min), max);
 };

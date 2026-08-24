@@ -9,9 +9,8 @@ export enum TargetType {
 }
 
 export type Effect = {
-    descriptionTemplate: string;
+    description: string;
     execute: (player: PlayerCombatant, targets: Combatant[]) => void;
-    potency?: number;
 }
 
 export type Card = {

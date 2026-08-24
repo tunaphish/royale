@@ -34,7 +34,11 @@ export const EnemyContainer = observer((props: { battle: Battle }): JSX.Element 
 export const EnemyView = observer((props: { battle: Battle, enemyCombatant: EnemyCombatant }): JSX.Element => {
 const { battle, enemyCombatant } = props;
 return (
-    <CombatantView battle={battle} combatant={enemyCombatant} />
+  <div>
+      <CombatantView battle={battle} combatant={enemyCombatant} />
+      <div>Intent: </div>
+  </div>
+
   )
 });
 
@@ -45,6 +49,7 @@ export const PlayerContainer = observer((props: { battle: Battle }): JSX.Element
   return (
     <div className={classNames.playerContainer}>
       <CombatantView battle={battle} combatant={playerCombatant} />
+      <div>Energy: {playerCombatant.energy} / {playerCombatant.maxEnergy}</div>
     </div>
   )
 });
@@ -59,7 +64,10 @@ export const CombatantView = observer((props: { battle: Battle, combatant: Comba
       <Window onClick={onClick}>
         <div className={classNames.meterContainer}>
           <Meter value={ combatant.health } max={ combatant.maxHealth }/>
-          <div>{combatant.health} / {combatant.maxHealth}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between'}}>
+            <div>{combatant.health} / {combatant.maxHealth}</div>
+            <div style={{ marginLeft: '8px'}}>Block: { combatant.block }</div>
+          </div>
         </div>
         <div>
           art here
@@ -85,8 +93,8 @@ export const Piles = observer((props: { battle: Battle }): JSX.Element => {
     battle.selectPile(pile);
   }
 
-  const onClickCard = (card) => {
-    battle.selectCard(card);
+  const onClickCardIndex = (index) => {
+    battle.selectCardIndex(index);
   }
 
   const pileItems = ['hand', 'deck', 'discard', 'exhaust'];
@@ -110,7 +118,7 @@ export const Piles = observer((props: { battle: Battle }): JSX.Element => {
               items={selectedCards}
               getKey={card => card.name}
               renderLabel={card => card.name}
-              onSelect={pile => onClickCard(pile)}
+              onSelect={(card, idx) => onClickCardIndex(idx)}
             />
         </div>
 
@@ -123,14 +131,15 @@ export const Piles = observer((props: { battle: Battle }): JSX.Element => {
 
 export const SelectedCard = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props; 
-  if (!battle.store.selectedCard) return null;
-  const { selectedCard } = battle.store;
+  if (battle.store.selectedCardIndex === null) return null;
+  
+  const selectedCard = battle.store.playerCombatant.hand[battle.store.selectedCardIndex];
   
 
   return (
     <div className={classNames.selectedCard}>
       { selectedCard.name }
-      { selectedCard.effects.map(effect => <div>{effect.descriptionTemplate}</div>) }
+      { selectedCard.effects.map(effect => <div>{effect.description}</div>) }
     </div>
   );
 });

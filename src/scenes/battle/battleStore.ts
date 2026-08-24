@@ -1,14 +1,15 @@
 import { makeAutoObservable } from "mobx";
 import { PlayerCombatant } from "../../model/playerCombatant";
-import { Card } from "../../model/card";
 import { EnemyCombatant } from "../../model/enemyCombatant";
 import { Combatant } from "../../model/combatant";
+import { Card } from "../../model/card";
 
 export class BattleStore {
   playerCombatant: PlayerCombatant;
   enemyCombatants: EnemyCombatant[];
   
-  selectedCard?: Card;
+  //selections
+  selectedCardIndex?: number = null;
   targets: Combatant[];
 
   turnNumber: number;
@@ -20,12 +21,25 @@ export class BattleStore {
     makeAutoObservable(this);
   }
 
-  setSelectedCard(card?: Card): void {
-    this.selectedCard = card;
+  setSelectedCardIndex(cardIndex?: number): void {
+    this.selectedCardIndex = cardIndex;
   }
 
   setTargets(targets: Combatant[]): void {
     this.targets = targets;
+  }
+
+  resetSelections(): void {
+    this.targets = [];
+    this.selectedCardIndex = null;
+  }
+
+  appendCardToDiscard(card: Card): void {
+    this.playerCombatant.discard.push(card);
+  }
+
+  removeSelectedCardFromHand(): void {
+    this.playerCombatant.hand.splice(this.selectedCardIndex, 1);
   }
 
   advanceTurnNumber(): void {
