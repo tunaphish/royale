@@ -96,24 +96,32 @@ export class Battle extends Phaser.Scene {
         break;
     }
 
-    this.executeCard();
+    this.tryExecutingSelectedCard();
   }
 
-  executeCard(): void {
+  tryExecutingSelectedCard(): void {
     const selectedCard = this.store.playerCombatant.hand[this.store.selectedCardIndex];
     if (!selectedCard || !this.store.targets) return;
-    
-    this.store.playerCombatant.energy = Math.max(this.store.playerCombatant.energy-selectedCard.cost, 0);
+    if (selectedCard.cost > this.store.playerCombatant.energy) {
+      this.choiceDisabledSound.play();
+      return;
+    }
 
-    selectedCard.effects.forEach(effect => {
+    this.store.playerCombatant.energy -= selectedCard.cost;
+
+    this.executeCard(selectedCard);
+
+    this.store.removeSelectedCardFromHand()
+    this.store.resetSelections();
+  }
+
+  executeCard(card: Card): void {
+    card.effects.forEach(effect => {
       effect.execute(this.store.playerCombatant, this.store.targets);
       this.sound.play(effect.sfxKey);
-    })
+    });
 
-    this.store.appendCardToDiscard(selectedCard)
-    this.store.removeSelectedCardFromHand()
-  
-    this.store.resetSelections();
+    this.store.appendCardToDiscard(card);
   }
 
   endTurn() {
