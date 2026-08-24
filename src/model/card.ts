@@ -11,6 +11,7 @@ export enum TargetType {
 export type Effect = {
     description: string;
     execute: (player: PlayerCombatant, targets: Combatant[]) => void;
+    sfxKey: string;
 }
 
 export type Card = {

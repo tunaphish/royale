@@ -107,6 +107,7 @@ export class Battle extends Phaser.Scene {
 
     selectedCard.effects.forEach(effect => {
       effect.execute(this.store.playerCombatant, this.store.targets);
+      this.sound.play(effect.sfxKey);
     })
 
     this.store.appendCardToDiscard(selectedCard)

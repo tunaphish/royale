@@ -28,7 +28,11 @@ export const strike: Card = {
     cost: 1,
     targetType: TargetType.SINGLE,
     effects: [
-        { description: "Deal 6 damage.", execute: (playerCombatant, targets) => dealDamage(playerCombatant, targets, 6), }
+        { 
+          description: "Deal 6 damage.", 
+          execute: (playerCombatant, targets) => dealDamage(playerCombatant, targets, 6), 
+          sfxKey: 'attack'
+        }
     ],
 };
 
@@ -37,8 +41,16 @@ export const twinStrike: Card = {
     cost: 1,
     targetType: TargetType.SINGLE,
     effects: [
-        { description: "Deal 5 damage.", execute: (playerCombatant, targets) => dealDamage(playerCombatant, targets, 5), },
-        { description: "Deal 5 damage.", execute: (playerCombatant, targets) => dealDamage(playerCombatant, targets, 5), }
+        { 
+          description: "Deal 5 damage.", 
+          execute: (playerCombatant, targets) => dealDamage(playerCombatant, targets, 5), 
+          sfxKey: 'attack'
+        },
+        { 
+          description: "Deal 5 damage.", 
+          execute: (playerCombatant, targets) => dealDamage(playerCombatant, targets, 5), 
+          sfxKey: 'attack'
+        },
     ],
 };
 
@@ -47,7 +59,11 @@ export const defend: Card = {
     cost: 1,
     targetType: TargetType.SELF,
     effects: [
-        { description: "Gain 5 block.", execute: (playerCombatant, targets) => gainBlock(playerCombatant, targets, 5), },
+        { 
+          description: "Gain 5 block.", 
+          execute: (playerCombatant, targets) => gainBlock(playerCombatant, targets, 5), 
+          sfxKey: 'block',
+        },
     ],
 };
 
