@@ -1,5 +1,5 @@
+import { Battle } from "../scenes/battle/Battle";
 import { Combatant } from "./combatant";
-import { PlayerCombatant } from "./playerCombatant";
 
 export enum TargetType {
     SINGLE = 'single',
@@ -10,7 +10,7 @@ export enum TargetType {
 
 export type Effect = {
     description: string;
-    execute: (player: PlayerCombatant, targets: Combatant[]) => void;
+    execute: (battle: Battle, targets: Combatant[]) => void;
     sfxKey: string;
 }
 

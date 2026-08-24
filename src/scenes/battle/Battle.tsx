@@ -144,7 +144,7 @@ export class Battle extends Phaser.Scene {
 
   executeCard(card: Card): void {
     card.effects.forEach(effect => {
-      effect.execute(this.store.playerCombatant, this.store.targets);
+      effect.execute(this, this.store.targets);
       this.sound.play(effect.sfxKey);
     });
 
@@ -155,7 +155,15 @@ export class Battle extends Phaser.Scene {
 
   endTurn(): void {
     this.store.discardHand();
-    // enemy action
+    
+    for (let enemyCombatant of this.store.enemyCombatants) {
+      const state = enemyCombatant.states[enemyCombatant.stateIndex];
+      state.actions.forEach(action => {
+        action(this, enemyCombatant);
+      });
+      enemyCombatant.stateIndex = state.getNextStateIndex(this, enemyCombatant);
+    }
+
     this.checkBattleEnd();
 
 

@@ -39,7 +39,7 @@ const { battle, enemyCombatant } = props;
 return (
   <div>
       <CombatantView battle={battle} combatant={enemyCombatant} />
-      <div>Intent: </div>
+      <div>Intent: {enemyCombatant.states[enemyCombatant.stateIndex].display}</div>
   </div>
 
   )
