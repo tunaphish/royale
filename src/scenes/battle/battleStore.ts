@@ -4,11 +4,19 @@ import { EnemyCombatant } from "../../model/enemyCombatant";
 import { Combatant } from "../../model/combatant";
 import { Card } from "../../model/card";
 
+export enum PileType {
+  hand = 'hand',
+  deck = 'deck',
+  discard = 'discard',
+  exhaust = 'exhaust',
+}
+
 export class BattleStore {
   playerCombatant: PlayerCombatant;
   enemyCombatants: EnemyCombatant[];
   
   //selections
+  selectedPile: PileType = PileType.hand
   selectedCardIndex?: number = null;
   targets: Combatant[];
 
@@ -40,6 +48,10 @@ export class BattleStore {
 
   removeSelectedCardFromHand(): void {
     this.playerCombatant.hand.splice(this.selectedCardIndex, 1);
+  }
+
+  setSelectedPile(pileType: PileType): void {
+    this.selectedPile = pileType;
   }
 
   advanceTurnNumber(): void {

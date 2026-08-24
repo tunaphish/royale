@@ -9,6 +9,7 @@ import { Meter } from './Meter';
 import { Combatant } from '../../model/combatant';
 import { MenuOptionsView } from './MenuOptionsView';
 import { EnemyCombatant } from '../../model/enemyCombatant';
+import { PileType } from './battleStore';
 
 export const BattleView = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props;
@@ -79,7 +80,6 @@ export const CombatantView = observer((props: { battle: Battle, combatant: Comba
 export const Piles = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props;
 
-  const [selectedPile, setSelectedPile] = React.useState<'hand' | 'deck' | 'discard' | 'exhaust'>('hand');
 
   const piles = {
       hand: battle.store.playerCombatant.hand,
@@ -89,7 +89,7 @@ export const Piles = observer((props: { battle: Battle }): JSX.Element => {
   };
 
   const onClickPile = (pile) => {
-    setSelectedPile(pile)
+    battle.store.setSelectedPile(pile);
     battle.selectPile(pile);
   }
 
@@ -97,15 +97,13 @@ export const Piles = observer((props: { battle: Battle }): JSX.Element => {
     battle.selectCardIndex(index);
   }
 
-  const pileItems = ['hand', 'deck', 'discard', 'exhaust'];
-
-  const selectedCards = piles[selectedPile];
+  const selectedCards = piles[battle.store.selectedPile];
   return (
     <div className={classNames.cardsContainer}>
 
         <div className={classNames.pileSelector}>
             <MenuOptionsView
-              items={pileItems}
+              items={Object.values(PileType)}
               getKey={pile => pile}
               renderLabel={pile => pile + ' ' + '(' + piles[pile].length + ')'}
               onSelect={pile => onClickPile(pile)}

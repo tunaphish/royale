@@ -2,7 +2,7 @@
 import * as React from 'react';
 import ReactOverlay from '../../plugins/ReactOverlay';
 import { BattleView } from './BattleView';
-import { BattleStore } from './battleStore';
+import { BattleStore, PileType } from './battleStore';
 
 import { toJS } from 'mobx';
 import { samplePlayerCombatant } from '../../data/sample-player';
@@ -58,6 +58,10 @@ export class Battle extends Phaser.Scene {
   }
 
   selectTarget(target: Combatant) {
+    if (this.store.selectedPile !== PileType.hand) {
+      this.choiceDisabledSound.play();
+      return;
+    }
     const selectedCard = this.store.playerCombatant.hand[this.store.selectedCardIndex];
     if (!selectedCard) return;
 
