@@ -61,6 +61,18 @@ export class Battle extends Phaser.Scene {
         this.store.playerCombatant.hand.push(card);
     }
   };
+
+  checkBattleEnd(): void {
+    // lose
+    if (this.store.playerCombatant.health <= 0) {
+      this.scene.start('GameOver');
+    }
+
+    // win
+    if (this.store.enemyCombatants.every(enemyCombatant => enemyCombatant.health <= 0)) {
+      this.scene.start('GameOver');
+    }
+  }
   
   // #region handle events
   selectPile(pile: Card[]) {
@@ -137,12 +149,16 @@ export class Battle extends Phaser.Scene {
     });
 
     this.store.appendCardToDiscard(card);
+
+    this.checkBattleEnd();
   }
 
   endTurn(): void {
     this.store.discardHand();
     // enemy action
-    
+    this.checkBattleEnd();
+
+
     this.store.advanceTurnNumber();
     this.drawCards(5);
     this.store.playerCombatant.energy = this.store.playerCombatant.maxEnergy;
