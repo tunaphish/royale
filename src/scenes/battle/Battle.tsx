@@ -157,15 +157,16 @@ export class Battle extends Phaser.Scene {
     this.store.discardHand();
     
     for (let enemyCombatant of this.store.enemyCombatants) {
+      enemyCombatant.block = 0;
+
       const state = enemyCombatant.states[enemyCombatant.stateIndex];
       state.actions.forEach(action => {
         action(this, enemyCombatant);
       });
       enemyCombatant.stateIndex = state.getNextStateIndex(this, enemyCombatant);
     }
-
+    this.store.playerCombatant.block = 0;
     this.checkBattleEnd();
-
 
     this.store.advanceTurnNumber();
     this.drawCards(5);
