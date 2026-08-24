@@ -6,9 +6,8 @@ import { BattleStore, PileType } from './battleStore';
 
 import { toJS } from 'mobx';
 import { samplePlayerCombatant } from '../../data/sample-player';
-import { PlayerCombatant } from '../../model/playerCombatant';
 import { Card, TargetType } from '../../model/card';
-import { SAMPLE_ENEMY } from '../../data/enemies';
+import { hexaghost } from '../../data/enemies';
 import { Combatant } from '../../model/combatant';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
@@ -29,7 +28,7 @@ export class Battle extends Phaser.Scene {
   }
 
   init(data: {  }): void {
-    const TEST_ENEMY_COMBATANTS = [SAMPLE_ENEMY];
+    const TEST_ENEMY_COMBATANTS = [hexaghost];
     this.store = new BattleStore(samplePlayerCombatant, TEST_ENEMY_COMBATANTS);
 
     this.choiceSelectSound = this.sound.add('choice-select');
@@ -97,7 +96,7 @@ export class Battle extends Phaser.Scene {
       case TargetType.SINGLE:
       case TargetType.AOE:
       case TargetType.RANDOM:
-        if (!isEnemy) {
+        if (!isEnemy || target.health === 0) {
           this.choiceDisabledSound.play();
           return;
         }
@@ -156,12 +155,13 @@ export class Battle extends Phaser.Scene {
   endTurn(): void {
     this.store.discardHand();
     
-    for (let enemyCombatant of this.store.enemyCombatants) {
+    for (let enemyCombatant of this.store.enemyCombatants.filter(enemy => enemy.health > 0)) {
       enemyCombatant.block = 0;
 
       const state = enemyCombatant.states[enemyCombatant.stateIndex];
-      state.actions.forEach(action => {
-        action(this, enemyCombatant);
+      state.effects.forEach(effect => {
+        effect.execute(this, [enemyCombatant]);
+        this.sound.play(effect.sfxKey);
       });
       enemyCombatant.stateIndex = state.getNextStateIndex(this, enemyCombatant);
     }

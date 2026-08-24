@@ -1,10 +1,10 @@
 import { Battle } from "../scenes/battle/Battle";
+import { Effect } from "./card";
 import { Combatant } from "./combatant"
 import { PlayerCombatant } from "./playerCombatant";
 
 export type EnemyState = {
-    display: string;
-    actions: ((battle: Battle, enemyCombatant: EnemyCombatant) => void)[];
+    effects: Effect[];
     getNextStateIndex: (battle: Battle, enemyCombatant: EnemyCombatant) => number;
 } 
 
@@ -14,4 +14,3 @@ export type EnemyCombatant = Combatant & {
     stateIndex: number;
 }
 
-// actions?

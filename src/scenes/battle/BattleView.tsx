@@ -29,17 +29,18 @@ export const EnemyContainer = observer((props: { battle: Battle }): JSX.Element 
   const { battle } = props;
   return (
     <div className={classNames.enemyContainer}>
-      { battle.store.enemyCombatants.map(enemyCombatant => <EnemyView battle={battle} enemyCombatant={enemyCombatant} />)}
+      { battle.store.enemyCombatants.map((enemyCombatant, idx) => <EnemyView battle={battle} enemyCombatant={enemyCombatant} key={idx}/>)}
     </div>
   )
 });
 
 export const EnemyView = observer((props: { battle: Battle, enemyCombatant: EnemyCombatant }): JSX.Element => {
 const { battle, enemyCombatant } = props;
+console.log(toJS(enemyCombatant));
 return (
-  <div>
+  <div style={{ width: "50%"}}>
       <CombatantView battle={battle} combatant={enemyCombatant} />
-      <div>Intent: {enemyCombatant.states[enemyCombatant.stateIndex].display}</div>
+      <div>Intent: {enemyCombatant.states[enemyCombatant.stateIndex].effects.map(effect => effect.description).join(", ")}</div>
   </div>
 
   )
