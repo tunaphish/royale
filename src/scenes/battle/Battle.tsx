@@ -74,8 +74,9 @@ export class Battle extends Phaser.Scene {
   }
   
   // #region handle events
-  selectPile(pile: Card[]) {
+  selectPile(pile: PileType) {
     this.choiceSelectSound.play();
+    this.store.setSelectedPile(pile);
   }
 
   selectCardIndex(cardIndex: number) {

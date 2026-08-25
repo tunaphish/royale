@@ -20,7 +20,8 @@ export const BattleView = observer((props: { battle: Battle }): JSX.Element => {
     <div className={classNames.container}>
       <EnemyContainer battle={battle} />
       <PlayerContainer battle={battle} />
-      <Piles battle={battle} />
+      <CardSelector battle={battle} />
+      <PileSelector battle={battle}/>
     </div>
   )
 });
@@ -35,13 +36,13 @@ export const EnemyContainer = observer((props: { battle: Battle }): JSX.Element 
 });
 
 export const EnemyView = observer((props: { battle: Battle, enemyCombatant: EnemyCombatant }): JSX.Element => {
-const { battle, enemyCombatant } = props;
-console.log(toJS(enemyCombatant));
-return (
-  <div style={{ width: "50%"}}>
-      <CombatantView battle={battle} combatant={enemyCombatant} />
-      <div>Intent: {enemyCombatant.states[enemyCombatant.stateIndex].effects.map(effect => effect.description).join(", ")}</div>
-  </div>
+  const { battle, enemyCombatant } = props;
+  console.log(toJS(enemyCombatant));
+  return (
+    <div style={{ width: "50%"}}>
+        <CombatantView battle={battle} combatant={enemyCombatant} />
+        <div>Intent: {enemyCombatant.states[enemyCombatant.stateIndex].effects.map(effect => effect.description).join(", ")}</div>
+    </div>
 
   )
 });
@@ -80,47 +81,18 @@ export const CombatantView = observer((props: { battle: Battle, combatant: Comba
   )
 });
 
-export const Piles = observer((props: { battle: Battle }): JSX.Element => {
+export const CardSelector = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props;
-
-  const piles = {
-      hand: battle.store.playerCombatant.hand,
-      deck: battle.store.playerCombatant.deck,
-      discard: battle.store.playerCombatant.discard,
-      exhaust: battle.store.playerCombatant.exhaust,
-  };
-
-
-  const onClickPile = (pile) => {
-    battle.store.setSelectedPile(pile);
-    battle.selectPile(pile);
-  }
-
-  const onClickEndTurn = () => {
-    battle.endTurn();
-  }
 
   const onClickCardIndex = (index) => {
     battle.selectCardIndex(index);
   }
 
-  const selectedCards = piles[battle.store.selectedPile];
+  const selectedCards = battle.store.playerCombatant[battle.store.selectedPile];
   console.log(toJS(selectedCards)); // loading bearing console statement... triggers mobx to observe the cards lol
 
   return (
     <div className={classNames.cardsContainer}>
-
-        <div className={classNames.pileSelector}>
-            <MenuOptionsView
-              items={Object.values(PileType)}
-              getKey={pile => pile}
-              renderLabel={pile => pile + ' ' + '(' + piles[pile].length + ')'}
-              onSelect={pile => onClickPile(pile)}
-              initialIndex={0}
-            />
-            <div onClick={onClickEndTurn}>End Turn</div>
-        </div>
-
         <div className={classNames.cardSelector}>
             <MenuOptionsView
               items={selectedCards}
@@ -151,4 +123,29 @@ export const SelectedCard = observer((props: { battle: Battle }): JSX.Element =>
       { selectedCard.effects.map(effect => <div>{effect.description}</div>) }
     </div>
   );
+});
+
+export const PileSelector = observer((props: { battle: Battle }): JSX.Element => {
+  const { battle } = props;
+  const piles = {
+    deck: battle.store.playerCombatant.deck,
+    hand: battle.store.playerCombatant.hand,
+    discard: battle.store.playerCombatant.discard,
+  };
+
+  const onClickPile = (pile) => {
+    battle.selectPile(pile);
+  }
+
+  return (
+    <div className={classNames.pileSelector}>
+      <MenuOptionsView
+        items={Object.values(PileType)}
+        getKey={pile => pile}
+        renderLabel={pile => pile + ' ' + '(' + piles[pile].length + ')'}
+        onSelect={pile => onClickPile(pile)}
+        initialIndex={0}
+      />
+  </div>
+  )
 });

@@ -5,10 +5,9 @@ import { Combatant } from "../../model/combatant";
 import { Card } from "../../model/card";
 
 export enum PileType {
-  hand = 'hand',
   deck = 'deck',
+  hand = 'hand',
   discard = 'discard',
-  exhaust = 'exhaust',
 }
 
 export class BattleStore {
