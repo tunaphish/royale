@@ -1,7 +1,5 @@
 import { EnemyCombatant } from "../model/enemyCombatant";
 import { dealDamage, gainBlock } from "./effects";
-import { Battle } from "../scenes/battle/Battle";
-
 
 export const hexaghost: EnemyCombatant = {
     name: "Hexaghost",
@@ -14,7 +12,7 @@ export const hexaghost: EnemyCombatant = {
                 {
                     description: 'bic attack',
                     sfxKey: 'attack',
-                    execute: (battle: Battle, enemyCombatant) => dealDamage(battle, [battle.store.playerCombatant], 10)
+                    execute: (caster, targets) => dealDamage(caster, targets, 10)
                 },
             ],
             getNextStateIndex: (battle, playerCombatant) => 1,
@@ -22,9 +20,9 @@ export const hexaghost: EnemyCombatant = {
         {
             effects: [
                 {
-                    description: 'bic attack',
+                    description: 'bic block',
                     sfxKey: 'block',
-                    execute:(battle: Battle, enemyCombatants) => gainBlock(battle, enemyCombatants, 10)
+                    execute:(caster, targets) => gainBlock(caster, [caster], 10)
                 },
             ],
             getNextStateIndex: (battle, playerCombatant) => 2,
@@ -32,14 +30,14 @@ export const hexaghost: EnemyCombatant = {
         {
             effects: [
                 {
-                    description: 'bic attack',
+                    description: 'small attacm',
                     sfxKey: 'attack',
-                    execute: (battle: Battle, enemyCombatant) => dealDamage(battle, [battle.store.playerCombatant], 5)
+                    execute: (caster, targets) => dealDamage(caster, targets, 5)
                 },
                           {
                     description: 'small block',
                     sfxKey: 'block',
-                    execute:(battle: Battle, enemyCombatants) => gainBlock(battle, enemyCombatants, 5)
+                    execute:(caster, targets) => gainBlock(caster, [caster], 5)
                 },
             ],
             getNextStateIndex: (battle, playerCombatant) => 0,

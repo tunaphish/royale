@@ -8,7 +8,7 @@ export const strike: Card = {
     effects: [
         { 
           description: "Deal 6 damage.", 
-          execute: (battle, targets) => dealDamage(battle, targets, 6), 
+          execute: (caster, targets) => dealDamage(caster, targets, 6), 
           sfxKey: 'attack'
         }
     ],
@@ -21,12 +21,12 @@ export const twinStrike: Card = {
     effects: [
         { 
           description: "Deal 5 damage.", 
-          execute: (battle, targets) => dealDamage(battle, targets, 5), 
+          execute: (caster, targets) => dealDamage(caster, targets, 5), 
           sfxKey: 'attack'
         },
         { 
           description: "Deal 5 damage.", 
-          execute: (battle, targets) => dealDamage(battle, targets, 5), 
+          execute: (caster, targets) => dealDamage(caster, targets, 5), 
           sfxKey: 'attack'
         },
     ],
@@ -39,7 +39,7 @@ export const defend: Card = {
     effects: [
         { 
           description: "Gain 5 block.", 
-          execute: (battle, targets) => gainBlock(battle, targets, 5), 
+          execute: (caster, targets) => gainBlock(caster, targets, 5), 
           sfxKey: 'block',
         },
     ],

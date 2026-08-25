@@ -137,6 +137,10 @@ export const PileSelector = observer((props: { battle: Battle }): JSX.Element =>
     battle.selectPile(pile);
   }
 
+  const onClickEndTurn = () => {
+    battle.endTurn();
+  }
+
   return (
     <div className={classNames.pileSelector}>
       <MenuOptionsView
@@ -146,6 +150,7 @@ export const PileSelector = observer((props: { battle: Battle }): JSX.Element =>
         onSelect={pile => onClickPile(pile)}
         initialIndex={0}
       />
+      <div onClick={onClickEndTurn}>End Turn</div>
   </div>
   )
 });

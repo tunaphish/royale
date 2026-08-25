@@ -1,8 +1,7 @@
-import { Battle } from "../scenes/battle/Battle";
 import { Combatant } from "../model/combatant";
 import { clamp } from "../util";
 
-export const dealDamage = (battle: Battle, targets: Combatant[], potency: number): void => {
+export const dealDamage = (caster: Combatant, targets: Combatant[], potency: number): void => {
   targets.forEach(target => {
     let finalDamage = potency;
 
@@ -15,7 +14,7 @@ export const dealDamage = (battle: Battle, targets: Combatant[], potency: number
 }
 
 
-export const gainBlock = (battle: Battle, targets: Combatant[], potency: number): void => {
+export const gainBlock = (caster: Combatant, targets: Combatant[], potency: number): void => {
   targets.forEach(target => {
     target.block += potency
   });

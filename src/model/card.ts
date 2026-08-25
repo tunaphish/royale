@@ -1,4 +1,3 @@
-import { Battle } from "../scenes/battle/Battle";
 import { Combatant } from "./combatant";
 
 export enum TargetType {
@@ -10,7 +9,7 @@ export enum TargetType {
 
 export type Effect = {
     description: string;
-    execute: (battle: Battle, targets: Combatant[]) => void;
+    execute: (caster: Combatant, targets: Combatant[]) => void;
     sfxKey: string;
 }
 
