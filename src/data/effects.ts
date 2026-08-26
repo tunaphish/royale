@@ -2,6 +2,12 @@ import { Combatant } from "../model/combatant";
 import { clamp } from "../util";
 
 export const dealDamage = (caster: Combatant, targets: Combatant[], potency: number): void => {
+  for (let activeTechnique of caster.activeTechniques) {
+    if (activeTechnique.technique.onModifyDamage) {
+      potency += activeTechnique.technique.onModifyDamage(caster, targets) * activeTechnique.amount;
+    }
+  }
+
   targets.forEach(target => {
     let finalDamage = potency;
 
@@ -16,6 +22,6 @@ export const dealDamage = (caster: Combatant, targets: Combatant[], potency: num
 
 export const gainBlock = (caster: Combatant, targets: Combatant[], potency: number): void => {
   targets.forEach(target => {
-    target.block += potency
+    target.block += potency;
   });
 }

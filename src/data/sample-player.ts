@@ -1,6 +1,7 @@
 import { PlayerCombatant } from "../model/playerCombatant";
 
 import * as Cards from './cards';
+import * as Techniques from './techinques';
 
 export const samplePlayerCombatant: PlayerCombatant = {
     health: 58,
@@ -13,4 +14,6 @@ export const samplePlayerCombatant: PlayerCombatant = {
     hand: [],
     discard: [],
     exhaust: [],
+
+    activeTechniques: [{technique: Techniques.inflame, amount: 2}],
 }

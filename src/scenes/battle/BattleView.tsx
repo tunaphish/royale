@@ -75,7 +75,7 @@ export const CombatantView = observer((props: { battle: Battle, combatant: Comba
           </div>
         </div>
         <div>
-          art here
+          { combatant.activeTechniques.map(activeTechnique => <div key={activeTechnique.technique.name}>{activeTechnique.technique.name} {activeTechnique.amount}</div>) }
         </div>
     </Window>
   )

@@ -6,6 +6,7 @@ export const hexaghost: EnemyCombatant = {
     health: 70,
     maxHealth: 70,
     block: 0,
+    activeTechniques: [],
     states: [
         {
             effects: [
