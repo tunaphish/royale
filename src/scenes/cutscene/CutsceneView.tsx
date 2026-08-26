@@ -12,14 +12,12 @@ export const CutsceneView = observer(({ children, cutscene }: CutsceneViewProps)
   return (
     <div className={classNames.container}>
       {children}
-      <div className={classNames.footer}>
-        <button
+        <div
           className={classNames.closeButton}
           onClick={() => cutscene.endScene()} 
         >
           End Scene
-        </button>
-      </div>
+        </div>
     </div>
   );
 });

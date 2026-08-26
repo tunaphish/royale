@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: black;
+  background-color: var(--paper-offwhite);
   z-index: 1000;
   overflow: auto;
 }
@@ -16,17 +16,12 @@
 }
 
 .closeButton {
-  background-color: rgba(255, 255, 255, 0.2);
   border: none;
-  color: white;
+  color: var(--ink-black);
   padding: 8px 12px;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s ease;
-}
-
-.closeButton:hover {
-  background-color: rgba(255, 255, 255, 0.3);
 }
 
 .background {
@@ -45,7 +40,7 @@
   transform: translate(-50%, -50%);
   transition: opacity 0.3s ease-out;
   
-  background-color: #222;
+  background-color: var(--ink-black);
   
   padding: 24px ;
   border-radius: 24px;
@@ -55,5 +50,6 @@
   z-index: 10;
 }
  
-
- 
+.panel {
+  border: 1px solid var(--ink-black);
+}
