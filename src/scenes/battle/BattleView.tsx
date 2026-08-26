@@ -6,7 +6,7 @@ import { Battle } from './Battle';
 import { observer } from 'mobx-react-lite';
 import { Window } from './Window';
 import { Meter } from './Meter';
-import { Combatant } from '../../model/combatant';
+import { ActiveTechnique, Combatant } from '../../model/combatant';
 import { MenuOptionsView } from './MenuOptionsView';
 import { EnemyCombatant } from '../../model/enemyCombatant';
 import { PileType } from './battleStore';
@@ -40,7 +40,7 @@ export const EnemyView = observer((props: { battle: Battle, enemyCombatant: Enem
   console.log(toJS(enemyCombatant));
   return (
     <div style={{ width: "50%"}}>
-        <CombatantView battle={battle} combatant={enemyCombatant} />
+        <CombatantView battle={battle} combatant={enemyCombatant} isPlayer={false}/>
         <div>Intent: {enemyCombatant.states[enemyCombatant.stateIndex].effects.map(effect => effect.description).join(", ")}</div>
     </div>
 
@@ -53,14 +53,14 @@ export const PlayerContainer = observer((props: { battle: Battle }): JSX.Element
 
   return (
     <div className={classNames.playerContainer}>
-      <CombatantView battle={battle} combatant={playerCombatant} />
+      <CombatantView battle={battle} combatant={playerCombatant} isPlayer/>
       <div>Energy: {playerCombatant.energy} / {playerCombatant.maxEnergy}</div>
     </div>
   )
 });
 
-export const CombatantView = observer((props: { battle: Battle, combatant: Combatant }): JSX.Element => { 
-  const { battle, combatant } = props;
+export const CombatantView = observer((props: { battle: Battle, combatant: Combatant, isPlayer: boolean }): JSX.Element => { 
+  const { battle, combatant, isPlayer } = props;
   const onClick = () => {
     battle.selectTarget(combatant);
   }
@@ -75,9 +75,22 @@ export const CombatantView = observer((props: { battle: Battle, combatant: Comba
           </div>
         </div>
         <div>
-          { combatant.activeTechniques.map(activeTechnique => <div key={activeTechnique.technique.name}>{activeTechnique.technique.name} {activeTechnique.amount}</div>) }
+          { combatant.activeTechniques.map((activeTechnique, idx) => <TechniqueView key={activeTechnique.technique.name} battle={battle} activeTechnique={activeTechnique} idx={idx} isPlayer={isPlayer}/>) }
         </div>
     </Window>
+  )
+});
+
+export const TechniqueView  = observer((props: { battle: Battle, activeTechnique: ActiveTechnique, idx: number, isPlayer: boolean }): JSX.Element => { 
+  const { battle, activeTechnique, idx, isPlayer  } = props;
+
+  // const onClickTechnique = () => {
+  //   if (!isPlayer) return;
+  //   battle.sacrificeTechniqueIndex(idx);
+  // }
+
+  return (
+    <div>{activeTechnique.technique.name} {activeTechnique.amount}</div>
   )
 });
 
