@@ -5,7 +5,7 @@ import styles from './boot.module.css';
 import ReactOverlay from '../../plugins/ReactOverlay';
 import { LocalStorageAdapter } from '../../external/LocalStorageAdapter';
 
-const SCENE_TO_START = 'Battle';
+const SCENE_TO_START = 'Cutscene';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
