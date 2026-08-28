@@ -3,14 +3,13 @@
   "version": "0.0.1",
   "description": "a game about everything",
   "author": "Tuan Pham",
-  "homepage": "http://tunaphish.github.io/royale",
-  "private": false,
+  "homepage": "https://gitlab.com/basil-leaf-group/royale",
+  "private": "true",
   "scripts": {
     "start": "vite",
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "deploy": "gh-pages -d dist",
     "lint": "eslint src --fix"
   },
   "dependencies": {
