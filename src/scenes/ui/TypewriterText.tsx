@@ -21,11 +21,10 @@ interface TypewriterTextProps {
 
 export const TypewriterText = ({
   children,
-  textSpeed = TextSpeed.NORMAL,
+  textSpeed = TextSpeed.SLOW,
   onComplete,
   skipAnimation = false,
 }: TypewriterTextProps): JSX.Element => {
-
   const chars = React.useMemo(
     () => extractTypedCharsFromChildren(children),
     [children]
@@ -60,11 +59,13 @@ export const TypewriterText = ({
 
   return (
     <div className={classNames.typewriterContainer}>
-      {chars
-        .slice(0, displayedIndex)
-        .map((typedChar, index) =>
-          renderTypedChar(typedChar, index)
-        )}
+      {chars.map((typedChar, index) =>
+        renderTypedChar(
+          typedChar,
+          index,
+          index < displayedIndex
+        )
+      )}
     </div>
   );
 };
@@ -79,8 +80,10 @@ export const extractTypedCharsFromChildren = (
     wrappers: React.ReactElement[] = []
   ): void => {
     if (typeof child === 'string' || typeof child === 'number') {
-      String(child).split('')
-                   .forEach((char) => chars.push({ char, wrappers }));
+      String(child)
+        .split('')
+        .forEach((char) => chars.push({ char, wrappers,}));
+
       return;
     }
 
@@ -102,12 +105,16 @@ export const extractTypedCharsFromChildren = (
 
 export const renderTypedChar = (
   typedChar: TypedChar,
-  index: number
+  index: number,
+  visible: boolean
 ): React.ReactNode => {
-  let result: React.ReactNode =
-    typedChar.char === ' '
-      ? '\u00A0'
-      : typedChar.char;
+  let result: React.ReactNode = (
+    <span style={{ visibility: visible ? 'visible' : 'hidden',}}>
+      {typedChar.char === ' '
+        ? '\u00A0'
+        : typedChar.char}
+    </span>
+  );
 
   [...typedChar.wrappers]
     .reverse()
