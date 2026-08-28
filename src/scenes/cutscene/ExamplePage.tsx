@@ -1,9 +1,10 @@
 import React from 'react'; 
 import { Section, DialogueBubble, Panel } from './CutsceneComponents';
+import { Frenzy, Limit } from '../ui/Characters';
  
 export const ExamplePage = (): JSX.Element => {
   return (
-    <div style={{ width: '100%' }}>
+    <div>
       <Section>
  
         <Panel
@@ -11,26 +12,24 @@ export const ExamplePage = (): JSX.Element => {
           position={{ x: '20%', y: '10%' }}
         />
 
-        <DialogueBubble
-          line={[
-            { text: 'hey this is ' },
-            { text: 'limit', effect: 'limit' },
-            { text: ' break and ' },
-            { text: 'madness', effect: 'frenzy' },
-            { text: '...' },
-          ]}
-          position={{ x: '50%', y: '30%' }}
-        />
+        <DialogueBubble position={{ x: '50%', y: '30%' }}>
+          hey this is <Limit>limit</Limit> break and <Frenzy>madness</Frenzy>...
+        </DialogueBubble>
+        
+        {/* 
+        <DialogueBubble position={{ x: '50%', y: '40%' }}>
+          normal <div style={{ color: 'red' }}>red</div> class test..
+        </DialogueBubble> 
+        */}
+
  
-        <DialogueBubble
-          line="I wasn't expecting visitors."
-          position={{ x: '50%', y: '55%' }}
-        />
+        <DialogueBubble position={{ x: '50%', y: '55%' }}>
+          I wasn't expecting visitors.
+        </DialogueBubble>
  
-        <DialogueBubble
-          line="What brings you here?"
-          position={{ x: '50%', y: '120%' }}
-        />
+        <DialogueBubble position={{ x: '50%', y: '120%' }}>
+          What brings you here?
+        </DialogueBubble>
       </Section>
  
       <div style={{ height: '8000px' }} />

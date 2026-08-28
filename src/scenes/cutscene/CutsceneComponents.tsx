@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import classNames from './cutscene.module.css';
-import { TextToken } from '../ui/TypewriterText';
+import { TextSpeed } from '../ui/TypewriterText';
 import { TypewriterText } from '../ui/TypewriterText';
 
 interface BackgroundProps {
@@ -34,27 +34,23 @@ const placedStyle = (position: PlacedProps['position'] = { x: '50%', y: '50%' })
   top: position.y,
 });
 
-interface TextToken {
-  text: string;
-  effect?: 'limit' | 'frenzy' | string;
-}
- 
 interface DialogueBubbleProps extends PlacedProps {
-  line: string | TextToken[];
+  children: React.ReactNode;
+  textSpeed?: TextSpeed | number;
+  onTextComplete?: () => void;
 }
  
 export const DialogueBubble = ({
-  line,
+  children,
   position,
-
+  textSpeed,
+  onTextComplete,
 }: DialogueBubbleProps): JSX.Element => {
-  const Content = typeof line === "string" ?
-    line :
-    <TypewriterText line={line} />
- 
   return (
     <div className={classNames.dialogueBubble} style={placedStyle(position)}>
-      {Content}
+      <TypewriterText textSpeed={textSpeed} onComplete={onTextComplete}>
+        {children}
+      </TypewriterText>
     </div>
   );
 };

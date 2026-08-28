@@ -1,82 +1,86 @@
-import * as React from 'react';
-import styles from './ui.module.css';
-import { LimitBreakLetter } from './LimitBreakLetter';
-import { FrenzyLetter } from './FrenzyLetter';
-
-export type TextEffect = 'normal' | 'frenzy' | 'limit'
-
-export type TextToken = {
-  text: string
-  effect?: TextEffect
-}
+import React from 'react';
+import classNames from './ui.module.css';
+import { TextEffectType, getEffectType, renderChar } from './Characters';
 
 export enum TextSpeed {
-  SLOW,
-  NORMAL,
-  FAST
+  SLOW = 45,
+  NORMAL = 25,
+  FAST = 5,
 }
 
-const textSpeedToValue = (speed: TextSpeed): number => {
-  switch (speed) {
-    case TextSpeed.SLOW:
-      return 45
-    case TextSpeed.NORMAL:
-      return 25
-    case TextSpeed.FAST:
-      return 5
-    default:
-      return 25
-  }
+export type TypedChar = {
+  char: string;
+  effect: TextEffectType;
+};
+ 
+interface TypewriterTextProps {
+  children: React.ReactNode;
+  textSpeed?: TextSpeed | number;
+  onComplete?: () => void;
+  skipAnimation?: boolean;
 }
-
-type TypewriterTextProps = { 
-  line: TextToken[]; 
-  textSpeed?: TextSpeed 
-}
-
-type TypedChar = {
-  char: string
-  effect: TextEffect
-}
-
-const flattenTokens = (tokens: TextToken[]): TypedChar[] => {
-  return tokens.flatMap(token =>
-    token.text.split('').map(char => ({
-      char,
-      effect: token.effect ?? 'normal',
-    }))
-  )
-}
-
+ 
 export const TypewriterText = ({
-  line,
+  children,
   textSpeed = TextSpeed.NORMAL,
+  onComplete,
+  skipAnimation = false,
 }: TypewriterTextProps): JSX.Element => {
-  const chars = React.useMemo(() => flattenTokens(line), [line])
-  const [index, setIndex] = React.useState(0)
-
+ 
+  const chars = React.useMemo<TypedChar[]>(
+    () => extractTypedCharsFromChildren(children),
+    [children]
+  );
+  const [displayedIndex, setDisplayedIndex] = React.useState(0);
+ 
   React.useEffect(() => {
-    if (index >= chars.length) return
-
+    if (skipAnimation) {
+      setDisplayedIndex(chars.length);
+      onComplete?.();
+      return;
+    }
+ 
+    if (displayedIndex >= chars.length) {
+      onComplete?.();
+      return;
+    }
+ 
+    const delay = typeof textSpeed === 'number' ? textSpeed : textSpeed;
     const timeout = setTimeout(() => {
-      setIndex(i => i + 1)
-    }, textSpeedToValue(textSpeed))
-
-    return () => clearTimeout(timeout)
-  }, [index, chars.length, textSpeed])
-
+      setDisplayedIndex((i) => i + 1);
+    }, delay);
+ 
+    return () => clearTimeout(timeout);
+  }, [displayedIndex, chars.length, textSpeed, skipAnimation, onComplete]);
+ 
   return (
-    <div className={styles.textContainer}>
-      {chars.slice(0, index).map((c, i) => {
-        switch (c.effect) {
-          case 'limit':
-            return <LimitBreakLetter key={i} char={c.char} offset={i} />
-          case 'frenzy':
-            return <FrenzyLetter key={i} char={c.char} />
-          default:
-            return <span key={i}>{c.char === ' ' ? '\u00A0' : c.char}</span>
-        }
-      })}
+    <div className={classNames.typewriterContainer}>
+      {chars.slice(0, displayedIndex).map((typedChar, idx) =>
+        renderChar(typedChar.char, typedChar.effect, idx)
+      )}
     </div>
-  )
-}
+  );
+};
+
+export const extractTypedCharsFromChildren = (
+  children: React.ReactNode
+): TypedChar[] => {
+  const chars: TypedChar[] = [];
+
+  const processChild = (child: React.ReactNode, effect: TextEffectType = 'normal') => {
+    if (typeof child === 'string' || typeof child === 'number') {
+      const text = String(child);
+      text.split('').forEach((char) => {
+        chars.push({ char, effect });
+      });
+    } else if (Array.isArray(child)) {
+      child.forEach((item) => processChild(item, effect));
+    } else if (React.isValidElement(child)) {
+      const childEffect = getEffectType(child.type) ?? effect;
+      processChild(child.props.children, childEffect);
+    }
+  };
+
+  processChild(children);
+  return chars;
+};
