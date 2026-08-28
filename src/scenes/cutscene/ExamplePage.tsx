@@ -1,6 +1,7 @@
 import React from 'react'; 
 import { Section, DialogueBubble, Panel } from './CutsceneComponents';
-import { Frenzy, Limit } from '../ui/Characters';
+import { Frenzy } from '../ui/Frenzy';
+import classNames from './cutscene.module.css';
  
 export const ExamplePage = (): JSX.Element => {
   return (
@@ -13,14 +14,14 @@ export const ExamplePage = (): JSX.Element => {
         />
 
         <DialogueBubble position={{ x: '50%', y: '30%' }}>
-          hey this is <Limit>limit</Limit> break and <Frenzy>madness</Frenzy>...
+          hey this is <span className={classNames.limitBreak}>limit</span> break and <Frenzy>madness</Frenzy>...
         </DialogueBubble>
         
-        {/* 
+        
         <DialogueBubble position={{ x: '50%', y: '40%' }}>
-          normal <div style={{ color: 'red' }}>red</div> class test..
+          normal <span style={{ color: 'red' }}>red</span> class test..
         </DialogueBubble> 
-        */}
+       
 
  
         <DialogueBubble position={{ x: '50%', y: '55%' }}>
