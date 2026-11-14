@@ -8,7 +8,8 @@
     "experimentalDecorators": true,
     "jsx": "react-jsx",
     "plugins": [{ "name": "typescript-plugin-css-modules" }],
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "strictPropertyInitialization": false
   },
   "include": ["**/*.ts", "**/*.tsx", "webpack.config.js"]
 }

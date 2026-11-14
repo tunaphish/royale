@@ -5,7 +5,7 @@ import styles from './boot.module.css';
 import ReactOverlay from '../../plugins/ReactOverlay';
 import { LocalStorageAdapter } from '../../external/LocalStorageAdapter';
 
-const SCENE_TO_START = 'Cutscene';
+const SCENE_TO_START = 'Dialogue';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -27,8 +27,8 @@ export class Boot extends Phaser.Scene {
       const [opacity, setOpacity]  = React.useState<number>(1);
 
       React.useEffect(() => {    
-        this.load.on('progress', (value) => (setPercent(Math.trunc(value * 100))));
-        this.load.on('fileprogress', (file) => (setFileKey(file.key)));
+        this.load.on('progress', (value: number) => (setPercent(Math.trunc(value * 100))));
+        this.load.on('fileprogress', (file: any) => (setFileKey(file.key)));
         this.load.on('complete', () => setOpacity(0));
       });
 
@@ -75,5 +75,11 @@ export class Boot extends Phaser.Scene {
     this.load.audio('bomb', '/royale/sounds/bomb.wav');
     this.load.audio('slime-noise', '/royale/sounds/slime-noise.mp3');
 
+    // related to new dialogue
+    this.load.image('eji', '/royale/characters/eji.png');
+    this.load.image('main-menu', '/royale/backgrounds/main-menu.png');
+    this.load.text('final-battle', '/royale/scripts/final-battle.yaml');
+    this.load.text('temp-scripts', '/royale/scripts/temp-scripts.yaml');
+    this.load.audio('knight', '/royale/music/knight.mp3');
   }
 }

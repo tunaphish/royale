@@ -24,7 +24,7 @@ export class GameOver extends Phaser.Scene {
     const Ui = () => {
       const [opacity, setOpacity] = React.useState(1);
 
-      const onAnimationComplete = ((definition: { opacity }) => {
+      const onAnimationComplete = ((definition: { opacity: number }) => {
         if (definition.opacity === 0) {
           this.scene.start('Battle');
         }

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 export const MenuCursor = (props: { size: number }): JSX.Element => (
   <motion.img
-    src="/reaper/ui/cursor.png" 
+    src="/royale/ui/cursor.png" 
     alt=""
     style={{
       width: props.size + 'px',       
