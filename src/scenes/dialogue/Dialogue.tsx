@@ -47,11 +47,6 @@ export class Dialogue extends Phaser.Scene {
     const { store } = this;
     if (store.isLeaving || store.choices) return;
 
-    if (store.animatingId !== null) {
-      store.skipTyping();
-      return;
-    }
-
     this.runFrom(store.lineIndex + 1);
   }
 
@@ -59,10 +54,6 @@ export class Dialogue extends Phaser.Scene {
     this.choiceSelectSound?.play();
     this.store.setScript(this.scripts[choice.newScriptKey] ?? []);
     this.runFrom(0);
-  }
-
-  finishTyping(id: number): void {
-    this.store.finishTyping(id);
   }
 
   leave(): void {
@@ -96,12 +87,12 @@ export class Dialogue extends Phaser.Scene {
           break;
         case 'says':
         case 'announce':
-          store.setMessage(store.createLine(action === 'says' ? actor : '', value));
+          store.setMessage({ actor: action === 'says' ? actor : '', text: value });
           this.dialogueAdvanceSound?.play();
           store.setLineIndex(i);
           return;
         case 'display':
-          store.setAnimeText(store.createLine('', value));
+          store.setAnimeText({ actor: '', text: value });
           this.dialogueAdvanceSound?.play();
           store.setLineIndex(i);
           return;

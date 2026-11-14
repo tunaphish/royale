@@ -4,10 +4,6 @@ import { observer } from 'mobx-react-lite';
 
 import styles from './dialogue.module.css';
 import { Dialogue } from './Dialogue';
-import { TypedLine } from './dialogueStore';
-import { TypewriterText } from '../ui/TypewriterText';
-
-const FOREGROUND = 'url(https://raw.githubusercontent.com/oscicen/oscicen.github.io/master/img/depth-3.png)';
 
 export const DialogueView = observer((props: { dialogue: Dialogue }): JSX.Element => {
   const { dialogue } = props;
@@ -39,7 +35,7 @@ export const DialogueView = observer((props: { dialogue: Dialogue }): JSX.Elemen
 
 export const ParallaxView = observer((props: { dialogue: Dialogue }): JSX.Element => {
   const { dialogue } = props;
-  const { middleground, background, animeText } = dialogue.store;
+  const { foreground, middleground, background, animeText } = dialogue.store;
   const parallaxRef = React.useRef<HTMLDivElement>(null);
 
   // set directly on the element so mouse movement doesn't re-render
@@ -49,7 +45,6 @@ export const ParallaxView = observer((props: { dialogue: Dialogue }): JSX.Elemen
     const depth = (factor: number) =>
       `${50 - (e.clientX - w) * factor}% ${50 - (e.clientY - h) * factor}%`;
     if (parallaxRef.current) {
-      // foreground, portrait, background
       parallaxRef.current.style.backgroundPosition = `${depth(0.06)}, ${depth(0.03)}, ${depth(0.01)}`;
     }
   };
@@ -58,12 +53,12 @@ export const ParallaxView = observer((props: { dialogue: Dialogue }): JSX.Elemen
     <div
       ref={parallaxRef}
       className={styles.parallax}
-      style={{ backgroundImage: `${FOREGROUND}, ${middleground}, ${background}` }}
+      style={{ backgroundImage: `${foreground}, ${middleground}, ${background}` }}
       onMouseMove={onMouseMove}
     >
       {animeText && (
         <div className={styles.animeText}>
-          <TypedLineView key={animeText.id} dialogue={dialogue} line={animeText} />
+          {animeText.text}
         </div>
       )}
     </div>
@@ -76,10 +71,9 @@ export const ActorMessageView = observer((props: { dialogue: Dialogue }): JSX.El
 
   return (
     <div className={styles.actorMessage} onClick={() => dialogue.advance()}>
-      <div>{message?.actor}</div>
       {message && (
         <div className={styles.actorDialogue}>
-          <TypedLineView key={message.id} dialogue={dialogue} line={message} />
+          {message.text}
         </div>
       )}
     </div>
@@ -101,19 +95,5 @@ export const ChoicesView = observer((props: { dialogue: Dialogue }): JSX.Element
         </div>
       ))}
     </div>
-  );
-});
-
-export const TypedLineView = observer((props: { dialogue: Dialogue, line: TypedLine }): JSX.Element => {
-  const { dialogue, line } = props;
-  const onComplete = React.useCallback(() => dialogue.finishTyping(line.id), [dialogue, line.id]);
-
-  return (
-    <TypewriterText
-      skipAnimation={dialogue.store.skipId === line.id}
-      onComplete={onComplete}
-    >
-      {line.text}
-    </TypewriterText>
   );
 });

@@ -1,6 +1,6 @@
 import { makeAutoObservable } from 'mobx';
 
-export type TypedLine = { id: number; actor: string; text: string };
+export type Line = { actor: string; text: string };
 export type Choice = { newScriptKey: string; displayText: string };
 
 export const DEFAULT_MIDDLEGROUND = 'url("/royale/characters/eji.png")';
@@ -12,26 +12,17 @@ export class DialogueStore {
 
   background = DEFAULT_BACKGROUND;
   middleground = DEFAULT_MIDDLEGROUND;
+  foreground = 'url(https://raw.githubusercontent.com/oscicen/oscicen.github.io/master/img/depth-3.png)';
 
-  message: TypedLine | null = null;
-  animeText: TypedLine | null = null;
+  message: Line | null = null;
+  animeText: Line | null = null;
   choices: Choice[] | null = null;
 
-  // id of the line currently typing, and the id the player asked to skip
-  animatingId: number | null = null;
-  skipId: number | null = null;
-
   isLeaving = false;
-
-  private nextId = 0;
 
   constructor(script: string[]) {
     this.script = script;
     makeAutoObservable(this);
-  }
-
-  createLine(actor: string, text: string): TypedLine {
-    return { id: this.nextId++, actor, text };
   }
 
   setScript(script: string[]): void {
@@ -51,29 +42,21 @@ export class DialogueStore {
     this.middleground = middleground;
   }
 
-  setMessage(line: TypedLine): void {
-    this.message = line;
-    this.choices = null;
-    this.animatingId = line.id;
+  setForeground(foreground: string): void {
+    this.foreground = foreground;
   }
 
-  setAnimeText(line: TypedLine): void {
+  setMessage(line: Line): void {
+    this.message = line;
+    this.choices = null;
+  }
+
+  setAnimeText(line: Line): void {
     this.animeText = line;
-    this.animatingId = line.id;
   }
 
   setChoices(choices: Choice[]): void {
     this.choices = choices;
-  }
-
-  skipTyping(): void {
-    this.skipId = this.animatingId;
-  }
-
-  finishTyping(id: number): void {
-    if (this.animatingId === id) {
-      this.animatingId = null;
-    }
   }
 
   setLeaving(): void {
