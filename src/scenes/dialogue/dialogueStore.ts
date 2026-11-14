@@ -3,16 +3,15 @@ import { makeAutoObservable } from 'mobx';
 export type Line = { actor: string; text: string };
 export type Choice = { newScriptKey: string; displayText: string };
 
-export const DEFAULT_MIDDLEGROUND = 'url("/royale/characters/eji.png")';
-export const DEFAULT_BACKGROUND = 'url("/royale/backgrounds/pikrepo.jpg")';
+export type Portrait = { character: string; emotion?: string };
 
 export class DialogueStore {
   script: string[];
   lineIndex = -1;
 
-  background = DEFAULT_BACKGROUND;
-  middleground = DEFAULT_MIDDLEGROUND;
-  foreground = 'url(https://raw.githubusercontent.com/oscicen/oscicen.github.io/master/img/depth-3.png)';
+  background: string | null = 'pikrepo';
+  portrait: Portrait | null = { character: 'eji' };
+  foreground: string | null = 'https://raw.githubusercontent.com/oscicen/oscicen.github.io/master/img/depth-3.png';
 
   message: Line | null = null;
   animeText: Line | null = null;
@@ -34,15 +33,15 @@ export class DialogueStore {
     this.lineIndex = lineIndex;
   }
 
-  setBackground(background: string): void {
+  setBackground(background: string | null): void {
     this.background = background;
   }
 
-  setMiddleground(middleground: string): void {
-    this.middleground = middleground;
+  setPortrait(portrait: Portrait | null): void {
+    this.portrait = portrait;
   }
 
-  setForeground(foreground: string): void {
+  setForeground(foreground: string | null): void {
     this.foreground = foreground;
   }
 

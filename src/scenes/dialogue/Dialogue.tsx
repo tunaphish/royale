@@ -62,7 +62,7 @@ export class Dialogue extends Phaser.Scene {
   // #endregion
 
   /**
-   * Runs non-blocking actions (show, enter, play) until it reaches a line
+   * Runs non-blocking actions (show, enter, foreground, play) until it reaches a line
    * that waits for the player (says, announce, display, choose).
    */
   private runFrom(startIndex: number): void {
@@ -75,13 +75,14 @@ export class Dialogue extends Phaser.Scene {
 
       switch (action) {
         case 'show':
-          store.setBackground(`url("/royale/backgrounds/${actor}.jpg")`);
+          store.setBackground(actor);
           break;
-        case 'enter': {
-          const emotion = adjective ? `-${adjective}` : '';
-          store.setMiddleground(`url("/royale/characters/${actor}${emotion}.png")`);
+        case 'enter':
+          store.setPortrait({ character: actor, emotion: adjective });
           break;
-        }
+        case 'foreground':
+          store.setForeground(actor === 'none' ? null : actor);
+          break;
         case 'play':
           this.playSong(actor);
           break;

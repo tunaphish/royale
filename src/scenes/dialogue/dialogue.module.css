@@ -12,23 +12,53 @@
   align-items: center;
 }
 
-.parallax {
+.stage {
   position: relative;
-  width: 100%;
-  height: 100%;
-
-  background-repeat: no-repeat;
-  background-size: cover;
-
   flex: 1;
+  overflow: hidden;
+  background-color: black;
+  touch-action: none;
+}
 
+.backgroundLayer {
+  position: absolute;
+  inset: 0;
   display: flex;
-  flex-direction: row;
+  align-items: flex-end;
+}
+
+.backgroundImage {
+  width: 100%;
+  height: auto;
+}
+
+.portraitLayer {
+  display: flex;
   align-items: flex-end;
   justify-content: center;
 }
 
+.portraitImage {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.foregroundLayer {
+  pointer-events: none;
+}
+
+.foregroundImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .animeText {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
   font-family: verdana;
   font-weight: bold;
   font-size: 20px;

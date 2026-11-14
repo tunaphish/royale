@@ -4,6 +4,8 @@ import { observer } from 'mobx-react-lite';
 
 import styles from './dialogue.module.css';
 import { Dialogue } from './Dialogue';
+import { Portrait } from './dialogueStore';
+import { ParallaxLayer, ParallaxProvider, useParallaxOffset } from './parallax';
 
 export const DialogueView = observer((props: { dialogue: Dialogue }): JSX.Element => {
   const { dialogue } = props;
@@ -23,7 +25,7 @@ export const DialogueView = observer((props: { dialogue: Dialogue }): JSX.Elemen
       transition={{ duration: 1 }}
       onAnimationComplete={onAnimationComplete}
     >
-      <ParallaxView dialogue={dialogue} />
+      <StageView dialogue={dialogue} />
       <div className={styles.menu}>
         {dialogue.store.choices
           ? <ChoicesView dialogue={dialogue} />
@@ -33,35 +35,47 @@ export const DialogueView = observer((props: { dialogue: Dialogue }): JSX.Elemen
   );
 });
 
-export const ParallaxView = observer((props: { dialogue: Dialogue }): JSX.Element => {
-  const { dialogue } = props;
-  const { foreground, middleground, background, animeText } = dialogue.store;
-  const parallaxRef = React.useRef<HTMLDivElement>(null);
+const backgroundSrc = (key: string) => `/royale/backgrounds/${key}.jpg`;
+const portraitSrc = ({ character, emotion }: Portrait) => `/royale/characters/${character}${emotion ? `-${emotion}` : ''}.png`;
+const foregroundSrc = (key: string) => key.startsWith('http') ? key : `/royale/foregrounds/${key}.png`;
 
-  // set directly on the element so mouse movement doesn't re-render
-  const onMouseMove = (e: React.MouseEvent) => {
-    const w = window.innerWidth / 2;
-    const h = window.innerHeight / 2;
-    const depth = (factor: number) =>
-      `${50 - (e.clientX - w) * factor}% ${50 - (e.clientY - h) * factor}%`;
-    if (parallaxRef.current) {
-      parallaxRef.current.style.backgroundPosition = `${depth(0.06)}, ${depth(0.03)}, ${depth(0.01)}`;
-    }
-  };
+export const StageView = observer((props: { dialogue: Dialogue }): JSX.Element => {
+  const { dialogue } = props;
+  const { background, portrait, foreground, animeText } = dialogue.store;
+  const stageRef = React.useRef<HTMLDivElement>(null);
+  const offset = useParallaxOffset(stageRef);
 
   return (
-    <div
-      ref={parallaxRef}
-      className={styles.parallax}
-      style={{ backgroundImage: `${foreground}, ${middleground}, ${background}` }}
-      onMouseMove={onMouseMove}
-    >
-      {animeText && (
-        <div className={styles.animeText}>
-          {animeText.text}
+    <ParallaxProvider value={offset}>
+      <div ref={stageRef} className={styles.stage}>
+        <div className={styles.backgroundLayer}>
+          {background && <img className={styles.backgroundImage} src={backgroundSrc(background)} />}
         </div>
-      )}
-    </div>
+
+        <ParallaxLayer depth={20} className={styles.portraitLayer}>
+          {portrait && (
+            <motion.img
+              key={portraitSrc(portrait)}
+              className={styles.portraitImage}
+              src={portraitSrc(portrait)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            />
+          )}
+        </ParallaxLayer>
+
+        <ParallaxLayer depth={40} className={styles.foregroundLayer}>
+          {foreground && <img className={styles.foregroundImage} src={foregroundSrc(foreground)} />}
+        </ParallaxLayer>
+
+        {animeText && (
+          <div className={styles.animeText}>
+            {animeText.text}
+          </div>
+        )}
+      </div>
+    </ParallaxProvider>
   );
 });
 
