@@ -38,7 +38,7 @@ type MenuOptionsViewProps<T> = {
   isCursor?: boolean
 }
 
-export const MenuOptionsView = ({items,getKey,renderLabel,onSelect,initialIndex = -1,isCursor=false}: MenuOptionsViewProps<T>): JSX.Element => {
+export const MenuOptionsView = <T,>({items,getKey,renderLabel,onSelect,initialIndex = -1,isCursor=false}: MenuOptionsViewProps<T>): JSX.Element => {
   const [selectedIndex, setSelectedIndex] = React.useState(initialIndex)
 
   return (

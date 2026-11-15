@@ -6,7 +6,8 @@ export class LocalStorageAdapter {
     localStorage.setItem(key, JSON.stringify(data))
   }
 
-  load(): PlayerSave {
+  /** The saved game, or null if nothing has been saved yet. */
+  load(): PlayerSave | null {
     const raw = localStorage.getItem(key)
     return raw ? JSON.parse(raw) : null
   }

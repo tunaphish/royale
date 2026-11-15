@@ -37,7 +37,7 @@ type MenuOptionsViewProps<T> = {
   initialIndex?: number
 }
 
-export const MenuOptionsView = ({items,getKey,renderLabel,onSelect,initialIndex = -1}: MenuOptionsViewProps<T>): JSX.Element => {
+export const MenuOptionsView = <T,>({items,getKey,renderLabel,onSelect,initialIndex = -1}: MenuOptionsViewProps<T>): JSX.Element => {
   const [selectedIndex, setSelectedIndex] = React.useState(initialIndex)
 
   return (

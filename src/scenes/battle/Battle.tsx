@@ -89,7 +89,7 @@ export class Battle extends Phaser.Scene {
       this.choiceDisabledSound.play();
       return;
     }
-    const selectedCard = this.store.playerCombatant.hand[this.store.selectedCardIndex];
+    const { selectedCard } = this.store;
     if (!selectedCard) return;
 
     const isEnemy = 'name' in target;
@@ -127,7 +127,7 @@ export class Battle extends Phaser.Scene {
   }
 
   tryExecutingSelectedCard(): void {
-    const selectedCard = this.store.playerCombatant.hand[this.store.selectedCardIndex];
+    const { selectedCard } = this.store;
     if (!selectedCard || !this.store.targets) return;
     if (selectedCard.cost > this.store.playerCombatant.energy) {
       this.choiceDisabledSound.play();

@@ -16,7 +16,7 @@ export class BattleStore {
   
   //selections
   selectedPile: PileType = PileType.hand
-  selectedCardIndex?: number = null;
+  selectedCardIndex: number | null = null;
   targets: Combatant[];
 
   turnNumber: number;
@@ -28,7 +28,12 @@ export class BattleStore {
     makeAutoObservable(this);
   }
 
-  setSelectedCardIndex(cardIndex?: number): void {
+  get selectedCard(): Card | null {
+    if (this.selectedCardIndex === null) return null;
+    return this.playerCombatant.hand[this.selectedCardIndex] ?? null;
+  }
+
+  setSelectedCardIndex(cardIndex: number | null): void {
     this.selectedCardIndex = cardIndex;
   }
 
@@ -51,6 +56,7 @@ export class BattleStore {
   }
 
   removeSelectedCardFromHand(): void {
+    if (this.selectedCardIndex === null) return;
     this.playerCombatant.hand.splice(this.selectedCardIndex, 1);
   }
 

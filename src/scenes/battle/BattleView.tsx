@@ -97,7 +97,7 @@ export const TechniqueView  = observer((props: { battle: Battle, activeTechnique
 export const CardSelector = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props;
 
-  const onClickCardIndex = (index) => {
+  const onClickCardIndex = (index: number) => {
     battle.selectCardIndex(index);
   }
 
@@ -127,13 +127,13 @@ export const CardSelector = observer((props: { battle: Battle }): JSX.Element =>
 
 export const SelectedCard = observer((props: { battle: Battle }): JSX.Element => {
   const { battle } = props; 
-  if (battle.store.selectedCardIndex === null) return <div className={classNames.selectedCard}></div>;
-  const selectedCard = battle.store.playerCombatant.hand[battle.store.selectedCardIndex];
+  const { selectedCard } = battle.store;
+  if (!selectedCard) return <div className={classNames.selectedCard}></div>;
 
   return (
     <div className={classNames.selectedCard}>
       { selectedCard.name }
-      { selectedCard.effects.map(effect => <div>{effect.description}</div>) }
+      { selectedCard.effects.map((effect, idx) => <div key={idx}>{effect.description}</div>) }
     </div>
   );
 });
@@ -146,7 +146,7 @@ export const PileSelector = observer((props: { battle: Battle }): JSX.Element =>
     discard: battle.store.playerCombatant.discard,
   };
 
-  const onClickPile = (pile) => {
+  const onClickPile = (pile: PileType) => {
     battle.selectPile(pile);
   }
 
