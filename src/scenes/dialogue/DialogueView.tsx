@@ -41,7 +41,7 @@ const foregroundSrc = (key: string) => key.startsWith('http') ? key : `/royale/f
 
 export const StageView = observer((props: { dialogue: Dialogue }): JSX.Element => {
   const { dialogue } = props;
-  const { background, portrait, foreground, animeText } = dialogue.store;
+  const { background, portrait, foreground, displayText } = dialogue.store;
   const stageRef = React.useRef<HTMLDivElement>(null);
   const offset = useParallaxOffset(stageRef);
 
@@ -69,9 +69,9 @@ export const StageView = observer((props: { dialogue: Dialogue }): JSX.Element =
           {foreground && <img className={styles.foregroundImage} src={foregroundSrc(foreground)} />}
         </ParallaxLayer>
 
-        {animeText && (
-          <div className={styles.animeText}>
-            {animeText.text}
+        {displayText && (
+          <div className={styles.displayText}>
+            {displayText}
           </div>
         )}
       </div>
@@ -101,11 +101,11 @@ export const ChoicesView = observer((props: { dialogue: Dialogue }): JSX.Element
     <div className={styles.dialogueOptions}>
       {dialogue.store.choices?.map((choice) => (
         <div
-          key={choice.newScriptKey}
+          key={choice.index}
           className={styles.optionDiv}
           onClick={() => dialogue.selectChoice(choice)}
         >
-          {choice.displayText}
+          {choice.text}
         </div>
       ))}
     </div>

@@ -4,8 +4,10 @@ import { motion } from 'framer-motion';
 import styles from './boot.module.css';
 import ReactOverlay from '../../plugins/ReactOverlay';
 import { LocalStorageAdapter } from '../../external/LocalStorageAdapter';
+import { compileInkScripts, INK_SCRIPTS, inkScriptUrl } from './inkScripts';
 
 const SCENE_TO_START = 'Dialogue';
+const SCENE_DATA = { storyKey: 'final-battle' };
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -38,7 +40,7 @@ export class Boot extends Phaser.Scene {
             transition={{ duration: .2 }} 
             className={styles.loadingContainer} 
             onAnimationComplete={(definition: { opacity: number }) => {  
-              if (definition.opacity === 0) this.scene.start(SCENE_TO_START);
+              if (definition.opacity === 0) this.scene.start(SCENE_TO_START, SCENE_DATA);
             }}
           >
             <div className={styles.spinner}>
@@ -78,8 +80,11 @@ export class Boot extends Phaser.Scene {
     // related to new dialogue
     this.load.image('eji', '/royale/characters/eji.png');
     this.load.image('main-menu', '/royale/backgrounds/main-menu.png');
-    this.load.text('final-battle', '/royale/scripts/final-battle.yaml');
-    this.load.text('temp-scripts', '/royale/scripts/temp-scripts.yaml');
+    INK_SCRIPTS.forEach((key) => this.load.text(key, inkScriptUrl(key)));
     this.load.audio('knight', '/royale/music/knight.mp3');
+  }
+
+  public create(): void {
+    compileInkScripts(this.cache);
   }
 }

@@ -1,36 +1,25 @@
 import { makeAutoObservable } from 'mobx';
 
-export type Line = { actor: string; text: string };
-export type Choice = { newScriptKey: string; displayText: string };
+/** A line in the message box; `speaker` is a CHARACTERS key, or null for narration. */
+export type Line = { speaker: string | null; text: string };
+export type Choice = { index: number; text: string };
 
 export type Portrait = { character: string; emotion?: string };
 
 export class DialogueStore {
-  script: string[];
-  lineIndex = -1;
-
-  background: string | null = 'pikrepo';
-  portrait: Portrait | null = { character: 'eji' };
+  // the script sets the stage with #bg / #enter; only the foreground has a default
+  background: string | null = null;
+  portrait: Portrait | null = null;
   foreground: string | null = 'https://raw.githubusercontent.com/oscicen/oscicen.github.io/master/img/depth-3.png';
 
   message: Line | null = null;
-  animeText: Line | null = null;
+  displayText: string | null = null;
   choices: Choice[] | null = null;
 
   isLeaving = false;
 
-  constructor(script: string[]) {
-    this.script = script;
+  constructor() {
     makeAutoObservable(this);
-  }
-
-  setScript(script: string[]): void {
-    this.script = script;
-    this.message = null;
-  }
-
-  setLineIndex(lineIndex: number): void {
-    this.lineIndex = lineIndex;
   }
 
   setBackground(background: string | null): void {
@@ -45,16 +34,16 @@ export class DialogueStore {
     this.foreground = foreground;
   }
 
-  setMessage(line: Line): void {
+  setMessage(line: Line | null): void {
     this.message = line;
     this.choices = null;
   }
 
-  setAnimeText(line: Line): void {
-    this.animeText = line;
+  setDisplayText(text: string): void {
+    this.displayText = text;
   }
 
-  setChoices(choices: Choice[]): void {
+  setChoices(choices: Choice[] | null): void {
     this.choices = choices;
   }
 

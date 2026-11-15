@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
-import { load } from 'js-yaml';
 import styles from './dialoguelist.module.css';
 import ReactOverlay from '../../plugins/ReactOverlay';
+import { INK_SCRIPTS } from '../boot/inkScripts';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -10,47 +10,34 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   key: 'DialogueList',
 };
 
-type ScriptSelection = { scriptFileKey: string; scriptKey: string };
-type ScriptFile = { scriptFileKey: string; scriptKeys: string[] };
-
 /**
- * List of Dialogue Scenes in the Game
+ * List of ink stories in the game. Each one plays from the top.
  */
 export class DialogueList extends Phaser.Scene {
   private reactOverlay: ReactOverlay;
-  private choiceSelectSound: Phaser.Sound.BaseSound;
-  private choiceHoverSound: Phaser.Sound.BaseSound;
 
   constructor() {
     super(sceneConfig);
   }
 
   public create(): void {
-    this.choiceSelectSound = this.sound.add('choice-select');
-    this.choiceHoverSound = this.sound.add('choice-hover');
-
-    const scriptFiles: ScriptFile[] = this.cache.text.getKeys().map((scriptFileKey) => {
-      const parsedData = load(this.cache.text.get(scriptFileKey)) as Record<string, string[]>;
-      return { scriptFileKey, scriptKeys: Object.keys(parsedData ?? {}) };
-    });
-
     const Ui = () => {
-      const [selection, setSelection] = React.useState<ScriptSelection | null>(null);
+      const [selection, setSelection] = React.useState<string | null>(null);
 
       const onAnimationComplete = (definition: { opacity: number }) => {
         if (definition.opacity === 0 && selection) {
-          this.scene.start('Dialogue', selection);
+          this.scene.start('Dialogue', { storyKey: selection });
         }
       };
 
-      const onClickScript = (scriptSelection: ScriptSelection) => {
+      const onClickStory = (storyKey: string) => {
         if (selection) return;
-        this.choiceSelectSound.play();
-        setSelection(scriptSelection);
+        this.sound.play('choice-select');
+        setSelection(storyKey);
       };
 
-      const onHoverScript = () => {
-        this.choiceHoverSound.play();
+      const onHoverStory = () => {
+        this.sound.play('choice-hover');
       };
 
       return (
@@ -60,20 +47,16 @@ export class DialogueList extends Phaser.Scene {
           transition={{ duration: 1 }}
           onAnimationComplete={onAnimationComplete}
         >
-          {scriptFiles.map(({ scriptFileKey, scriptKeys }) => (
-            <section key={scriptFileKey}>
-              <h1 className={styles.title}>{scriptFileKey}</h1>
-              {scriptKeys.map((scriptKey) => (
-                <div
-                  key={scriptKey}
-                  className={styles.scriptButton}
-                  onClick={() => onClickScript({ scriptFileKey, scriptKey })}
-                  onMouseEnter={onHoverScript}
-                >
-                  - {scriptKey}
-                </div>
-              ))}
-            </section>
+          <h1 className={styles.title}>stories</h1>
+          {INK_SCRIPTS.map((storyKey) => (
+            <div
+              key={storyKey}
+              className={styles.scriptButton}
+              onClick={() => onClickStory(storyKey)}
+              onMouseEnter={onHoverStory}
+            >
+              - {storyKey}
+            </div>
           ))}
         </motion.div>
       );
