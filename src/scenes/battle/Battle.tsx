@@ -5,10 +5,17 @@ import { BattleView } from './BattleView';
 import { BattleStore, PileType } from './battleStore';
 
 import { toJS } from 'mobx';
-import { samplePlayerCombatant } from '../../data/sample-player';
-import { Card, TargetType } from '../../model/card';
-import { hexaghost } from '../../data/enemies';
+import { TargetType } from '../../model/card';
 import { Combatant } from '../../model/combatant';
+import { PlayerCombatant } from '../../model/playerCombatant';
+import { CardInstance, cardDef } from '../../data/cards';
+import { createEnemyCombatant, EnemyId } from '../../data/enemies';
+import { TECHNIQUES } from '../../data/techinques';
+import GameSession from '../../plugins/GameSession';
+import { PlayerState } from '../../state/gameState';
+
+/** Placeholder until battles are started with an encounter. */
+const TEST_ENCOUNTER: EnemyId[] = ['hexaghost'];
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -18,7 +25,11 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
 
 export class Battle extends Phaser.Scene {
   reactOverlay: ReactOverlay;
+  session: GameSession;
   store: BattleStore;
+
+  /** Set once the battle is won or lost, so the result is only applied once. */
+  private isOver = false;
 
   choiceSelectSound: Phaser.Sound.BaseSound;
   choiceDisabledSound: Phaser.Sound.BaseSound;
@@ -28,8 +39,14 @@ export class Battle extends Phaser.Scene {
   }
 
   init(data: {  }): void {
-    const TEST_ENEMY_COMBATANTS = [hexaghost];
-    this.store = new BattleStore(samplePlayerCombatant, TEST_ENEMY_COMBATANTS);
+    const { state } = this.session;
+    TEST_ENCOUNTER.forEach((enemyId) => state.recordEnemySeen(enemyId));
+
+    this.store = new BattleStore(
+      createPlayerCombatant(state.player),
+      TEST_ENCOUNTER.map(createEnemyCombatant),
+    );
+    this.isOver = false;
 
     this.choiceSelectSound = this.sound.add('choice-select');
     this.choiceDisabledSound = this.sound.add('stamina-depleted');
@@ -62,15 +79,23 @@ export class Battle extends Phaser.Scene {
   };
 
   checkBattleEnd(): void {
-    // lose
-    if (this.store.playerCombatant.health <= 0) {
-      this.scene.start('GameOver');
+    if (this.isOver) return;
+
+    const lost = this.store.playerCombatant.health <= 0;
+    const won = this.store.enemyCombatants.every(enemyCombatant => enemyCombatant.health <= 0);
+    if (!lost && !won) return;
+
+    this.isOver = true;
+
+    // Placeholder rule until there's a design for losing: only a win carries
+    // the battle's results back into the game. A loss leaves the player as
+    // they were before the fight.
+    if (won) {
+      this.session.state.setPlayerHealth(this.store.playerCombatant.health);
+      this.session.save();
     }
 
-    // win
-    if (this.store.enemyCombatants.every(enemyCombatant => enemyCombatant.health <= 0)) {
-      this.scene.start('GameOver');
-    }
+    this.scene.start('GameOver');
   }
   
   // #region handle events
@@ -93,7 +118,7 @@ export class Battle extends Phaser.Scene {
     if (!selectedCard) return;
 
     const isEnemy = 'name' in target;
-    switch(selectedCard.targetType) {
+    switch(cardDef(selectedCard).targetType) {
       case TargetType.SINGLE:
       case TargetType.AOE:
       case TargetType.RANDOM:
@@ -129,12 +154,13 @@ export class Battle extends Phaser.Scene {
   tryExecutingSelectedCard(): void {
     const { selectedCard } = this.store;
     if (!selectedCard || !this.store.targets) return;
-    if (selectedCard.cost > this.store.playerCombatant.energy) {
+    const { cost } = cardDef(selectedCard);
+    if (cost > this.store.playerCombatant.energy) {
       this.choiceDisabledSound.play();
       return;
     }
 
-    this.store.playerCombatant.energy -= selectedCard.cost;
+    this.store.playerCombatant.energy -= cost;
 
     this.executeCard(selectedCard);
 
@@ -142,8 +168,8 @@ export class Battle extends Phaser.Scene {
     this.store.resetSelections();
   }
 
-  executeCard(card: Card): void {
-    card.effects.forEach(effect => {
+  executeCard(card: CardInstance): void {
+    cardDef(card).effects.forEach(effect => {
       effect.execute(this.store.playerCombatant, this.store.targets);
       this.sound.play(effect.sfxKey);
     });
@@ -195,3 +221,23 @@ const randomItem = <T,>(array: T[]): T => {
 export const clamp = (min: number, val: number, max: number): number => {
   return Math.min(Math.max(val, min), max);
 };
+
+/**
+ * The player as they enter a battle: a copy of the saved player, so the battle
+ * can change health, piles and energy freely until it writes results back.
+ */
+const createPlayerCombatant = (player: PlayerState): PlayerCombatant => ({
+  health: player.health,
+  maxHealth: player.maxHealth,
+  block: 0,
+  energy: player.maxEnergy,
+  maxEnergy: player.maxEnergy,
+  deck: [...player.deck],
+  hand: [],
+  discard: [],
+  exhaust: [],
+  activeTechniques: player.techniques.map(({ techniqueId, amount }) => ({
+    technique: TECHNIQUES[techniqueId],
+    amount,
+  })),
+});

@@ -7,3 +7,7 @@ export const inflame: Technique = {
         return 3;
     }
 }
+
+/** Every technique definition, keyed by its ID. */
+export const TECHNIQUES = { inflame } satisfies Record<string, Technique>;
+export type TechniqueId = keyof typeof TECHNIQUES;

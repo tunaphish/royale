@@ -2,7 +2,7 @@ import { makeAutoObservable } from "mobx";
 import { PlayerCombatant } from "../../model/playerCombatant";
 import { EnemyCombatant } from "../../model/enemyCombatant";
 import { Combatant } from "../../model/combatant";
-import { Card } from "../../model/card";
+import type { CardInstance } from "../../data/cards";
 
 export enum PileType {
   deck = 'deck',
@@ -28,7 +28,7 @@ export class BattleStore {
     makeAutoObservable(this);
   }
 
-  get selectedCard(): Card | null {
+  get selectedCard(): CardInstance | null {
     if (this.selectedCardIndex === null) return null;
     return this.playerCombatant.hand[this.selectedCardIndex] ?? null;
   }
@@ -51,7 +51,7 @@ export class BattleStore {
     this.playerCombatant.hand = [];
   }
 
-  appendCardToDiscard(card: Card): void {
+  appendCardToDiscard(card: CardInstance): void {
     this.playerCombatant.discard.push(card);
   }
 

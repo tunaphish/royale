@@ -56,3 +56,22 @@ export const defend: Card = {
 //     cost: 1,
 //     effects: [],
 // };
+
+/** Every card definition, keyed by its ID. Saves and decks refer to cards by these IDs. */
+export const CARDS = { strike, twinStrike, defend } satisfies Record<string, Card>;
+export type CardId = keyof typeof CARDS;
+
+/**
+ * One copy of a card in a deck. Copies of the same card share a definition
+ * but each has its own `uid`, so a copy can later be changed (e.g. upgraded)
+ * without affecting the others. Contains only plain data, so it can be saved.
+ */
+export type CardInstance = { uid: string; cardId: CardId };
+
+export const createCardInstance = (cardId: CardId): CardInstance => ({
+  uid: crypto.randomUUID(),
+  cardId,
+});
+
+/** The definition behind a card copy: name, cost, effects. */
+export const cardDef = (card: CardInstance): Card => CARDS[card.cardId];

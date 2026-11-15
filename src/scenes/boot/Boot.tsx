@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 
 import styles from './boot.module.css';
 import ReactOverlay from '../../plugins/ReactOverlay';
-import { LocalStorageAdapter } from '../../external/LocalStorageAdapter';
 import { compileInkScripts, INK_SCRIPTS, inkScriptUrl } from './inkScripts';
 
 const SCENE_TO_START = 'Dialogue';

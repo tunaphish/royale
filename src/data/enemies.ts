@@ -46,3 +46,23 @@ export const hexaghost: EnemyCombatant = {
     ],
     stateIndex: 0,
 }
+
+/** Every enemy definition, keyed by its ID. */
+export const ENEMIES = { hexaghost } satisfies Record<string, EnemyCombatant>;
+export type EnemyId = keyof typeof ENEMIES;
+
+/**
+ * A fresh copy of an enemy for one battle, at full health. Battles change
+ * health, block and state, so they must never use the definition itself.
+ * The definition's states hold only functions and text, so they're shared.
+ */
+export const createEnemyCombatant = (enemyId: EnemyId): EnemyCombatant => {
+  const definition = ENEMIES[enemyId];
+  return {
+    ...definition,
+    health: definition.maxHealth,
+    block: 0,
+    stateIndex: 0,
+    activeTechniques: definition.activeTechniques.map((active) => ({ ...active })),
+  };
+};

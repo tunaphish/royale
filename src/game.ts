@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import Scenes from './scenes';
 import ReactOverlay from './plugins/ReactOverlay';
+import GameSession from './plugins/GameSession';
 import { configure } from "mobx";
 
 configure({
@@ -29,19 +30,12 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
     createContainer: true,
   },
   plugins: {
-    global: [{ key: 'react-overlay', plugin: ReactOverlay, start: true, mapping: 'reactOverlay' }],
+    global: [
+      { key: 'react-overlay', plugin: ReactOverlay, start: true, mapping: 'reactOverlay' },
+      { key: 'game-session', plugin: GameSession, start: true, mapping: 'session' },
+    ],
   },
 };
-
-const seedLocalStorage = () => {
-  localStorage.setItem(
-    "royale:playersave",
-    JSON.stringify({
-      //example:  spirits: 120,
-    })
-  );
-};
-seedLocalStorage();
 
 const game = new Phaser.Game(gameConfig);
 
