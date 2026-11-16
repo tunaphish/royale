@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 
 import styles from './boot.module.css';
 import ReactOverlay from '../../plugins/ReactOverlay';
-import { compileInkScripts, INK_SCRIPTS, inkScriptUrl } from './inkScripts';
+import { compileInkScripts, INK_INCLUDES, INK_SCRIPTS, inkIncludeKey, inkIncludeUrl, inkScriptUrl } from './inkScripts';
 
 const SCENE_TO_START = 'Dialogue';
 const SCENE_DATA = { storyKey: 'final-battle' };
@@ -80,6 +80,7 @@ export class Boot extends Phaser.Scene {
     this.load.image('eji', '/royale/characters/eji.png');
     this.load.image('main-menu', '/royale/backgrounds/main-menu.png');
     INK_SCRIPTS.forEach((key) => this.load.text(key, inkScriptUrl(key)));
+    INK_INCLUDES.forEach((file) => this.load.text(inkIncludeKey(file), inkIncludeUrl(file)));
     this.load.audio('knight', '/royale/music/knight.mp3');
   }
 

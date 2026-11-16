@@ -5,6 +5,8 @@ import { DialogueView } from './DialogueView';
 import { Choice, DialogueStore } from './dialogueStore';
 import { createStory } from '../boot/inkScripts';
 import { readNext, StoryStep } from './storyReader';
+import { bindGameFunctions } from './inkBindings';
+import GameSession from '../../plugins/GameSession';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -25,6 +27,7 @@ type Command = {
 
 export class Dialogue extends Phaser.Scene {
   reactOverlay: ReactOverlay;
+  session: GameSession;
   store: DialogueStore;
 
   private story: Story;
@@ -58,9 +61,14 @@ export class Dialogue extends Phaser.Scene {
       throw new Error('[Dialogue] started without a storyKey');
     }
     this.story = createStory(this.cache, data.storyKey);
+    bindGameFunctions(this.story, this.session.state);
     this.store = new DialogueStore();
 
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.stopMusic());
+    // leaving the scene is an autosave checkpoint, for anything ink changed
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.session.save();
+      this.stopMusic();
+    });
   }
 
   create(): void {
@@ -111,7 +119,9 @@ export class Dialogue extends Phaser.Scene {
         store.setChoices(step.choices);
         break;
       case 'end':
+        // the end of a story is an autosave checkpoint
         this.stopMusic();
+        this.session.save();
         store.setLeaving();
         break;
     }

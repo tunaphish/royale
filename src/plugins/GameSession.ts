@@ -11,6 +11,10 @@ export const DEFAULT_SLOT = 'slot-1';
  * its GameState. Mapped onto every scene as `this.session`.
  *
  * Add `?newgame` to the URL to start a fresh game instead of loading the save.
+ *
+ * Saves at checkpoints (a won battle, the end of a story, leaving a story)
+ * and whenever the page is hidden, since phones can close a hidden page
+ * without warning.
  */
 export default class GameSession extends Plugins.BasePlugin {
   readonly saves = new SaveManager(localStorageStorage);
@@ -26,7 +30,20 @@ export default class GameSession extends Plugins.BasePlugin {
     if (wantsNewGame || !this.loadSlot(DEFAULT_SLOT)) {
       this.newGame(DEFAULT_SLOT);
     }
+
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
+
+  destroy(): void {
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    super.destroy();
+  }
+
+  private onVisibilityChange = (): void => {
+    if (document.visibilityState === 'hidden') {
+      this.save();
+    }
+  };
 
   /** Starts a fresh game in a slot. Nothing is written until the next save. */
   newGame(slotId: string): void {

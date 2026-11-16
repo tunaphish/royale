@@ -18,4 +18,7 @@ export const newGameState = (): GameStateData => ({
   },
   spirits: 0,
   seenEnemies: [],
+  stats: {},
+  flags: {},
+  relationships: {},
 });

@@ -6,6 +6,8 @@
 //   #bg <background>   #enter <character> [emotion]
 //   #foreground <key|none>   #play <song>
 
+INCLUDE game.ink
+
 -> start
 
 === start ===

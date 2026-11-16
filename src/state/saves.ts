@@ -17,13 +17,16 @@ export const localStorageStorage: SaveStorage = {
 };
 
 /** Bump this whenever GameStateData changes shape, and add a migration below. */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /**
  * Upgrades a save from version N to N + 1. To change the save format:
  * bump SAVE_VERSION and add `[oldVersion]: (state) => newState`.
  */
-const MIGRATIONS: Record<number, (state: any) => any> = {};
+const MIGRATIONS: Record<number, (state: any) => any> = {
+  // v2 added the values ink reads and writes
+  1: (state) => ({ ...state, stats: {}, flags: {}, relationships: {} }),
+};
 
 export type SaveFile = { version: number; savedAt: number; state: GameStateData };
 
