@@ -2,7 +2,8 @@ import * as React from 'react';
 import type { Story } from 'inkjs/engine/Story';
 import ReactOverlay from '../../plugins/ReactOverlay';
 import { DialogueView } from './DialogueView';
-import { Choice, DialogueStore } from './dialogueStore';
+import { Choice, DialogueStore, Line, TypingTarget } from './dialogueStore';
+import { parseMarkup, plainText } from '../ui/markup';
 import { createStory } from '../../assets/ink';
 import { bindGameFunctions } from './inkBindings';
 import { SFX } from '../../assets/manifest';
@@ -15,6 +16,28 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
 };
 
 type DialogueData = { storyKey: string };
+
+/** Typewriter speed: time per letter, plus a pause after punctuation that ends a phrase. */
+const LETTER_MS = 30;
+const PUNCTUATION_PAUSE_MS: Record<string, number> = {
+  '.': 250, '!': 250, '?': 250, '…': 250,
+  ',': 120, ';': 120, ':': 120,
+};
+
+/** Delay before the next letter, once `revealed` letters show. Pauses only at the end of a run like `...`. */
+const letterDelay = (text: string, revealed: number): number => {
+  const last = text[revealed - 1];
+  const next = text[revealed];
+  const endsRun = next === undefined || /\s/.test(next);
+  return LETTER_MS + (endsRun ? PUNCTUATION_PAUSE_MS[last] ?? 0 : 0);
+};
+
+/** Parses a line's markup, warning about mistakes like an unclosed tag. */
+const toLine = (text: string): Line => {
+  const { nodes, problems } = parseMarkup(text);
+  problems.forEach((problem) => console.warn(`[Dialogue] ${problem} in: ${text}`));
+  return { text, nodes };
+};
 
 /** Tag that marks a line as large text over the stage instead of the message box. */
 const DISPLAY_TAG = 'display';
@@ -86,6 +109,7 @@ export class Dialogue extends Phaser.Scene {
 
   private story: Story;
   private music?: Phaser.Sound.BaseSound;
+  private typingTimer?: Phaser.Time.TimerEvent;
 
   constructor() {
     super(sceneConfig);
@@ -115,6 +139,13 @@ export class Dialogue extends Phaser.Scene {
   advance(): void {
     const { store } = this;
     if (store.isLeaving || store.choices) return;
+
+    // a tap while a line is typing finishes the line; the next tap continues
+    if (store.typing) {
+      this.finishTyping();
+      return;
+    }
+
     this.playSound('window-advance');
     this.continueStory();
   }
@@ -159,7 +190,7 @@ export class Dialogue extends Phaser.Scene {
       return commands;
     }
 
-    const choices = this.story.currentChoices.map(({ index, text }) => ({ index, text }));
+    const choices = this.story.currentChoices.map(({ index, text }) => ({ index, nodes: toLine(text).nodes }));
     commands.push(choices.length > 0 ? { kind: 'choices', choices } : { kind: 'end' });
     return commands;
   }
@@ -187,12 +218,18 @@ export class Dialogue extends Phaser.Scene {
       case 'sfx':
         this.sound.play(command.sound);
         break;
-      case 'line':
-        store.setMessage({ text: command.text });
+      case 'line': {
+        const line = toLine(command.text);
+        store.setMessage(line);
+        this.startTyping('message', line);
         break;
-      case 'display':
-        store.setDisplayText(command.text);
+      }
+      case 'display': {
+        const line = toLine(command.text);
+        store.setDisplay(line);
+        this.startTyping('display', line);
         break;
+      }
       case 'choices':
         store.setChoices(command.choices);
         break;
@@ -203,6 +240,35 @@ export class Dialogue extends Phaser.Scene {
         store.setLeaving();
         break;
     }
+  }
+
+  /** Types a line out one letter at a time; `finishTyping` shows the rest at once. */
+  private startTyping(target: TypingTarget, line: Line): void {
+    this.typingTimer?.remove();
+    const text = plainText(line.nodes);
+    if (text.length === 0) {
+      this.store.setTyping(null);
+      return;
+    }
+
+    this.store.setTyping({ target, revealed: 0, length: text.length });
+
+    const typeNext = () => {
+      const revealed = (this.store.typing?.revealed ?? 0) + 1;
+      if (revealed >= text.length) {
+        this.finishTyping();
+        return;
+      }
+      this.store.setRevealed(revealed);
+      this.typingTimer = this.time.delayedCall(letterDelay(text, revealed), typeNext);
+    };
+    this.typingTimer = this.time.delayedCall(LETTER_MS, typeNext);
+  }
+
+  private finishTyping(): void {
+    this.typingTimer?.remove();
+    this.typingTimer = undefined;
+    this.store.setTyping(null);
   }
 
   /** One-off sounds; Phaser removes them once they finish playing. */

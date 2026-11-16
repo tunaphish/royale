@@ -1,8 +1,16 @@
 import { makeAutoObservable } from 'mobx';
 
-/** A line in the message box. */
-export type Line = { text: string };
-export type Choice = { index: number; text: string };
+import type { MarkupNode } from '../ui/markup';
+
+/** A line of text from ink, parsed for markup like `<frenzy>`. */
+export type Line = { text: string; nodes: MarkupNode[] };
+export type Choice = { index: number; nodes: MarkupNode[] };
+
+/** Where the line being typed out is shown. */
+export type TypingTarget = 'message' | 'display';
+
+/** The line being typed out: `revealed` of its `length` letters show. */
+export type Typing = { target: TypingTarget; revealed: number; length: number };
 
 export type Portrait = { character: string; emotion?: string };
 
@@ -13,7 +21,8 @@ export class DialogueStore {
   foreground: string | null = 'https://raw.githubusercontent.com/oscicen/oscicen.github.io/master/img/depth-3.png';
 
   message: Line | null = null;
-  displayText: string | null = null;
+  display: Line | null = null;
+  typing: Typing | null = null;
   choices: Choice[] | null = null;
 
   isLeaving = false;
@@ -39,8 +48,16 @@ export class DialogueStore {
     this.choices = null;
   }
 
-  setDisplayText(text: string): void {
-    this.displayText = text;
+  setDisplay(line: Line | null): void {
+    this.display = line;
+  }
+
+  setTyping(typing: Typing | null): void {
+    this.typing = typing;
+  }
+
+  setRevealed(revealed: number): void {
+    if (this.typing) this.typing.revealed = revealed;
   }
 
   setChoices(choices: Choice[] | null): void {

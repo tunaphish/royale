@@ -1,0 +1,23 @@
+/*
+ * Classes script lines can use: <span class="red">text</span>.
+ * Add a class here and it's available to every story.
+ */
+
+/*
+ * Wraps every RichText. index.html sets `* { font-size: 12px }`, which would
+ * shrink every tag inside a line; this makes them inherit the line's size.
+ * Keep it first, so the classes below can still change the size.
+ */
+.richText,
+.richText :where(*) {
+  font-size: inherit;
+}
+
+.red {
+  color: #ff4a4a;
+  -webkit-text-fill-color: #ff4a4a;
+}
+
+.big {
+  font-size: 1.4em;
+}

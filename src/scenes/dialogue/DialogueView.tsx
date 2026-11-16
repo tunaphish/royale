@@ -7,6 +7,7 @@ import { Dialogue } from './Dialogue';
 import { Portrait } from './dialogueStore';
 import { ParallaxLayer, ParallaxProvider, useParallaxOffset } from './parallax';
 import { imageUrl } from '../../assets/manifest';
+import { RichText } from '../ui/RichText';
 
 export const DialogueView = observer((props: { dialogue: Dialogue }): JSX.Element => {
   const { dialogue } = props;
@@ -42,7 +43,7 @@ const foregroundSrc = (key: string) => key.startsWith('http') ? key : imageUrl(`
 
 export const StageView = observer((props: { dialogue: Dialogue }): JSX.Element => {
   const { dialogue } = props;
-  const { background, portrait, foreground, displayText } = dialogue.store;
+  const { background, portrait, foreground, display, typing } = dialogue.store;
   const stageRef = React.useRef<HTMLDivElement>(null);
   const offset = useParallaxOffset(stageRef);
 
@@ -70,9 +71,9 @@ export const StageView = observer((props: { dialogue: Dialogue }): JSX.Element =
           {foreground && <img className={styles.foregroundImage} src={foregroundSrc(foreground)} />}
         </ParallaxLayer>
 
-        {displayText && (
+        {display && (
           <div className={styles.displayText}>
-            {displayText}
+            <RichText nodes={display.nodes} revealed={typing?.target === 'display' ? typing.revealed : undefined} />
           </div>
         )}
       </div>
@@ -82,13 +83,14 @@ export const StageView = observer((props: { dialogue: Dialogue }): JSX.Element =
 
 export const ActorMessageView = observer((props: { dialogue: Dialogue }): JSX.Element => {
   const { dialogue } = props;
-  const { message } = dialogue.store;
+  const { message, typing } = dialogue.store;
+  const isTyping = typing?.target === 'message';
 
   return (
     <div className={styles.actorMessage} onClick={() => dialogue.advance()}>
       {message && (
-        <div className={styles.actorDialogue}>
-          {message.text}
+        <div className={isTyping ? `${styles.actorDialogue} ${styles.typing}` : styles.actorDialogue}>
+          <RichText nodes={message.nodes} revealed={isTyping ? typing.revealed : undefined} />
         </div>
       )}
     </div>
@@ -106,7 +108,7 @@ export const ChoicesView = observer((props: { dialogue: Dialogue }): JSX.Element
           className={styles.optionDiv}
           onClick={() => dialogue.selectChoice(choice)}
         >
-          {choice.text}
+          <RichText nodes={choice.nodes} />
         </div>
       ))}
     </div>

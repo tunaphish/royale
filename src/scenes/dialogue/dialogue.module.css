@@ -113,6 +113,12 @@
 }
 
 
+/* the "tap to continue" arrow waits until the line has finished typing */
+.actorDialogue.typing::after {
+  animation: none;
+  opacity: 0;
+}
+
 @keyframes blink-animation {
   50% { opacity: 1; }
 }

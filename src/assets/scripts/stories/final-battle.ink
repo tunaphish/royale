@@ -1,6 +1,7 @@
 // Line conventions read by the Dialogue scene:
 //   text                 -> a line in the message box
 //   text #display        -> large text over the stage
+// Text markup: <frenzy>shaking</frenzy>  <span class="red big">styled</span>  <b>  <i>
 // Stage directions are tags:
 //   #bg <background>   #enter <character> [emotion]
 //   #foreground <key|none>   #music <song>   #sfx <sound>
@@ -12,9 +13,9 @@ INCLUDE game.ink
 === start ===
 #bg supermarket
 #enter eji
-We saved those souls... Without reaping them
+We saved those <span class="red big">souls</span>... Without <b>reaping</b> them, and that changed <frenzy>everything about who we are</frenzy> forever.
 #sfx bomb
-What was the point? #display
+What was the <frenzy>point?</frenzy> #display
 Everyone's still dead #display
 Did it change the world? #display
 Or did it just feel good #display
