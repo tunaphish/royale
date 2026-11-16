@@ -2,7 +2,7 @@ import { makeAutoObservable, toJS } from 'mobx';
 import type { CardInstance } from '../data/cards';
 import type { EnemyId } from '../data/enemies';
 import type { TechniqueId } from '../data/techinques';
-import { clamp } from '../util';
+import { clamp } from '../model/math';
 
 export type OwnedTechnique = { techniqueId: TechniqueId; amount: number };
 

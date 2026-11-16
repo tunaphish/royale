@@ -1,7 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 
-/** A line in the message box; `speaker` is a CHARACTERS key, or null for narration. */
-export type Line = { speaker: string | null; text: string };
+/** A line in the message box. */
+export type Line = { text: string };
 export type Choice = { index: number; text: string };
 
 export type Portrait = { character: string; emotion?: string };

@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 
 import styles from './boot.module.css';
 import ReactOverlay from '../../plugins/ReactOverlay';
-import { compileInkScripts } from './inkScripts';
-import { loadAll } from '../../assets/manifest';
+import { compileStories } from '../../assets/ink';
+import { IMAGES, INK_INCLUDES, INK_STORIES, MUSIC, SFX } from '../../assets/manifest';
 
 type StartTarget = { scene: string; data: Record<string, string> };
 
@@ -86,10 +86,18 @@ export class Boot extends Phaser.Scene {
     }
     this.reactOverlay.create(<Ui/>, this);
 
-    loadAll(this.load);
+    this.loadAssets();
+  }
+
+  /** Queues every sound, song and image from the asset manifest. */
+  private loadAssets(): void {
+    Object.entries(SFX).forEach(([key, url]) => this.load.audio(key, url));
+    Object.entries(MUSIC).forEach(([key, url]) => this.load.audio(key, url));
+    Object.entries(IMAGES).forEach(([key, url]) => this.load.image(key, url));
   }
 
   public create(): void {
-    compileInkScripts(this.cache);
+    const compiled = compileStories(INK_STORIES, INK_INCLUDES);
+    Object.entries(compiled).forEach(([key, json]) => this.cache.json.add(key, json));
   }
 }

@@ -1,6 +1,5 @@
 // Line conventions read by the Dialogue scene:
-//   speaker: text        -> spoken line (speaker must be in characters.ts)
-//   text                 -> narration in the message box (no speaker)
+//   text                 -> a line in the message box
 //   text #display        -> large text over the stage
 // Stage directions are tags:
 //   #bg <background>   #enter <character> [emotion]
@@ -13,7 +12,7 @@ INCLUDE game.ink
 === start ===
 #bg supermarket
 #enter eji
-eji: We saved those souls... Without reaping them
+We saved those souls... Without reaping them
 What was the point? #display
 Everyone's still dead #display
 Did it change the world? #display

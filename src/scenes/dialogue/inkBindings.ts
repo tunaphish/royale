@@ -1,6 +1,5 @@
 import type { Story } from 'inkjs/engine/Story';
 import type { GameState } from '../../state/gameState';
-import { CHARACTERS } from './characters';
 
 /**
  * Connects the functions declared in public/scripts/game.ink to the game's
@@ -21,21 +20,15 @@ export const bindGameFunctions = (story: Story, state: GameState): void => {
 
   story.BindExternalFunction(
     'relationship',
-    (character: string) => state.relationship(checkCharacter(character)),
+    (character: string) => state.relationship(character),
     true,
   );
 
   story.BindExternalFunction(
     'add_relationship',
-    (character: string, amount: number) => state.addRelationship(checkCharacter(character), amount),
+    (character: string, amount: number) => state.addRelationship(character, amount),
     false,
   );
 };
 
-/** Warns about typos like add_relationship("avaa", 1) instead of silently tracking a new name. */
-const checkCharacter = (character: string): string => {
-  if (!(character in CHARACTERS)) {
-    console.warn(`[ink] unknown character "${character}"; add it to characters.ts`);
-  }
-  return character;
-};
+

@@ -3,7 +3,7 @@ import type { Story } from 'inkjs/engine/Story';
 import ReactOverlay from '../../plugins/ReactOverlay';
 import { DialogueView } from './DialogueView';
 import { Choice, DialogueStore } from './dialogueStore';
-import { createStory } from '../boot/inkScripts';
+import { createStory } from '../../assets/ink';
 import { readNext, StoryStep } from './storyReader';
 import { bindGameFunctions } from './inkBindings';
 import GameSession from '../../plugins/GameSession';

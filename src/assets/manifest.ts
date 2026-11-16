@@ -69,10 +69,3 @@ export const imageUrl = (key: string): string | undefined => {
   if (!url) console.warn(`[assets] no image "${key}"`);
   return url;
 };
-
-/** Queues every sound, song and image on Phaser's loader. */
-export const loadAll = (load: Phaser.Loader.LoaderPlugin): void => {
-  Object.entries(SFX).forEach(([key, url]) => load.audio(key, url));
-  Object.entries(MUSIC).forEach(([key, url]) => load.audio(key, url));
-  Object.entries(IMAGES).forEach(([key, url]) => load.image(key, url));
-};

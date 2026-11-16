@@ -1,5 +1,4 @@
 import type { Story } from 'inkjs/engine/Story';
-import { CHARACTERS } from './characters';
 import { Choice, Line } from './dialogueStore';
 
 /** Tag that marks a line as large text over the stage instead of the message box. */
@@ -34,7 +33,7 @@ export const readNext = (story: Story): StoryStep => {
 
     return isDisplay
       ? { kind: 'display', text, commands }
-      : { kind: 'line', line: parseLine(text), commands };
+      : { kind: 'line', line: { text }, commands };
   }
 
   if (story.currentChoices.length > 0) {
@@ -43,15 +42,4 @@ export const readNext = (story: Story): StoryStep => {
   }
 
   return { kind: 'end', commands };
-};
-
-/** `eji: some text` is spoken by eji if eji is in CHARACTERS; anything else is narration. */
-export const parseLine = (text: string): Line => {
-  const colon = text.indexOf(':');
-  const speaker = colon > 0 ? text.slice(0, colon).trim().toLowerCase() : '';
-
-  if (speaker in CHARACTERS) {
-    return { speaker, text: text.slice(colon + 1).trim() };
-  }
-  return { speaker: null, text };
 };

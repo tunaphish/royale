@@ -1,5 +1,5 @@
 import { Combatant } from "../model/combatant";
-import { clamp } from "../util";
+import { clamp } from "../model/math";
 
 export const dealDamage = (caster: Combatant, targets: Combatant[], potency: number): void => {
   for (let activeTechnique of caster.activeTechniques) {
