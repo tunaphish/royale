@@ -24,7 +24,7 @@ Did it change anything? Huh Eji? #display
 === fight ===
 #play knight
 #enter eji angry
-eji: It changed me.
+It changed me.
 > ... the wind is howling
 So be it #display
 -> END

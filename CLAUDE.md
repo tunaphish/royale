@@ -35,7 +35,7 @@ Dev-only URL params (ignored in production builds):
   - **Scene:** owns the logic and the methods the view calls (`battle.endTurn()`, `dialogue.advance()`).
   - **Store:** a `makeAutoObservable` MobX store with small setters.
   - **View:** `observer` components that take the scene as a prop.
-- Put logic that doesn't need Phaser in plain modules (e.g. `dialogue/storyReader.ts`) so it can be tested on its own.
+- Put logic that doesn't need Phaser in plain modules under `src/model/` so it can be tested on its own.
 - To use a plugin in a scene, declare the field (`session: GameSession;`). Phaser fills it in before `init`.
 - One-off sounds use `this.sound.play(key)`. Only music uses `this.sound.add`, and it must be destroyed on the scene's `shutdown` event, because Phaser's sound manager is global.
 - **Assets are found automatically:** drop a file in the right `src/assets/` folder; there's no list to update. Boot loads everything up front.
@@ -62,7 +62,7 @@ Dev-only URL params (ignored in production builds):
 - **Lines:**
   - Plain text goes in the message box.
   - A line ending in `#display` is large text over the stage.
-- **Tags are for visuals:** `#bg <key>`, `#enter <character> [emotion]`, `#foreground <key|none>`, `#play <song>`. Add new ones to the `commands` table in `Dialogue.tsx`, with `params`, so wrong arguments warn.
+- **Tags are for visuals:** `#bg <key>`, `#enter <character> [emotion]`, `#foreground <key|none>`, `#play <song>`. To add one in `Dialogue.tsx`: add a `Command` kind, parse it in `parseTag` (which warns on wrong arguments), and run it in `runCommand`.
 - **External functions are for game state:** `stat`, `flag`, `set_flag`, `relationship`, `add_relationship`.
   - Declare them in `game.ink`, with a fallback so stories still run in Inky, and bind them in `dialogue/inkBindings.ts`.
   - Functions that only read are lookahead-safe; functions that change state are not.
