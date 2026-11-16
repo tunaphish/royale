@@ -3,7 +3,7 @@
 //   text #display        -> large text over the stage
 // Stage directions are tags:
 //   #bg <background>   #enter <character> [emotion]
-//   #foreground <key|none>   #play <song>
+//   #foreground <key|none>   #music <song>   #sfx <sound>
 
 INCLUDE game.ink
 
@@ -13,6 +13,7 @@ INCLUDE game.ink
 #bg supermarket
 #enter eji
 We saved those souls... Without reaping them
+#sfx bomb
 What was the point? #display
 Everyone's still dead #display
 Did it change the world? #display
@@ -22,7 +23,7 @@ Did it change anything? Huh Eji? #display
 * [Give Up] -> giveup
 
 === fight ===
-#play knight
+#music knight
 #enter eji angry
 It changed me.
 > ... the wind is howling

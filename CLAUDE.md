@@ -62,7 +62,7 @@ Dev-only URL params (ignored in production builds):
 - **Lines:**
   - Plain text goes in the message box.
   - A line ending in `#display` is large text over the stage.
-- **Tags are for visuals:** `#bg <key>`, `#enter <character> [emotion]`, `#foreground <key|none>`, `#play <song>`. To add one in `Dialogue.tsx`: add a `Command` kind, parse it in `parseTag` (which warns on wrong arguments), and run it in `runCommand`.
+- **Tags are for stage directions (visuals and sound):** `#bg <key>`, `#enter <character> [emotion]`, `#foreground <key|none>`, `#music <song>` (loops, replaces the current song), `#sfx <sound>` (plays once). To add one in `Dialogue.tsx`: add a `Command` kind, parse it in `parseTag` (which warns on wrong arguments), and run it in `runCommand`.
 - **External functions are for game state:** `stat`, `flag`, `set_flag`, `relationship`, `add_relationship`.
   - Declare them in `game.ink`, with a fallback so stories still run in Inky, and bind them in `dialogue/inkBindings.ts`.
   - Functions that only read are lookahead-safe; functions that change state are not.

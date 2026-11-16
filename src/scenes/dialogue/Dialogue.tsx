@@ -5,6 +5,7 @@ import { DialogueView } from './DialogueView';
 import { Choice, DialogueStore } from './dialogueStore';
 import { createStory } from '../../assets/ink';
 import { bindGameFunctions } from './inkBindings';
+import { SFX } from '../../assets/manifest';
 import GameSession from '../../plugins/GameSession';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
@@ -20,7 +21,7 @@ const DISPLAY_TAG = 'display';
 
 /**
  * One thing the scene does, read from ink in script order.
- * Stage directions (`bg`, `enter`, `foreground`, `play`) run straight away;
+ * Stage directions (`bg`, `enter`, `foreground`, `music`, `sfx`) run straight away;
  * the rest block until the player advances or picks a choice, so they always
  * come last in a batch.
  */
@@ -28,7 +29,8 @@ type Command =
   | { kind: 'bg'; background: string }
   | { kind: 'enter'; character: string; emotion?: string }
   | { kind: 'foreground'; foreground: string | null }
-  | { kind: 'play'; song: string }
+  | { kind: 'music'; song: string }
+  | { kind: 'sfx'; sound: string }
   | { kind: 'line'; text: string }
   | { kind: 'display'; text: string }
   | { kind: 'choices'; choices: Choice[] }
@@ -60,10 +62,17 @@ const parseTag = (tag: string): Command | null => {
       return expects('#foreground <key|none>', 1)
         ? { kind: 'foreground', foreground: args[0] === 'none' ? null : args[0] }
         : null;
-    case 'play':
-      return expects('#play <song>', 1)
-        ? { kind: 'play', song: args[0] }
+    case 'music':
+      return expects('#music <song>', 1)
+        ? { kind: 'music', song: args[0] }
         : null;
+    case 'sfx':
+      if (!expects('#sfx <sound>', 1)) return null;
+      if (!(args[0] in SFX)) {
+        console.warn(`[Dialogue] #${tag}: no sound "${args[0]}" in src/assets/audio/sfx`);
+        return null;
+      }
+      return { kind: 'sfx', sound: args[0] };
     default:
       console.warn(`[Dialogue] unknown tag: #${tag}`);
       return null;
@@ -172,8 +181,11 @@ export class Dialogue extends Phaser.Scene {
       case 'foreground':
         store.setForeground(command.foreground);
         break;
-      case 'play':
+      case 'music':
         this.playSong(command.song);
+        break;
+      case 'sfx':
+        this.sound.play(command.sound);
         break;
       case 'line':
         store.setMessage({ text: command.text });
