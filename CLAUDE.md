@@ -1,0 +1,86 @@
+# royale
+
+A narrative card game, played mostly on phones. Phaser 3 runs scenes, loading
+and audio; React draws the UI through a global plugin; MobX holds state.
+Dialogue is written in ink. Built with Vite and TypeScript.
+
+## Commands
+
+- `npm run dev` — dev server at `http://localhost:5173/royale/` (Vite `base` is `/royale`)
+- `npm run typecheck` — `tsc --noEmit`
+- `npm run build` — typecheck, then `vite build`. GitLab Pages runs this, so a type error blocks deploys.
+- `npm run lint`
+
+Dev-only URL params (ignored in production builds):
+
+- `?scene=Battle` — jump straight to a scene after loading. Other params become
+  the scene's data: `?scene=Dialogue&storyKey=final-battle`.
+- `?newgame` — start a fresh game instead of loading the save. Works in any build.
+
+## Layout
+
+- `src/scenes/<name>/` — one folder per scene: the scene class, its MobX store, its views, a CSS module
+- `src/plugins/` — global Phaser plugins: `ReactOverlay` (`this.reactOverlay`), `GameSession` (`this.session`)
+- `src/state/` — `GameState` (the live game) and `saves.ts` (save files, slots, settings)
+- `src/data/` — content definitions (cards, enemies, techniques, new-game state), keyed by ID
+- `src/model/` — cross cutting concerns, core business
+- `public/scripts/` — ink stories, plus `game.ink` shared by all of them
+
+## Conventions
+
+### Scenes
+
+- Each scene follows scene + store + view:
+  - **Scene:** owns the logic and the methods the view calls (`battle.endTurn()`, `dialogue.advance()`).
+  - **Store:** a `makeAutoObservable` MobX store with small setters.
+  - **View:** `observer` components that take the scene as a prop.
+- Put logic that doesn't need Phaser in plain modules (e.g. `dialogue/storyReader.ts`) so it can be tested on its own.
+- To use a plugin in a scene, declare the field (`session: GameSession;`). Phaser fills it in before `init`.
+- One-off sounds use `this.sound.play(key)`. Only music uses `this.sound.add`, and it must be destroyed on the scene's `shutdown` event, because Phaser's sound manager is global.
+- Asset paths start with `/royale/` (e.g. `/royale/backgrounds/<key>.jpg`). Boot loads everything up front.
+
+### Game state and saves
+
+- **Definitions are never changed at runtime.** Look them up by ID (`CARDS`, `ENEMIES`, `TECHNIQUES`).
+  - Decks hold `CardInstance`s (`{ uid, cardId }`); use `cardDef(card)` for name, cost and effects.
+  - Every battle gets fresh enemies from `createEnemyCombatant(id)`.
+- **Battles work on a copy** of the player and write results back at the end. For now only a win writes back; what losing does is still undecided.
+- **`GameStateData` is plain data only** (IDs, numbers, strings), because functions don't survive JSON.
+  - When it changes shape, bump `SAVE_VERSION` in `state/saves.ts` and add a migration.
+- **Saves are keyed by slot** (`royale:save:<slotId>`). Settings are stored separately (`royale:settings`). Unreadable saves are backed up, never overwritten.
+- **Autosave checkpoints:** a won battle, the end of a story, leaving the Dialogue scene, and the page being hidden.
+- **Story progress is deliberately not saved.** Every story plays from the top. Don't add ink state or screen snapshots to saves.
+
+### Ink
+
+- **Adding a story:** put it in `public/scripts/<key>.ink` and add the key to `INK_SCRIPTS` in `scenes/boot/inkScripts.ts`. Boot compiles every story once and fails loudly on compile errors.
+- Every story starts with `INCLUDE game.ink`.
+- **Lines:**
+  - `speaker: text` is speech, and only counts as speech if `speaker` is in `dialogue/characters.ts`.
+  - Plain text is narration.
+  - A line ending in `#display` is large text over the stage.
+- **Tags are for visuals:** `#bg <key>`, `#enter <character> [emotion]`, `#foreground <key|none>`, `#play <song>`. Add new ones to the `commands` table in `Dialogue.tsx`, with `params`, so wrong arguments warn.
+- **External functions are for game state:** `stat`, `flag`, `set_flag`, `relationship`, `add_relationship`.
+  - Declare them in `game.ink`, with a fallback so stories still run in Inky, and bind them in `dialogue/inkBindings.ts`.
+  - Functions that only read are lookahead-safe; functions that change state are not.
+- Values only one story needs stay in ink variables. Values the rest of the game needs live in `GameState`.
+
+### TypeScript
+
+`strict` is on. `strictPropertyInitialization` is off on purpose, because Phaser
+scenes assign their fields in `init`/`create`, not in the constructor.
+
+## How to work in this repo
+
+- **Don't remove existing behavior, defaults or assets unless asked.** Keep changes to what was requested.
+- **Propose a design before structural changes,** then wait for a go-ahead.
+- **UX decisions are the owner's.** Some things that look like bugs are intentional: the message box and `#display` text both stay on screen, because several pieces of information are meant to be visible at once.
+- **Don't commit unless asked.** The owner commits between steps.
+- **Before saying something works:** run `npm run typecheck`, and play the change in the browser when it's visible on screen.
+  - The browser pane has to be visible. When it's hidden, animations stall and Boot's fade never finishes.
+  - There's no test runner yet. Plain modules can be checked by bundling a script with esbuild and running it in Node.
+
+## Known gaps
+- `ReactOverlay` shows one scene's UI at a time, so UI can't stack (e.g. dialogue over a battle).
+- Battle's rules live in the scene class, and enemy AI (`getNextStateIndex`) takes the scene as an argument.
+- `Battle` and `GameOver` still create sounds with `this.sound.add` on every visit.
