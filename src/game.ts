@@ -3,6 +3,7 @@ import Scenes from './scenes';
 import ReactOverlay from './plugins/ReactOverlay';
 import GameSession from './plugins/GameSession';
 import { configure } from "mobx";
+import './assets/fonts/fonts.css';
 
 configure({
   enforceActions: "never"

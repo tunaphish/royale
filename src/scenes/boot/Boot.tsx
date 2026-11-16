@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 
 import styles from './boot.module.css';
 import ReactOverlay from '../../plugins/ReactOverlay';
-import { compileInkScripts, INK_INCLUDES, INK_SCRIPTS, inkIncludeKey, inkIncludeUrl, inkScriptUrl } from './inkScripts';
+import { compileInkScripts } from './inkScripts';
+import { loadAll } from '../../assets/manifest';
 
 type StartTarget = { scene: string; data: Record<string, string> };
 
@@ -85,35 +86,7 @@ export class Boot extends Phaser.Scene {
     }
     this.reactOverlay.create(<Ui/>, this);
 
-    this.loadAssets();
-  }
-
-  private loadAssets() {
-    this.load.audio('battle-start', '/royale/sounds/battle-start.mp3');
-    this.load.audio('action-ready', '/royale/sounds/action-ready.mp3');
-    this.load.audio('choice-hover', '/royale/sounds/choice-hover.wav');
-    this.load.audio('choice-select', '/royale/sounds/choice-select.wav');
-    this.load.audio('window-advance', '/royale/sounds/window-advance.wav');
-    this.load.audio('battle-start', '/royale/sounds/battle-start-2.mp3');
-    this.load.audio('stamina-depleted', '/royale/sounds/stamina-depleted.wav');
-
-
-    this.load.audio('heal', '/royale/sounds/heal.mp3');
-    this.load.audio('block', '/royale/sounds/block.wav');
-    this.load.audio('attack', '/royale/sounds/attack.wav');
-    this.load.audio('debuff', '/royale/sounds/debuff.wav');
-    this.load.audio('smirk', '/royale/sounds/smirk.mp3');
-    this.load.audio('charged', '/royale/sounds/charged.mp3');
-    this.load.audio('restriction-violated', '/royale/sounds/restriction-violated.mp3');
-    this.load.audio('bomb', '/royale/sounds/bomb.wav');
-    this.load.audio('slime-noise', '/royale/sounds/slime-noise.mp3');
-
-    // related to new dialogue
-    this.load.image('eji', '/royale/characters/eji.png');
-    this.load.image('main-menu', '/royale/backgrounds/main-menu.png');
-    INK_SCRIPTS.forEach((key) => this.load.text(key, inkScriptUrl(key)));
-    INK_INCLUDES.forEach((file) => this.load.text(inkIncludeKey(file), inkIncludeUrl(file)));
-    this.load.audio('knight', '/royale/music/knight.mp3');
+    loadAll(this.load);
   }
 
   public create(): void {

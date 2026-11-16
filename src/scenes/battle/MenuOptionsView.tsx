@@ -2,9 +2,11 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
 
+import cursorUrl from '../../assets/images/ui/cursor.png';
+
 export const MenuCursor = (props: { size: number }): JSX.Element => (
   <motion.img
-    src="/royale/ui/cursor.png" 
+    src={cursorUrl}
     alt=""
     style={{
       width: props.size + 'px',       

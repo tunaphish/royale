@@ -24,7 +24,8 @@ Dev-only URL params (ignored in production builds):
 - `src/state/` — `GameState` (the live game) and `saves.ts` (save files, slots, settings)
 - `src/data/` — content definitions (cards, enemies, techniques, new-game state), keyed by ID
 - `src/model/` — cross cutting concerns, core business
-- `public/scripts/` — ink stories, plus `game.ink` shared by all of them
+- `src/assets/` — every asset, found by `src/assets/manifest.ts` with `import.meta.glob`: `audio/sfx`, `audio/music`, `images/<category>`, `fonts`, `scripts/stories/*.ink` (one per story) and `scripts/game.ink` (shared includes)
+- `public/` — only files that need a fixed URL (`favicon.ico`)
 
 ## Conventions
 
@@ -37,7 +38,10 @@ Dev-only URL params (ignored in production builds):
 - Put logic that doesn't need Phaser in plain modules (e.g. `dialogue/storyReader.ts`) so it can be tested on its own.
 - To use a plugin in a scene, declare the field (`session: GameSession;`). Phaser fills it in before `init`.
 - One-off sounds use `this.sound.play(key)`. Only music uses `this.sound.add`, and it must be destroyed on the scene's `shutdown` event, because Phaser's sound manager is global.
-- Asset paths start with `/royale/` (e.g. `/royale/backgrounds/<key>.jpg`). Boot loads everything up front.
+- **Assets are found automatically:** drop a file in the right `src/assets/` folder; there's no list to update. Boot loads everything up front with `loadAll`.
+  - Audio keys are the file name (`attack`, `knight`). Image keys are the path under `images/` without extension (`backgrounds/supermarket`, `characters/eji-angry`).
+  - In React, get image URLs with `imageUrl(key)` or import the file directly. Never hard-code `/royale/...` paths: built files have hashed names.
+  - Two files with the same key (e.g. `heal.mp3` and `heal.wav`) throw when the game starts.
 
 ### Game state and saves
 
@@ -53,7 +57,7 @@ Dev-only URL params (ignored in production builds):
 
 ### Ink
 
-- **Adding a story:** put it in `public/scripts/<key>.ink` and add the key to `INK_SCRIPTS` in `scenes/boot/inkScripts.ts`. Boot compiles every story once and fails loudly on compile errors.
+- **Adding a story:** put it in `src/assets/scripts/stories/<key>.ink`. Boot compiles every story once and fails loudly on compile errors.
 - Every story starts with `INCLUDE game.ink`.
 - **Lines:**
   - `speaker: text` is speech, and only counts as speech if `speaker` is in `dialogue/characters.ts`.

@@ -4,32 +4,18 @@ import { JsonFileHandler } from 'inkjs/compiler/FileHandler/JsonFileHandler';
 import { Story } from 'inkjs/engine/Story';
 import { ErrorType } from 'inkjs/engine/Error';
 
-/** Ink scripts in public/scripts, loaded into Phaser's text cache by Boot. */
-export const INK_SCRIPTS = ['final-battle'];
+import { INK_INCLUDES, INK_STORIES } from '../../assets/manifest';
 
 /**
- * Ink files that stories pull in with `INCLUDE <file>`. Loaded by Boot into
- * the text cache under `ink-include:<file>`.
- */
-export const INK_INCLUDES = ['game.ink'];
-
-export const inkScriptUrl = (key: string): string => `/royale/scripts/${key}.ink`;
-export const inkIncludeUrl = (file: string): string => `/royale/scripts/${file}`;
-export const inkIncludeKey = (file: string): string => `ink-include:${file}`;
-
-/**
- * Compiles every ink script once, after Boot has loaded them, and keeps the
- * compiled JSON in Phaser's json cache under the same key.
+ * Compiles every ink story in src/assets/scripts/stories once, and keeps the
+ * compiled JSON in Phaser's json cache under the story key.
  * Throws on compile errors, so a broken script fails at load time.
  */
 export const compileInkScripts = (cache: Phaser.Cache.CacheManager): void => {
-  const includes = Object.fromEntries(
-    INK_INCLUDES.map((file) => [file, cache.text.get(inkIncludeKey(file))]),
-  );
-  const options = new CompilerOptions(null, [], false, null, new JsonFileHandler(includes));
+  const options = new CompilerOptions(null, [], false, null, new JsonFileHandler(INK_INCLUDES));
 
-  INK_SCRIPTS.forEach((key) => {
-    const compiler = new Compiler(cache.text.get(key), options);
+  Object.entries(INK_STORIES).forEach(([key, source]) => {
+    const compiler = new Compiler(source, options);
     const story = compiler.Compile();
 
     compiler.warnings.forEach((warning) => console.warn(`[ink:${key}] ${warning}`));
@@ -48,7 +34,7 @@ export const compileInkScripts = (cache: Phaser.Cache.CacheManager): void => {
 export const createStory = (cache: Phaser.Cache.CacheManager, key: string): Story => {
   const json = cache.json.get(key);
   if (!json) {
-    throw new Error(`[ink:${key}] no compiled story; is it listed in INK_SCRIPTS?`);
+    throw new Error(`[ink:${key}] no compiled story; is there a src/assets/scripts/stories/${key}.ink?`);
   }
 
   const story = new Story(json);

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { motion } from 'framer-motion';
 import styles from './dialoguelist.module.css';
 import ReactOverlay from '../../plugins/ReactOverlay';
-import { INK_SCRIPTS } from '../boot/inkScripts';
+import { STORY_KEYS } from '../../assets/manifest';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -48,7 +48,7 @@ export class DialogueList extends Phaser.Scene {
           onAnimationComplete={onAnimationComplete}
         >
           <h1 className={styles.title}>stories</h1>
-          {INK_SCRIPTS.map((storyKey) => (
+          {STORY_KEYS.map((storyKey) => (
             <div
               key={storyKey}
               className={styles.scriptButton}

@@ -6,6 +6,7 @@ import styles from './dialogue.module.css';
 import { Dialogue } from './Dialogue';
 import { Portrait } from './dialogueStore';
 import { ParallaxLayer, ParallaxProvider, useParallaxOffset } from './parallax';
+import { imageUrl } from '../../assets/manifest';
 
 export const DialogueView = observer((props: { dialogue: Dialogue }): JSX.Element => {
   const { dialogue } = props;
@@ -35,9 +36,9 @@ export const DialogueView = observer((props: { dialogue: Dialogue }): JSX.Elemen
   );
 });
 
-const backgroundSrc = (key: string) => `/royale/backgrounds/${key}.jpg`;
-const portraitSrc = ({ character, emotion }: Portrait) => `/royale/characters/${character}${emotion ? `-${emotion}` : ''}.png`;
-const foregroundSrc = (key: string) => key.startsWith('http') ? key : `/royale/foregrounds/${key}.png`;
+const backgroundSrc = (key: string) => imageUrl(`backgrounds/${key}`);
+const portraitSrc = ({ character, emotion }: Portrait) => imageUrl(`characters/${character}${emotion ? `-${emotion}` : ''}`);
+const foregroundSrc = (key: string) => key.startsWith('http') ? key : imageUrl(`foregrounds/${key}`);
 
 export const StageView = observer((props: { dialogue: Dialogue }): JSX.Element => {
   const { dialogue } = props;
