@@ -1,6 +1,7 @@
 // Line conventions read by the Dialogue scene:
 //   text                 -> a line in the message box
 //   text #display        -> large text over the stage
+//   text #voice <key|none> -> blip voice for this line (default: player in the box, the #enter character on stage)
 // Text markup: <frenzy>shaking</frenzy>  <span class="red big">styled</span>  <b>  <i>
 // Stage directions are tags:
 //   #bg <background>   #enter <character> [emotion]

@@ -63,6 +63,8 @@ Dev-only URL params (ignored in production builds):
   - Plain text goes in the message box.
   - A line ending in `#display` is large text over the stage.
   - Lines and `#display` text type out one letter at a time (`LETTER_MS` in `Dialogue.tsx`). A tap finishes the line; the next tap continues.
+  - **Voices:** typing plays blips. Message box lines use the `player` voice; `#display` lines use the voice of the character on stage (the last `#enter`). `#voice <key>` picks another for that line, `#voice none` makes it silent. Voices live in `data/voices.ts`; characters without one use `DEFAULT_VOICE`.
+  - `#display` and `#voice` change the line they're on (or the next line, from a tag-only line), so `collectCommands` reads them into the `line`/`display` command instead of making commands of their own.
 - **Text markup:** lines and choices can use HTML-like tags: `<frenzy>Huh?</frenzy>`, `<span class="red big">me</span>`, `<b>`, `<i>`.
   - Parsed by `model/markup.ts`, rendered by `scenes/ui/RichText.tsx`. Unknown tags or classes warn; the text still shows.
   - One-off styles: add a class to `scenes/ui/textStyles.module.css`.

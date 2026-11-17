@@ -7,6 +7,7 @@ import { parseMarkup, plainText } from '../ui/markup';
 import { createStory } from '../../assets/ink';
 import { bindGameFunctions } from './inkBindings';
 import { SFX } from '../../assets/manifest';
+import { DEFAULT_VOICE, Voice, VOICES } from '../../data/voices';
 import GameSession from '../../plugins/GameSession';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
@@ -39,8 +40,45 @@ const toLine = (text: string): Line => {
   return { text, nodes };
 };
 
-/** Tag that marks a line as large text over the stage instead of the message box. */
+/**
+ * Blips while typing. Only letters and digits blip, and only every
+ * BLIP_EVERY of them, at least BLIP_MIN_GAP_MS apart. Each blip's pitch and
+ * volume vary a little so a long line doesn't sound like one repeated beep.
+ */
+const BLIP_EVERY = 2;
+const BLIP_MIN_GAP_MS = 60;
+const BLIP_PITCH_JITTER = 80;
+const BLIP_VOLUME = 0.5;
+const BLIP_VOLUME_JITTER = 0.15;
+
+const randomBetween = (min: number, max: number): number => min + Math.random() * (max - min);
+
+/** Tags that change the line they're on instead of becoming commands of their own. */
 const DISPLAY_TAG = 'display';
+const VOICE_TAG = 'voice';
+
+const tagName = (tag: string): string => tag.split(/\s+/)[0];
+const isLineModifier = (tag: string): boolean => tag === DISPLAY_TAG || tagName(tag) === VOICE_TAG;
+
+/** Reads `#voice <key|none>` from a line's tags. Unknown keys warn and fall back to the default voice. */
+const readVoice = (tags: string[]): string | undefined => {
+  const tag = tags.find((t) => tagName(t) === VOICE_TAG);
+  if (!tag) return undefined;
+
+  const [, key, ...extra] = tag.split(/\s+/);
+  if (!key || extra.length > 0) {
+    console.warn(`[Dialogue] #${tag} expects: #voice <key|none>`);
+    return undefined;
+  }
+  if (key !== 'none' && !(key in VOICES)) {
+    console.warn(`[Dialogue] #${tag}: no voice "${key}" in data/voices.ts; using the default voice`);
+  }
+  return key;
+};
+
+/** The voice for a key: `none` is silent, and keys without an entry use the default. */
+const resolveVoice = (key: string | undefined): Voice | null =>
+  key === 'none' ? null : (key && VOICES[key]) || DEFAULT_VOICE;
 
 /**
  * One thing the scene does, read from ink in script order.
@@ -54,8 +92,8 @@ type Command =
   | { kind: 'foreground'; foreground: string | null }
   | { kind: 'music'; song: string }
   | { kind: 'sfx'; sound: string }
-  | { kind: 'line'; text: string }
-  | { kind: 'display'; text: string }
+  | { kind: 'line'; text: string; voice?: string }
+  | { kind: 'display'; text: string; voice?: string }
   | { kind: 'choices'; choices: Choice[] }
   | { kind: 'end' };
 
@@ -111,6 +149,12 @@ export class Dialogue extends Phaser.Scene {
   private music?: Phaser.Sound.BaseSound;
   private typingTimer?: Phaser.Time.TimerEvent;
 
+  /** Blip state for the line being typed. */
+  private voice: Voice | null = null;
+  private blipCount = 0;
+  private lastBlipAt = -Infinity;
+  private lastBlipSound?: string;
+
   constructor() {
     super(sceneConfig);
   }
@@ -122,6 +166,7 @@ export class Dialogue extends Phaser.Scene {
     this.story = createStory(this.cache, data.storyKey);
     bindGameFunctions(this.story, this.session.state);
     this.store = new DialogueStore();
+    this.warnMissingVoiceSounds();
 
     // leaving the scene is an autosave checkpoint, for anything ink changed
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -174,19 +219,23 @@ export class Dialogue extends Phaser.Scene {
    */
   private collectCommands(): Command[] {
     const commands: Command[] = [];
+    // modifier tags (#display, #voice) apply to the next line of text, even from a tag-only line above it
+    const modifiers: string[] = [];
 
     while (this.story.canContinue) {
       const text = this.story.Continue()?.trim() ?? '';
       const tags = (this.story.currentTags ?? []).map((tag) => tag.trim());
 
+      modifiers.push(...tags.filter(isLineModifier));
       tags
-        .filter((tag) => tag !== DISPLAY_TAG)
+        .filter((tag) => !isLineModifier(tag))
         .map(parseTag)
         .forEach((command) => command && commands.push(command));
 
       if (!text) continue;
 
-      commands.push(tags.includes(DISPLAY_TAG) ? { kind: 'display', text } : { kind: 'line', text });
+      const voice = readVoice(modifiers);
+      commands.push(modifiers.includes(DISPLAY_TAG) ? { kind: 'display', text, voice } : { kind: 'line', text, voice });
       return commands;
     }
 
@@ -221,13 +270,15 @@ export class Dialogue extends Phaser.Scene {
       case 'line': {
         const line = toLine(command.text);
         store.setMessage(line);
-        this.startTyping('message', line);
+        // message box lines are the player speaking
+        this.startTyping('message', line, resolveVoice(command.voice ?? 'player'));
         break;
       }
       case 'display': {
         const line = toLine(command.text);
         store.setDisplay(line);
-        this.startTyping('display', line);
+        // display lines are the character on stage speaking
+        this.startTyping('display', line, resolveVoice(command.voice ?? store.portrait?.character));
         break;
       }
       case 'choices':
@@ -243,8 +294,10 @@ export class Dialogue extends Phaser.Scene {
   }
 
   /** Types a line out one letter at a time; `finishTyping` shows the rest at once. */
-  private startTyping(target: TypingTarget, line: Line): void {
+  private startTyping(target: TypingTarget, line: Line, voice: Voice | null): void {
     this.typingTimer?.remove();
+    this.voice = voice;
+    this.blipCount = 0;
     const text = plainText(line.nodes);
     if (text.length === 0) {
       this.store.setTyping(null);
@@ -260,6 +313,7 @@ export class Dialogue extends Phaser.Scene {
         return;
       }
       this.store.setRevealed(revealed);
+      this.blip(text[revealed - 1]);
       this.typingTimer = this.time.delayedCall(letterDelay(text, revealed), typeNext);
     };
     this.typingTimer = this.time.delayedCall(LETTER_MS, typeNext);
@@ -269,6 +323,39 @@ export class Dialogue extends Phaser.Scene {
     this.typingTimer?.remove();
     this.typingTimer = undefined;
     this.store.setTyping(null);
+  }
+
+  /** Plays the line's voice for a newly revealed letter, if it should blip. */
+  private blip(char: string): void {
+    const { voice } = this;
+    if (!voice || !/[\p{L}\p{N}]/u.test(char)) return;
+
+    this.blipCount += 1;
+    if ((this.blipCount - 1) % BLIP_EVERY !== 0) return;
+
+    const now = this.time.now;
+    if (now - this.lastBlipAt < BLIP_MIN_GAP_MS) return;
+
+    // a random sound, but not the same one twice in a row
+    const choices = voice.sounds.filter((key) => key !== this.lastBlipSound && this.cache.audio.exists(key));
+    const sound = choices[Math.floor(Math.random() * choices.length)] ?? voice.sounds.find((key) => this.cache.audio.exists(key));
+    if (!sound) return;
+
+    this.sound.play(sound, {
+      detune: (voice.pitch ?? 0) + randomBetween(-BLIP_PITCH_JITTER, BLIP_PITCH_JITTER),
+      volume: (voice.volume ?? BLIP_VOLUME) * randomBetween(1 - BLIP_VOLUME_JITTER, 1),
+    });
+    this.lastBlipAt = now;
+    this.lastBlipSound = sound;
+  }
+
+  /** Warns once per visit about voices that point at sounds that don't exist. */
+  private warnMissingVoiceSounds(): void {
+    Object.entries({ default: DEFAULT_VOICE, ...VOICES }).forEach(([key, voice]) => {
+      voice.sounds
+        .filter((sound) => !(sound in SFX))
+        .forEach((sound) => console.warn(`[Dialogue] voice "${key}": no sound "${sound}" in src/assets/audio/sfx`));
+    });
   }
 
   /** One-off sounds; Phaser removes them once they finish playing. */
