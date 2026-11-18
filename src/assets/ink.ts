@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { Compiler } from 'inkjs/compiler/Compiler';
 import { CompilerOptions } from 'inkjs/compiler/CompilerOptions';
 import { JsonFileHandler } from 'inkjs/compiler/FileHandler/JsonFileHandler';

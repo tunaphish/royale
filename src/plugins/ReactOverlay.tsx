@@ -1,3 +1,4 @@
+import * as Phaser from "phaser";
 import { Plugins } from "phaser";
 import * as React from 'react';
 import { createRoot, Root } from "react-dom/client";

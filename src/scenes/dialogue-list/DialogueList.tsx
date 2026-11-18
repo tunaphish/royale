@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import * as React from 'react';
 import { motion } from 'framer-motion';
 import styles from './dialoguelist.module.css';

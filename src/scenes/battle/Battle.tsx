@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 
 import * as React from 'react';
 import ReactOverlay from '../../plugins/ReactOverlay';

@@ -1,0 +1,86 @@
+.panel {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  max-height: 55%;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(10, 10, 16, 0.8);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  pointer-events: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.panel button,
+.openButton {
+  font: inherit;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.openButton {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(10, 10, 16, 0.8);
+  pointer-events: auto;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.toggles {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.group {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  margin: 8px 0 0;
+  padding: 4px 8px 6px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 76px 1fr 36px;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.row input[type='range'] {
+  width: 100%;
+}
+
+.row input[type='color'] {
+  width: 48px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
