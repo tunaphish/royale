@@ -30,7 +30,7 @@ const ColorRow = ({ label, value, onChange }: { label: string; value: string; on
   </label>
 );
 
-/** A button that shows whether it's selected. Used for every on/off and pick-one control. */
+/** A button that shows whether it's selected. Used for every on/off and pick-one control. Test update */
 const Toggle = ({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) => (
   <button className={on ? styles.on : styles.off} aria-pressed={on} onClick={onClick}>
     {children}
