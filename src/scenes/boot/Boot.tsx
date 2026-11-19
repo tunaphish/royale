@@ -10,7 +10,7 @@ import { IMAGES, INK_INCLUDES, INK_STORIES, MUSIC, SFX } from '../../assets/mani
 type StartTarget = { scene: string; data: Record<string, string> };
 
 /** Where the game goes once loading finishes. */
-const DEFAULT_START: StartTarget = { scene: 'Dialogue', data: { storyKey: 'final-battle' } };
+const DEFAULT_START: StartTarget = { scene: 'LightingTest', data: { storyKey: 'final-battle' } };
 
 /** URL params that aren't scene data. */
 const RESERVED_PARAMS = ['scene', 'newgame'];
