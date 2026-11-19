@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "a game about everything",
   "author": "Tuan Pham",
-  "homepage": "https://gitlab.com/basil-leaf-group/royale",
+  "homepage": "http://tunaphish.github.io/royale",
   "private": "true",
   "scripts": {
     "start": "vite",
