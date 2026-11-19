@@ -22,30 +22,67 @@ const Slider = ({ label, value, min, max, step, onChange }: SliderProps) => (
   </label>
 );
 
+const ColorRow = ({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) => (
+  <label className={styles.row}>
+    <span>{label}</span>
+    <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
+    <span />
+  </label>
+);
+
+/** A button that shows whether it's selected. Used for every on/off and pick-one control. */
+const Toggle = ({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) => (
+  <button className={on ? styles.on : styles.off} aria-pressed={on} onClick={onClick}>
+    {children}
+  </button>
+);
+
 const LightControls = observer(({ scene, light, title }: { scene: LightingTest; light: 'key' | 'rim'; title: string }) => {
   const { store } = scene;
   const settings = store.settings[light];
   return (
-    <fieldset className={styles.group}>
-      <legend>
-        <label>
-          <input type="checkbox" checked={settings.on}
-            onChange={(e) => store.setLight(light, 'on', e.target.checked)} />
-          {title}
-        </label>
-      </legend>
-      <label className={styles.row}>
-        <span>color</span>
-        <input type="color" value={settings.color}
-          onChange={(e) => store.setLight(light, 'color', e.target.value)} />
-      </label>
-      <Slider label="brightness" value={settings.intensity} min={0} max={3} step={0.05}
-        onChange={(v) => store.setLight(light, 'intensity', v)} />
-      <Slider label="reach" value={settings.radius} min={50} max={900} step={10}
-        onChange={(v) => store.setLight(light, 'radius', v)} />
-      <Slider label="height" value={settings.height} min={0} max={1} step={0.01}
-        onChange={(v) => store.setLight(light, 'height', v)} />
-    </fieldset>
+    <section className={styles.group}>
+      <div className={styles.groupHeader}>
+        <span className={styles.groupTitle}>{title}</span>
+        <Toggle on={settings.on} onClick={() => store.setLight(light, 'on', !settings.on)}>
+          {settings.on ? 'on' : 'off'}
+        </Toggle>
+      </div>
+      {settings.on && (
+        <>
+          <ColorRow label="color" value={settings.color}
+            onChange={(v) => store.setLight(light, 'color', v)} />
+          <Slider label="brightness" value={settings.intensity} min={0} max={3} step={0.05}
+            onChange={(v) => store.setLight(light, 'intensity', v)} />
+          <Slider label="reach" value={settings.radius} min={50} max={900} step={10}
+            onChange={(v) => store.setLight(light, 'radius', v)} />
+          <Slider label="height" value={settings.height} min={0} max={1} step={0.01}
+            onChange={(v) => store.setLight(light, 'height', v)} />
+        </>
+      )}
+    </section>
+  );
+});
+
+const PixelControls = observer(({ scene }: { scene: LightingTest }) => {
+  const { store } = scene;
+  const { settings, grid } = store;
+  return (
+    <section className={styles.group}>
+      <div className={styles.groupHeader}>
+        <span className={styles.groupTitle}>pixels</span>
+      </div>
+      <Slider label="pixel size" value={grid.size} min={1} max={16} step={0.5}
+        onChange={(v) => store.setGrid('size', v)} />
+      <Slider label="offset x" value={grid.offsetX} min={0} max={grid.size} step={0.5}
+        onChange={(v) => store.setGrid('offsetX', v)} />
+      <Slider label="offset y" value={grid.offsetY} min={0} max={grid.size} step={0.5}
+        onChange={(v) => store.setGrid('offsetY', v)} />
+      <Slider label="steps" value={settings.bands} min={0} max={6} step={1}
+        onChange={(v) => store.set('bands', v)} />
+      <Slider label="step edge" value={settings.bandSoftness} min={0} max={1} step={0.05}
+        onChange={(v) => store.set('bandSoftness', v)} />
+    </section>
   );
 });
 
@@ -65,43 +102,46 @@ export const LightingTestView = observer(({ scene }: { scene: LightingTest }) =>
     <div className={styles.panel}>
       <div className={styles.header}>
         <span>lighting</span>
-        <button onClick={() => store.setPanelOpen(false)}>hide</button>
+        <button className={styles.off} onClick={() => store.setPanelOpen(false)}>hide</button>
       </div>
 
-      <div className={styles.presets}>
+      <div className={styles.label}>preset{store.activePreset ? '' : ' · custom'}</div>
+      <div className={styles.buttons}>
         {Object.keys(PRESETS).map((name) => (
-          <button key={name} onClick={() => store.applyPreset(name)}>{name}</button>
+          <Toggle key={name} on={store.activePreset === name} onClick={() => store.applyPreset(name)}>
+            {name}
+          </Toggle>
         ))}
       </div>
 
-      <div className={styles.toggles}>
-        <label>
-          <input type="checkbox" checked={settings.lit}
-            onChange={(e) => store.set('lit', e.target.checked)} />
-          lighting
-        </label>
-        <label>
-          <input type="checkbox" checked={settings.followPointer}
-            onChange={(e) => store.set('followPointer', e.target.checked)} />
-          follow pointer
-        </label>
-        <label>
-          <input type="checkbox" checked={settings.selfShadow}
-            onChange={(e) => store.set('selfShadow', e.target.checked)} />
-          self-shadow
-        </label>
+      <div className={styles.label}>mode</div>
+      <div className={styles.buttons}>
+        <Toggle on={store.mode === 'pixel'} onClick={() => store.setMode('pixel')}>pixel</Toggle>
+        <Toggle on={store.mode === 'phaser'} onClick={() => store.setMode('phaser')}>smooth (phaser)</Toggle>
       </div>
 
-      {settings.selfShadow && (
+      <div className={styles.label}>show</div>
+      <div className={styles.buttons}>
+        <Toggle on={settings.lit} onClick={() => store.set('lit', !settings.lit)}>lighting</Toggle>
+        <Toggle on={store.normalMap} onClick={() => store.setNormalMap(!store.normalMap)}>normal map</Toggle>
+        <Toggle on={settings.followPointer} onClick={() => store.set('followPointer', !settings.followPointer)}>
+          follow pointer
+        </Toggle>
+        {store.mode === 'phaser' && (
+          <Toggle on={settings.selfShadow} onClick={() => store.set('selfShadow', !settings.selfShadow)}>
+            self-shadow
+          </Toggle>
+        )}
+      </div>
+
+      {store.mode === 'phaser' && settings.selfShadow && (
         <Slider label="softness" value={settings.penumbra} min={0} max={1} step={0.05}
           onChange={(v) => store.set('penumbra', v)} />
       )}
 
-      <label className={styles.row}>
-        <span>ambient</span>
-        <input type="color" value={settings.ambient}
-          onChange={(e) => store.set('ambient', e.target.value)} />
-      </label>
+      <ColorRow label="ambient" value={settings.ambient} onChange={(v) => store.set('ambient', v)} />
+
+      {store.mode === 'pixel' && <PixelControls scene={scene} />}
 
       <LightControls scene={scene} light="key" title="main light" />
       <LightControls scene={scene} light="rim" title="rim light" />
