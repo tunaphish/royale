@@ -86,6 +86,39 @@ const PixelControls = observer(({ scene }: { scene: LightingTest }) => {
   );
 });
 
+const ForegroundControls = observer(({ scene }: { scene: LightingTest }) => {
+  const { store } = scene;
+  const fg = store.foreground;
+  return (
+    <section className={styles.group}>
+      <div className={styles.groupHeader}>
+        <span className={styles.groupTitle}>foreground</span>
+        <Toggle on={fg.on} onClick={() => store.setForeground('on', !fg.on)}>{fg.on ? 'on' : 'off'}</Toggle>
+      </div>
+      {fg.on && (
+        <>
+          <Slider label="blur" value={fg.blur} min={0} max={4} step={0.1}
+            onChange={(v) => store.setForeground('blur', v)} />
+          <Slider label="opacity" value={fg.opacity} min={0} max={1} step={0.05}
+            onChange={(v) => store.setForeground('opacity', v)} />
+          <Slider label="front fill" value={fg.fill} min={0} max={1} step={0.01}
+            onChange={(v) => store.setForeground('fill', v)} />
+          <Slider label="glow thru" value={fg.translucency} min={0} max={3} step={0.05}
+            onChange={(v) => store.setForeground('translucency', v)} />
+          <Slider label="rim" value={fg.rim} min={0} max={4} step={0.05}
+            onChange={(v) => store.setForeground('rim', v)} />
+          <Slider label="rim width" value={fg.rimWidth} min={0.5} max={4} step={0.5}
+            onChange={(v) => store.setForeground('rimWidth', v)} />
+          <Slider label="light depth" value={fg.depth} min={0} max={400} step={10}
+            onChange={(v) => store.setForeground('depth', v)} />
+          <Slider label="parallax" value={fg.parallax} min={0} max={30} step={1}
+            onChange={(v) => store.setForeground('parallax', v)} />
+        </>
+      )}
+    </section>
+  );
+});
+
 export const LightingTestView = observer(({ scene }: { scene: LightingTest }) => {
   const { store } = scene;
   const { settings } = store;
@@ -145,6 +178,7 @@ export const LightingTestView = observer(({ scene }: { scene: LightingTest }) =>
 
       <LightControls scene={scene} light="key" title="main light" />
       <LightControls scene={scene} light="rim" title="rim light" />
+      <ForegroundControls scene={scene} />
     </div>
   );
 });

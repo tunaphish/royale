@@ -101,6 +101,26 @@ export interface PixelGrid {
   offsetY: number;
 }
 
+/** The foreground layer, lit from behind. Kept apart from presets so they don't reset it. */
+export interface ForegroundSettings {
+  on: boolean;
+  opacity: number;
+  /** Blur filter strength. 0 is sharp. */
+  blur: number;
+  /** Direct light on the side we see, on top of ambient. */
+  fill: number;
+  /** How much light shows through, tinted by the layer's color. */
+  translucency: number;
+  /** Bright outline on edges facing a light. */
+  rim: number;
+  /** Rim thickness, in art pixels. */
+  rimWidth: number;
+  /** How far behind the layer the lights are, in screen pixels. Further is softer and wider. */
+  depth: number;
+  /** How far the layer moves against the pointer, in screen pixels. */
+  parallax: number;
+}
+
 /** The settings that make up a preset's look; viewing toggles like `lit` don't count. */
 const lookOf = ({ lit, followPointer, ...look }: LightingSettings) => JSON.stringify(look);
 
@@ -110,6 +130,17 @@ export class LightingTestStore {
   grid: PixelGrid = { size: 6, offsetX: 0, offsetY: 0 };
   /** Off lights the art as if it were flat, to compare with and without the normal map. */
   normalMap = true;
+  foreground: ForegroundSettings = {
+    on: true,
+    opacity: 1,
+    blur: 0,
+    fill: 0.12,
+    translucency: 0.9,
+    rim: 1.5,
+    rimWidth: 1,
+    depth: 120,
+    parallax: 12,
+  };
   panelOpen = true;
 
   constructor() {
@@ -120,6 +151,10 @@ export class LightingTestStore {
   get activePreset(): string | undefined {
     const look = lookOf(this.settings);
     return Object.keys(PRESETS).find((name) => lookOf(PRESETS[name]) === look);
+  }
+
+  setForeground<K extends keyof ForegroundSettings>(field: K, value: ForegroundSettings[K]) {
+    this.foreground[field] = value;
   }
 
   setNormalMap(on: boolean) {

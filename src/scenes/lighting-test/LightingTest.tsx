@@ -5,9 +5,13 @@ import ReactOverlay from '../../plugins/ReactOverlay';
 import { LightingTestStore } from './lightingTestStore';
 import { LightingTestView } from './LightingTestView';
 import { LIGHT_COUNT, PIXEL_LIGHT_FRAG } from './pixelLight';
+import { BACKLIGHT_FRAG } from './backlight';
 
 const SPRITE_KEY = 'characters/rena-sprite';
 const NORMAL_KEY = 'characters/rena-sprite_n';
+const FOREGROUND_KEY = 'layers/sakura';
+/** The foreground is drawn this much larger than the portrait so parallax never shows its edges. */
+const FOREGROUND_OVERSCAN = 1.08;
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -31,6 +35,9 @@ const rgb = (color: string): number[] => {
 export class LightingTest extends Phaser.Scene {
   reactOverlay: ReactOverlay;
   store: LightingTestStore;
+  private foreground: Phaser.GameObjects.Shader;
+  /** Where the foreground sits with no parallax. */
+  private foregroundHome = new Phaser.Math.Vector2();
 
   constructor() {
     super(sceneConfig);
@@ -59,6 +66,10 @@ export class LightingTest extends Phaser.Scene {
     const lights = [key, rim];
 
     const pixelLit = this.createPixelLit(sprite, scale, lights);
+    this.foreground = this.createForeground(sprite, scale, lights);
+    this.foregroundHome.set(this.foreground.x, this.foreground.y);
+    this.foreground.enableFilters();
+    const blur = this.foreground.filters!.internal.addBlur(1, 2, 2, 0);
 
     const moveKey = (pointer: Phaser.Input.Pointer) => {
       if (this.store.settings.followPointer) key.setPosition(pointer.x, pointer.y);
@@ -81,9 +92,88 @@ export class LightingTest extends Phaser.Scene {
       key.setColor(hex(s.key.color)).setIntensity(s.key.on ? s.key.intensity : 0).setRadius(s.key.radius).setZNormal(s.key.height);
       rim.setColor(hex(s.rim.color)).setIntensity(s.rim.on ? s.rim.intensity : 0).setRadius(s.rim.radius).setZNormal(s.rim.height);
     });
-    this.events.once('shutdown', stopSync);
+    const stopForegroundSync = autorun(() => {
+      const fg = this.store.foreground;
+      this.foreground.setVisible(fg.on);
+      blur.strength = fg.blur;
+      blur.active = fg.blur > 0;
+    });
+    this.events.once('shutdown', () => {
+      stopSync();
+      stopForegroundSync();
+    });
 
     this.reactOverlay.create(<LightingTestView scene={this} />, this);
+  }
+
+  update(): void {
+    // Parallax: the foreground drifts against the pointer, easing toward its target.
+    const { parallax } = this.store.foreground;
+    const pointer = this.input.activePointer;
+    const { width, height } = this.scale;
+    const targetX = this.foregroundHome.x - ((pointer.x - width / 2) / (width / 2)) * parallax;
+    const targetY = this.foregroundHome.y - ((pointer.y - height / 2) / (height / 2)) * parallax;
+    this.foreground.x += (targetX - this.foreground.x) * 0.1;
+    this.foreground.y += (targetY - this.foreground.y) * 0.1;
+  }
+
+  /** The foreground layer, drawn with the backlight shader and lit by `lights` from behind. */
+  private createForeground(sprite: Phaser.GameObjects.Image, portraitScale: number, lights: Phaser.GameObjects.Light[]) {
+    const source = this.textures.get(FOREGROUND_KEY).getSourceImage();
+    const texWidth = source.width;
+    const texHeight = source.height;
+    const displayWidth = sprite.displayWidth * FOREGROUND_OVERSCAN;
+    const displayHeight = sprite.displayHeight * FOREGROUND_OVERSCAN;
+    const scale = displayWidth / texWidth;
+
+    const positions = new Array(LIGHT_COUNT * 3).fill(0);
+    const colors = new Array(LIGHT_COUNT * 3).fill(0);
+    const radii = new Array(LIGHT_COUNT).fill(0);
+    const intensities = new Array(LIGHT_COUNT).fill(0);
+
+    const shader = this.add.shader(
+      {
+        name: 'Backlight',
+        fragmentSource: BACKLIGHT_FRAG,
+        initialUniforms: { uTexture: 0, uTexSize: [texWidth, texHeight] },
+        setupUniforms: (setUniform: (name: string, value: unknown) => void) => {
+          const { settings, grid, foreground: fg } = this.store;
+          // The layer moves with parallax, so light positions are relative to where it is now.
+          const left = shader.x - displayWidth / 2;
+          const top = shader.y - displayHeight / 2;
+          lights.forEach((light, i) => {
+            positions[i * 3] = (light.x - left) / scale;
+            positions[i * 3 + 1] = texHeight - (light.y - top) / scale;
+            positions[i * 3 + 2] = fg.depth / scale;
+            colors[i * 3] = light.color.r;
+            colors[i * 3 + 1] = light.color.g;
+            colors[i * 3 + 2] = light.color.b;
+            radii[i] = light.radius / scale;
+            intensities[i] = light.intensity;
+          });
+          setUniform('uLightPos[0]', positions);
+          setUniform('uLightColor[0]', colors);
+          setUniform('uLightRadius[0]', radii);
+          setUniform('uLightIntensity[0]', intensities);
+          setUniform('uAmbient', rgb(settings.ambient));
+          // Same art-pixel size on screen as the portrait's grid.
+          setUniform('uPixelSize', Math.max((grid.size * portraitScale) / scale, 1));
+          setUniform('uBands', settings.bands);
+          setUniform('uBandSoftness', settings.bandSoftness);
+          setUniform('uFill', fg.fill);
+          setUniform('uTranslucency', fg.translucency);
+          setUniform('uRim', fg.rim);
+          setUniform('uRimWidth', fg.rimWidth);
+          setUniform('uOpacity', fg.opacity);
+        },
+      },
+      sprite.x,
+      sprite.y,
+      displayWidth,
+      displayHeight,
+      [FOREGROUND_KEY],
+    );
+    return shader;
   }
 
   /** A quad over the sprite that draws it with the pixel lighting shader, reading `lights` every frame. */
