@@ -7,7 +7,9 @@ export default defineConfig({
     react(),
   ],
   server: {
-    host: true, 
-    port: 5173  
+    host: true,
+    port: 5173,
+    // lets a Cloudflare quick tunnel (`cloudflared tunnel --url ...`) reach the dev server, for testing on a phone
+    allowedHosts: ['.trycloudflare.com'],
   }
 });
