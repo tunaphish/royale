@@ -17,6 +17,7 @@ import type { Duration } from '../../fx/types';
 import { FX } from '../../data/fx';
 import { LIGHTING } from '../../data/lighting';
 import { Stage } from '../../stage/Stage';
+import { addCrt } from '../../fx/crt';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -24,7 +25,8 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   key: 'Dialogue',
 };
 
-type DialogueData = { storyKey: string };
+/** `crt` (any value, e.g. `?scene=Dialogue&storyKey=final-battle&crt`) tests the CRT TV filter over the stage. */
+type DialogueData = { storyKey: string; crt?: string };
 
 /** How long the stage takes to fade in and out, matching the UI's fade. */
 const FADE_MS = 1000;
@@ -222,6 +224,7 @@ export class Dialogue extends Phaser.Scene {
   private typingTimer?: Phaser.Time.TimerEvent;
   /** FX started by `#fx`, by ID, so `#fx <id> stop` can find them. */
   private runningFx = new Map<string, FxHandle[]>();
+  private crt = false;
 
   /** Blip state for the line being typed. */
   private voice: Voice | null = null;
@@ -240,6 +243,7 @@ export class Dialogue extends Phaser.Scene {
     this.story = createStory(this.cache, data.storyKey);
     bindGameFunctions(this.story, this.session.state);
     this.store = new DialogueStore();
+    this.crt = data.crt !== undefined;
     this.warnMissingVoiceSounds();
 
     // leaving the scene is an autosave checkpoint, for anything ink changed
@@ -253,6 +257,7 @@ export class Dialogue extends Phaser.Scene {
     this.runningFx.clear();
     this.stage = new Stage(this, this.fx);
     this.syncStage();
+    if (this.crt) addCrt(this);
     this.cameras.main.fadeIn(FADE_MS);
 
     this.reactOverlay.create(<DialogueView dialogue={this} />, this);

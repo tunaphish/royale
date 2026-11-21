@@ -11,6 +11,7 @@ import { LIGHTING } from '../../data/lighting';
 import { FxLabStore, RIM_AT, settingsToMood } from './fxLabStore';
 import { FxLabView } from './FxLabView';
 import { fxEntrySource } from './toSource';
+import { addCrt, removeCrt, type CrtFilter } from '../../fx/crt';
 
 const SPRITE_KEY = 'characters/rena-sprite';
 const FOREGROUND_KEY = 'layers/sakura';
@@ -53,6 +54,7 @@ export class FxLab extends Phaser.Scene {
   private replayTimer?: Phaser.Time.TimerEvent;
   private slotOverlay: Phaser.GameObjects.Graphics;
   private statsAt = 0;
+  private crtFilter?: CrtFilter;
 
   constructor() {
     super(sceneConfig);
@@ -61,6 +63,7 @@ export class FxLab extends Phaser.Scene {
   init(data: FxLabData): void {
     this.store = new FxLabStore();
     this.handle = undefined;
+    this.crtFilter = undefined;
     if (data.fx) {
       if (data.fx in FX) this.store.selectFx(data.fx);
       else console.warn(`[FxLab] no FX "${data.fx}" in data/fx.ts`);
@@ -144,6 +147,15 @@ export class FxLab extends Phaser.Scene {
     this.input.keyboard?.on('keydown-L', () => this.store.setShowLightMap(!this.store.showLightMap));
     const stopLabSync = [
       autorun(() => this.fx.showLightMap(this.store.showLightMap)),
+      autorun(() => {
+        if (this.store.crtOn && !this.crtFilter) this.crtFilter = addCrt(this, this.store.crt);
+        if (!this.store.crtOn && this.crtFilter) {
+          removeCrt(this.crtFilter);
+          this.crtFilter = undefined;
+        }
+        // the filter reads its settings every frame, so copying them is enough
+        if (this.crtFilter) this.crtFilter.settings = { ...this.store.crt };
+      }),
       autorun(() => {
         this.fx.reducedMotion = this.store.reducedMotion;
         this.fx.quality = this.store.quality;

@@ -4,6 +4,7 @@ import type { FxLab } from './FxLab';
 import { PRESETS } from './fxLabStore';
 import { ColorRow, Slider, Toggle } from './controls';
 import { FxEditor } from './FxEditor';
+import type { CrtSettings } from '../../fx/crt';
 import styles from './fxlab.module.css';
 
 const LightControls = observer(({ scene, light, title }: { scene: FxLab; light: 'key' | 'rim'; title: string }) => {
@@ -113,6 +114,34 @@ export const FxLabView = observer(({ scene }: { scene: FxLab }) => {
   );
 });
 
+const CRT_SLIDERS: [keyof CrtSettings, number, number, number][] = [
+  ['curvature', 0, 0.5, 0.01],
+  ['scanlines', 0, 1, 0.01],
+  ['lineSize', 1, 8, 0.5],
+  ['mask', 0, 1, 0.01],
+  ['aberration', 0, 6, 0.1],
+  ['vignette', 0, 1, 0.01],
+  ['noise', 0, 0.3, 0.01],
+  ['flicker', 0, 1, 0.05],
+  ['brightness', 0.5, 2, 0.05],
+];
+
+const CrtControls = observer(({ scene }: { scene: FxLab }) => {
+  const { store } = scene;
+  return (
+    <section className={styles.group}>
+      <div className={styles.groupHeader}>
+        <span className={styles.groupTitle}>crt tv (fx/crt.ts)</span>
+        <Toggle on={store.crtOn} onClick={() => store.setCrtOn(!store.crtOn)}>{store.crtOn ? 'on' : 'off'}</Toggle>
+      </div>
+      {store.crtOn && CRT_SLIDERS.map(([field, min, max, step]) => (
+        <Slider key={field} label={field} value={store.crt[field]} min={min} max={max} step={step}
+          onChange={(v) => store.setCrt(field, v)} />
+      ))}
+    </section>
+  );
+});
+
 /** Mood and material settings. Presets are the moods in data/lighting.ts. */
 const LightingPanel = observer(({ scene }: { scene: FxLab }) => {
   const { store } = scene;
@@ -160,6 +189,7 @@ const LightingPanel = observer(({ scene }: { scene: FxLab }) => {
       <LightControls scene={scene} light="key" title="main light" />
       <LightControls scene={scene} light="rim" title="rim light" />
       <ForegroundControls scene={scene} />
+      <CrtControls scene={scene} />
     </>
   );
 });

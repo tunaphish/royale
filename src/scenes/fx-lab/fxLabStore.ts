@@ -1,6 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 import { FX } from '../../data/fx';
 import { LIGHTING } from '../../data/lighting';
+import { DEFAULT_CRT, type CrtSettings } from '../../fx/crt';
 import type { Flicker, FxDef, FxQuality, LightingMood, MoodLight } from '../../fx/types';
 
 export interface LightSettings {
@@ -144,6 +145,9 @@ export class FxLabStore {
   stats = { fx: 0, particles: 0, pointLights: 0, mapLights: 0 };
   /** The draft as code, shown after "copy". */
   source: string | null = null;
+  /** CRT TV filter over the whole lab. */
+  crtOn = false;
+  crt: CrtSettings = { ...DEFAULT_CRT };
   panelOpen = true;
 
   constructor() {
@@ -158,6 +162,14 @@ export class FxLabStore {
 
   setForeground<K extends keyof ForegroundSettings>(field: K, value: ForegroundSettings[K]) {
     this.foreground[field] = value;
+  }
+
+  setCrtOn(on: boolean) {
+    this.crtOn = on;
+  }
+
+  setCrt<K extends keyof CrtSettings>(field: K, value: CrtSettings[K]) {
+    this.crt[field] = value;
   }
 
   setTab(tab: LabTab) {
