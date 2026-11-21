@@ -19,6 +19,8 @@ export class DialogueStore {
   background: string | null = null;
   portrait: Portrait | null = null;
   foreground: string | null = 'https://raw.githubusercontent.com/oscicen/oscicen.github.io/master/img/depth-3.png';
+  /** Draw the foreground lit from behind (`#foreground <key> backlit`). */
+  foregroundBacklit = false;
 
   message: Line | null = null;
   display: Line | null = null;
@@ -39,8 +41,9 @@ export class DialogueStore {
     this.portrait = portrait;
   }
 
-  setForeground(foreground: string | null): void {
+  setForeground(foreground: string | null, backlit = false): void {
     this.foreground = foreground;
+    this.foregroundBacklit = backlit;
   }
 
   setMessage(line: Line | null): void {

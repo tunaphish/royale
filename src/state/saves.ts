@@ -33,8 +33,15 @@ export type SaveFile = { version: number; savedAt: number; state: GameStateData 
 /** What a slot picker needs to show, without loading the whole save. */
 export type SlotSummary = { id: string; name: string; savedAt: number };
 
-export type Settings = { volume: number; textSpeed: number };
-const DEFAULT_SETTINGS: Settings = { volume: 1, textSpeed: 1 };
+export type Settings = {
+  volume: number;
+  textSpeed: number;
+  /** `'low'` halves particles and turns off bloom, for older phones. */
+  fxQuality: 'high' | 'low';
+  /** Skips screen shake and flashes. */
+  reducedMotion: boolean;
+};
+const DEFAULT_SETTINGS: Settings = { volume: 1, textSpeed: 1, fxQuality: 'high', reducedMotion: false };
 
 const KEYS = {
   settings: 'royale:settings',

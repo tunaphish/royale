@@ -4,9 +4,6 @@ import { observer } from 'mobx-react-lite';
 
 import styles from './dialogue.module.css';
 import { Dialogue } from './Dialogue';
-import { Portrait } from './dialogueStore';
-import { ParallaxLayer, ParallaxProvider, useParallaxOffset } from './parallax';
-import { imageUrl } from '../../assets/manifest';
 import { RichText } from '../ui/RichText';
 
 export const DialogueView = observer((props: { dialogue: Dialogue }): JSX.Element => {
@@ -37,47 +34,47 @@ export const DialogueView = observer((props: { dialogue: Dialogue }): JSX.Elemen
   );
 });
 
-const backgroundSrc = (key: string) => imageUrl(`backgrounds/${key}`);
-const portraitSrc = ({ character, emotion }: Portrait) => imageUrl(`characters/${character}${emotion ? `-${emotion}` : ''}`);
-const foregroundSrc = (key: string) => key.startsWith('http') ? key : imageUrl(`foregrounds/${key}`);
-
+/**
+ * The stage's box. Phaser draws the background, character and foreground
+ * (`Dialogue.stage`) inside it; this view reports where the box is, forwards
+ * the pointer for parallax, and shows `#display` text on top.
+ */
 export const StageView = observer((props: { dialogue: Dialogue }): JSX.Element => {
   const { dialogue } = props;
-  const { background, portrait, foreground, display, typing } = dialogue.store;
+  const { display, typing } = dialogue.store;
   const stageRef = React.useRef<HTMLDivElement>(null);
-  const offset = useParallaxOffset(stageRef);
+
+  React.useLayoutEffect(() => {
+    const element = stageRef.current;
+    if (!element) return;
+    const report = () => dialogue.stage.setRectFromElement(element);
+    report();
+    // the box moves when the layout or the window changes size
+    const observer = new ResizeObserver(report);
+    observer.observe(element);
+    window.addEventListener('resize', report);
+
+    // pointer events cover both mouse and touch drags
+    const onPointerMove = (e: PointerEvent) => {
+      const rect = element.getBoundingClientRect();
+      dialogue.stage.setParallax(((e.clientX - rect.left) / rect.width) * 2 - 1, ((e.clientY - rect.top) / rect.height) * 2 - 1);
+    };
+    element.addEventListener('pointermove', onPointerMove);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', report);
+      element.removeEventListener('pointermove', onPointerMove);
+    };
+  }, [dialogue]);
 
   return (
-    <ParallaxProvider value={offset}>
-      <div ref={stageRef} className={styles.stage}>
-        <div className={styles.backgroundLayer}>
-          {background && <img className={styles.backgroundImage} src={backgroundSrc(background)} />}
+    <div ref={stageRef} className={styles.stage}>
+      {display && (
+        <div className={styles.displayText}>
+          <RichText nodes={display.nodes} revealed={typing?.target === 'display' ? typing.revealed : undefined} />
         </div>
-
-        <ParallaxLayer depth={20} className={styles.portraitLayer}>
-          {portrait && (
-            <motion.img
-              key={portraitSrc(portrait)}
-              className={styles.portraitImage}
-              src={portraitSrc(portrait)}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            />
-          )}
-        </ParallaxLayer>
-
-        <ParallaxLayer depth={40} className={styles.foregroundLayer}>
-          {foreground && <img className={styles.foregroundImage} src={foregroundSrc(foreground)} />}
-        </ParallaxLayer>
-
-        {display && (
-          <div className={styles.displayText}>
-            <RichText nodes={display.nodes} revealed={typing?.target === 'display' ? typing.revealed : undefined} />
-          </div>
-        )}
-      </div>
-    </ParallaxProvider>
+      )}
+    </div>
   );
 });
 

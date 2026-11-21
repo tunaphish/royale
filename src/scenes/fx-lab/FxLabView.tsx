@@ -1,43 +1,12 @@
 import * as React from 'react';
 import { observer } from 'mobx-react-lite';
-import type { LightingTest } from './LightingTest';
-import { PRESETS } from './lightingTestStore';
-import styles from './lightingtest.module.css';
+import type { FxLab } from './FxLab';
+import { PRESETS } from './fxLabStore';
+import { ColorRow, Slider, Toggle } from './controls';
+import { FxEditor } from './FxEditor';
+import styles from './fxlab.module.css';
 
-interface SliderProps {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  onChange: (value: number) => void;
-}
-
-const Slider = ({ label, value, min, max, step, onChange }: SliderProps) => (
-  <label className={styles.row}>
-    <span>{label}</span>
-    <input type="range" min={min} max={max} step={step} value={value}
-      onChange={(e) => onChange(Number(e.target.value))} />
-    <span className={styles.value}>{value}</span>
-  </label>
-);
-
-const ColorRow = ({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) => (
-  <label className={styles.row}>
-    <span>{label}</span>
-    <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
-    <span />
-  </label>
-);
-
-/** A button that shows whether it's selected. Used for every on/off and pick-one control. Test update */
-const Toggle = ({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) => (
-  <button className={on ? styles.on : styles.off} aria-pressed={on} onClick={onClick}>
-    {children}
-  </button>
-);
-
-const LightControls = observer(({ scene, light, title }: { scene: LightingTest; light: 'key' | 'rim'; title: string }) => {
+const LightControls = observer(({ scene, light, title }: { scene: FxLab; light: 'key' | 'rim'; title: string }) => {
   const { store } = scene;
   const settings = store.settings[light];
   return (
@@ -64,7 +33,7 @@ const LightControls = observer(({ scene, light, title }: { scene: LightingTest; 
   );
 });
 
-const PixelControls = observer(({ scene }: { scene: LightingTest }) => {
+const PixelControls = observer(({ scene }: { scene: FxLab }) => {
   const { store } = scene;
   const { settings, grid } = store;
   return (
@@ -86,7 +55,7 @@ const PixelControls = observer(({ scene }: { scene: LightingTest }) => {
   );
 });
 
-const ForegroundControls = observer(({ scene }: { scene: LightingTest }) => {
+const ForegroundControls = observer(({ scene }: { scene: FxLab }) => {
   const { store } = scene;
   const fg = store.foreground;
   return (
@@ -119,14 +88,13 @@ const ForegroundControls = observer(({ scene }: { scene: LightingTest }) => {
   );
 });
 
-export const LightingTestView = observer(({ scene }: { scene: LightingTest }) => {
+export const FxLabView = observer(({ scene }: { scene: FxLab }) => {
   const { store } = scene;
-  const { settings } = store;
 
   if (!store.panelOpen) {
     return (
       <button className={styles.openButton} onClick={() => store.setPanelOpen(true)}>
-        lights
+        lab
       </button>
     );
   }
@@ -134,11 +102,24 @@ export const LightingTestView = observer(({ scene }: { scene: LightingTest }) =>
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
-        <span>lighting</span>
+        <span className={styles.tabs}>
+          <Toggle on={store.tab === 'fx'} onClick={() => store.setTab('fx')}>fx</Toggle>
+          <Toggle on={store.tab === 'lighting'} onClick={() => store.setTab('lighting')}>lighting</Toggle>
+        </span>
         <button className={styles.off} onClick={() => store.setPanelOpen(false)}>hide</button>
       </div>
+      {store.tab === 'fx' ? <FxEditor scene={scene} /> : <LightingPanel scene={scene} />}
+    </div>
+  );
+});
 
-      <div className={styles.label}>preset{store.activePreset ? '' : ' · custom'}</div>
+/** Mood and material settings. Presets are the moods in data/lighting.ts. */
+const LightingPanel = observer(({ scene }: { scene: FxLab }) => {
+  const { store } = scene;
+  const { settings } = store;
+  return (
+    <>
+      <div className={styles.label}>mood{store.activePreset ? '' : ' | custom'}</div>
       <div className={styles.buttons}>
         {Object.keys(PRESETS).map((name) => (
           <Toggle key={name} on={store.activePreset === name} onClick={() => store.applyPreset(name)}>
@@ -179,6 +160,6 @@ export const LightingTestView = observer(({ scene }: { scene: LightingTest }) =>
       <LightControls scene={scene} light="key" title="main light" />
       <LightControls scene={scene} light="rim" title="rim light" />
       <ForegroundControls scene={scene} />
-    </div>
+    </>
   );
 });

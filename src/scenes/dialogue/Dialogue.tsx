@@ -10,6 +10,13 @@ import { bindGameFunctions } from './inkBindings';
 import { SFX } from '../../assets/manifest';
 import { DEFAULT_VOICE, Voice, VOICES } from '../../data/voices';
 import GameSession from '../../plugins/GameSession';
+import { comparer, reaction } from 'mobx';
+import type { FxSystem } from '../../fx/FxSystem';
+import type { FxHandle } from '../../fx/FxHandle';
+import type { Duration } from '../../fx/types';
+import { FX } from '../../data/fx';
+import { LIGHTING } from '../../data/lighting';
+import { Stage } from '../../stage/Stage';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -18,6 +25,11 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
 };
 
 type DialogueData = { storyKey: string };
+
+/** How long the stage takes to fade in and out, matching the UI's fade. */
+const FADE_MS = 1000;
+/** Default fade for `#light`, in ms. */
+const LIGHT_FADE_MS = 500;
 
 /** Typewriter speed: time per letter, plus a pause after punctuation that ends a phrase. */
 const LETTER_MS = 30;
@@ -83,14 +95,17 @@ const resolveVoice = (key: string | undefined): Voice | null =>
 
 /**
  * One thing the scene does, read from ink in script order.
- * Stage directions (`bg`, `enter`, `foreground`, `music`, `sfx`) run straight away;
+ * Stage directions (`bg`, `enter`, `foreground`, `music`, `sfx`, `fx`, `light`) run straight away;
  * the rest block until the player advances or picks a choice, so they always
  * come last in a batch.
  */
 type Command =
   | { kind: 'bg'; background: string }
   | { kind: 'enter'; character: string; emotion?: string }
-  | { kind: 'foreground'; foreground: string | null }
+  | { kind: 'foreground'; foreground: string | null; backlit: boolean }
+  | { kind: 'fx'; id: string; duration?: Duration; at?: string }
+  | { kind: 'fxStop'; id?: string }
+  | { kind: 'light'; mood: string; fade: number }
   | { kind: 'music'; song: string }
   | { kind: 'sfx'; sound: string }
   | { kind: 'line'; text: string; voice?: string }
@@ -120,10 +135,29 @@ const parseTag = (tag: string): Command | null => {
       return expects('#enter <character> [emotion]', 1, 2)
         ? { kind: 'enter', character: args[0], emotion: args[1] }
         : null;
-    case 'foreground':
-      return expects('#foreground <key|none>', 1)
-        ? { kind: 'foreground', foreground: args[0] === 'none' ? null : args[0] }
-        : null;
+    case 'foreground': {
+      if (!expects('#foreground <key|none> [backlit]', 1, 2)) return null;
+      if (args[1] !== undefined && args[1] !== 'backlit') {
+        console.warn(`[Dialogue] #${tag}: the second word can only be "backlit"`);
+        return null;
+      }
+      return { kind: 'foreground', foreground: args[0] === 'none' ? null : args[0], backlit: args[1] === 'backlit' };
+    }
+    case 'fx':
+      return parseFxTag(tag, args);
+    case 'light': {
+      if (!expects('#light <mood> [fade ms]', 1, 2)) return null;
+      if (!(args[0] in LIGHTING)) {
+        console.warn(`[Dialogue] #${tag}: no mood "${args[0]}" in data/lighting.ts`);
+        return null;
+      }
+      const fade = args[1] === undefined ? LIGHT_FADE_MS : Number(args[1]);
+      if (!Number.isFinite(fade) || fade < 0) {
+        console.warn(`[Dialogue] #${tag}: fade must be a number of ms`);
+        return null;
+      }
+      return { kind: 'light', mood: args[0], fade };
+    }
     case 'music':
       return expects('#music <song>', 1)
         ? { kind: 'music', song: args[0] }
@@ -141,14 +175,53 @@ const parseTag = (tag: string): Command | null => {
   }
 };
 
+const FX_USAGE = '#fx <id> [ms|infinite] [at <character>], #fx <id> stop, or #fx stop';
+
+/**
+ * `#fx heal-burst`, `#fx green-motes infinite`, `#fx heal-burst 800 at eji`,
+ * `#fx green-motes stop`, `#fx stop` (stops every FX).
+ */
+const parseFxTag = (tag: string, args: string[]): Command | null => {
+  const warn = (problem: string) => {
+    console.warn(`[Dialogue] #${tag}: ${problem}. Expects: ${FX_USAGE}`);
+    return null;
+  };
+  const [id, ...rest] = args;
+  if (!id) return warn('missing FX id');
+  if (id === 'stop' && rest.length === 0) return { kind: 'fxStop' };
+  if (!(id in FX)) return warn(`no FX "${id}" in data/fx.ts`);
+  if (rest[0] === 'stop') return rest.length === 1 ? { kind: 'fxStop', id } : warn('nothing can follow "stop"');
+
+  const command: Command & { kind: 'fx' } = { kind: 'fx', id };
+  for (let i = 0; i < rest.length; i++) {
+    const word = rest[i];
+    if (word === 'at') {
+      if (!rest[i + 1]) return warn('"at" needs a character');
+      command.at = rest[++i];
+    } else if (word === 'infinite') {
+      command.duration = 'infinite';
+    } else if (/^\d+$/.test(word) && Number(word) > 0) {
+      command.duration = Number(word);
+    } else {
+      return warn(`didn't understand "${word}"`);
+    }
+  }
+  return command;
+};
+
 export class Dialogue extends Phaser.Scene {
   reactOverlay: ReactOverlay;
   session: GameSession;
+  fx: FxSystem;
   store: DialogueStore;
+  /** Background, character and foreground, drawn and lit in Phaser. The view reports where it is. */
+  stage: Stage;
 
   private story: Story;
   private music?: Phaser.Sound.BaseSound;
   private typingTimer?: Phaser.Time.TimerEvent;
+  /** FX started by `#fx`, by ID, so `#fx <id> stop` can find them. */
+  private runningFx = new Map<string, FxHandle[]>();
 
   /** Blip state for the line being typed. */
   private voice: Voice | null = null;
@@ -177,8 +250,31 @@ export class Dialogue extends Phaser.Scene {
   }
 
   create(): void {
+    this.runningFx.clear();
+    this.stage = new Stage(this, this.fx);
+    this.syncStage();
+    this.cameras.main.fadeIn(FADE_MS);
+
     this.reactOverlay.create(<DialogueView dialogue={this} />, this);
     this.continueStory();
+  }
+
+  /** The store says what's on stage; the stage draws it. */
+  private syncStage(): void {
+    const { store, stage } = this;
+    const stops = [
+      reaction(() => store.background, (bg) => stage.setBackground(bg), { fireImmediately: true }),
+      // the same character and emotion again doesn't re-enter (or fade in again)
+      reaction(() => store.portrait, (portrait) => stage.setPortrait(portrait), { fireImmediately: true, equals: comparer.structural }),
+      reaction(
+        () => [store.foreground, store.foregroundBacklit] as const,
+        ([foreground, backlit]) => stage.setForeground(foreground, { backlit }),
+        { fireImmediately: true, equals: comparer.structural },
+      ),
+      // the UI fades out over the same time, then calls leave()
+      reaction(() => store.isLeaving, (leaving) => leaving && this.cameras.main.fadeOut(FADE_MS)),
+    ];
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => stops.forEach((stop) => stop()));
   }
 
   // #region handle events
@@ -260,7 +356,16 @@ export class Dialogue extends Phaser.Scene {
         store.setPortrait({ character: command.character, emotion: command.emotion });
         break;
       case 'foreground':
-        store.setForeground(command.foreground);
+        store.setForeground(command.foreground, command.backlit);
+        break;
+      case 'fx':
+        this.playFx(command);
+        break;
+      case 'fxStop':
+        this.stopFx(command.id);
+        break;
+      case 'light':
+        this.fx.setMood(command.mood, { fade: command.fade });
         break;
       case 'music':
         this.playSong(command.song);
@@ -292,6 +397,28 @@ export class Dialogue extends Phaser.Scene {
         store.setLeaving();
         break;
     }
+  }
+
+  private playFx({ id, duration, at }: Command & { kind: 'fx' }): void {
+    let follow: Phaser.GameObjects.Image | undefined;
+    if (at) {
+      follow = this.stage.characterImage(at);
+      if (!follow) console.warn(`[Dialogue] #fx ${id} at ${at}: ${at} isn't on stage; playing in the middle`);
+    }
+    const handle = this.fx.play(id, { duration, at: follow ? { follow } : undefined });
+    const handles = (this.runningFx.get(id) ?? []).filter((h) => !h.isFinished);
+    this.runningFx.set(id, [...handles, handle]);
+  }
+
+  /** Stops one FX by ID (every copy of it running), or all of them. */
+  private stopFx(id?: string): void {
+    if (!id) {
+      this.fx.stopAll();
+      this.runningFx.clear();
+      return;
+    }
+    this.runningFx.get(id)?.forEach((handle) => handle.stop());
+    this.runningFx.delete(id);
   }
 
   /** Types a line out one letter at a time; `finishTyping` shows the rest at once. */

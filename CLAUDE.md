@@ -1,7 +1,7 @@
 # royale
 
-A narrative card game, played mostly on phones. Phaser 3 runs scenes, loading
-and audio; React draws the UI through a global plugin; MobX holds state.
+A narrative card game, played mostly on phones. Phaser 4 runs scenes, loading,
+audio, the story stage and FX; React draws the UI through a global plugin; MobX holds state.
 Dialogue is written in ink. Built with Vite and TypeScript.
 
 ## Commands
@@ -16,13 +16,16 @@ Dev-only URL params (ignored in production builds):
 - `?scene=Battle` — jump straight to a scene after loading. Other params become
   the scene's data: `?scene=Dialogue&storyKey=final-battle`.
 - `?newgame` — start a fresh game instead of loading the save. Works in any build.
+- `?scene=FxLab` — the FX lab, for tuning FX and lighting: `?scene=FxLab&fx=heal-burst&mood=night`.
 
 ## Layout
 
 - `src/scenes/<name>/` — one folder per scene: the scene class, its MobX store, its views, a CSS module
 - `src/plugins/` — global Phaser plugins: `ReactOverlay` (`this.reactOverlay`), `GameSession` (`this.session`)
+- `src/fx/` — the FX and lighting package, types and pure helpers included: the `FxSystem` scene plugin (`this.fx`), lit materials and their shaders, the light map
+- `src/stage/` — `Stage`: the background, character and foreground of story scenes, drawn in Phaser so they can be lit
 - `src/state/` — `GameState` (the live game) and `saves.ts` (save files, slots, settings)
-- `src/data/` — content definitions (cards, enemies, techniques, new-game state), keyed by ID
+- `src/data/` — content definitions (cards, enemies, techniques, new-game state, FX, lighting moods), keyed by ID
 - `src/model/` — cross cutting concerns, core business
 - `src/assets/` — every asset, found by `src/assets/manifest.ts` with `import.meta.glob`: `audio/sfx`, `audio/music`, `images/<category>`, `fonts`, `scripts/stories/*.ink` (one per story) and `scripts/game.ink` (shared includes)
 - `public/` — only files that need a fixed URL (`favicon.ico`)
@@ -35,7 +38,7 @@ Dev-only URL params (ignored in production builds):
   - **Scene:** owns the logic and the methods the view calls (`battle.endTurn()`, `dialogue.advance()`).
   - **Store:** a `makeAutoObservable` MobX store with small setters.
   - **View:** `observer` components that take the scene as a prop.
-- Put logic that doesn't need Phaser in plain modules under `src/model/` so it can be tested on its own.
+- Put logic that doesn't need Phaser in plain modules under `src/model/` so it can be tested on its own. FX is the exception: its pure modules stay in `src/fx/` with the rest of the package.
 - To use a plugin in a scene, declare the field (`session: GameSession;`). Phaser fills it in before `init`.
 - One-off sounds use `this.sound.play(key)`. Only music uses `this.sound.add`, and it must be destroyed on the scene's `shutdown` event, because Phaser's sound manager is global.
 - **Assets are found automatically:** drop a file in the right `src/assets/` folder; there's no list to update. Boot loads everything up front.
@@ -70,11 +73,28 @@ Dev-only URL params (ignored in production builds):
   - One-off styles: add a class to `scenes/ui/textStyles.module.css`.
   - New effects: write a component in `scenes/ui/effects/` and add it to `TAGS` in `RichText.tsx`. A plain effect wraps its children; `perLetter: true` gets each letter instead (like `Frenzy`), and should use `groupWords` so words don't break across lines.
   - Never write an empty tag like `<i></i>`: `<>` is glue in ink. `#` and `//` can't appear inside tags either.
-- **Tags are for stage directions (visuals and sound):** `#bg <key>`, `#enter <character> [emotion]`, `#foreground <key|none>`, `#music <song>` (loops, replaces the current song), `#sfx <sound>` (plays once). To add one in `Dialogue.tsx`: add a `Command` kind, parse it in `parseTag` (which warns on wrong arguments), and run it in `runCommand`.
+- **Tags are for stage directions (visuals and sound):** `#bg <key>`, `#enter <character> [emotion]`, `#foreground <key|none> [backlit]`, `#music <song>` (loops, replaces the current song), `#sfx <sound>` (plays once).
+  - `#foreground` takes a file in `images/foregrounds/`, any image key (`layers/sakura`) or a URL. `backlit` lights it from behind.
+  - `#fx <id>` plays an FX from `data/fx.ts` with its own duration. Add `<ms>` or `infinite` to override it, and `at <character>` to follow the character on stage. `#fx <id> stop` stops it (live particles finish); `#fx stop` stops every FX. Looping FX keep going across lines, like `#music`.
+  - `#light <mood> [fade ms]` changes the lighting mood (`data/lighting.ts`), fading over 500ms by default. Stories start `flat`.
+  - To add a tag in `Dialogue.tsx`: add a `Command` kind, parse it in `parseTag` (which warns on wrong arguments), and run it in `runCommand`.
 - **External functions are for game state:** `stat`, `flag`, `set_flag`, `relationship`, `add_relationship`.
   - Declare them in `game.ink`, with a fallback so stories still run in Inky, and bind them in `dialogue/inkBindings.ts`.
   - Functions that only read are lookahead-safe; functions that change state are not.
 - Values only one story needs stay in ink variables. Values the rest of the game needs live in `GameState`.
+
+### FX and lighting
+
+- **An FX is data:** add it to `data/fx.ts` by ID; every field is documented in `fx/types.ts`. Tune it in the FX lab (`?scene=FxLab`), then "copy definition" and paste it back. Boot checks the data (`fx/validate.ts`) and fails loudly.
+- **Playing:** `this.fx.play(id, { at, duration })` returns an `FxHandle`. `duration` is ms or `'infinite'`; an infinite FX runs until `handle.stop()`. `stop()` lets particles finish, `stop({ immediate: true })` clears them, `await handle.done` waits for the end. Everything stops when the scene shuts down.
+- **Layers:** `particles`, `shake`, `flash`, `vignette`. Particle layers draw at a `depth`: `behind` the characters, in `front` of them, or on `top` of the foreground (`DEPTH` in `fx/types.ts`). Nothing in Phaser can draw over the React UI.
+- **Light from FX:** a particle layer's `light` is `map` (soft colored light in the low-res light map: cheap, any number, no normal map) or `point` (uses normal maps; only `POINT_SLOTS` exist, given to the brightest, and the rest fall back to `map`).
+- **Lit art:** `this.fx.lit(image, { material })` draws an image through the `front` (default) or `backlit` shader. A `<texture>_n` image next to the art is used as its normal map. The image stays the source of position, size and alpha; move or tween the image, not the material.
+- **Moods** live in `data/lighting.ts`: ambient color, lights placed as fractions of the stage, and light steps. `this.fx.setMood(id, { fade })`. `flat` is every scene's default and shows art as drawn.
+- **The stage is the main camera's view.** Story scenes point the camera at the stage's box (`Stage.setRectFromElement`), so FX and lights use stage coordinates.
+- **Budgets for phones:** `POINT_SLOTS` (8), `PARTICLE_BUDGET` (300), `ART_PIXEL` (light map texel size). The `fxQuality` and `reducedMotion` settings halve particles and drop bloom, and skip shake and flash.
+- **Per frame, allocate nothing** in FX and lighting code: pooled light candidates, uniform arrays allocated once. Garbage collection on phones shows up as stutter.
+- Phaser's `ADD` blend is `(ONE, DST_ALPHA)`, not plain addition, which is why the light map is cleared to opaque black.
 
 ### TypeScript
 
@@ -95,3 +115,5 @@ scenes assign their fields in `init`/`create`, not in the constructor.
 - `ReactOverlay` shows one scene's UI at a time, so UI can't stack (e.g. dialogue over a battle).
 - Battle's rules live in the scene class, and enemy AI (`getNextStateIndex`) takes the scene as an argument.
 - `Battle` and `GameOver` still create sounds with `this.sound.add` on every visit.
+- Battle doesn't use `Stage` or lighting yet; it's meant to adopt Dialogue's presentation later.
+- There's no settings screen for `fxQuality` and `reducedMotion` yet; they're read from `royale:settings`.

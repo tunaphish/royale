@@ -16,41 +16,9 @@
   position: relative;
   flex: 1;
   overflow: hidden;
-  background-color: black;
+  /* see-through: Phaser draws the stage underneath (Dialogue.stage) */
+  background-color: transparent;
   touch-action: none;
-}
-
-.backgroundLayer {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: flex-end;
-}
-
-.backgroundImage {
-  width: 100%;
-  height: auto;
-}
-
-.portraitLayer {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.portraitImage {
-  max-width: 100%;
-  max-height: 100%;
-}
-
-.foregroundLayer {
-  pointer-events: none;
-}
-
-.foregroundImage {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .displayText {

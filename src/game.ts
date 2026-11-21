@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import Scenes from './scenes';
 import ReactOverlay from './plugins/ReactOverlay';
 import GameSession from './plugins/GameSession';
+import { FxSystem } from './fx/FxSystem';
 import { configure } from "mobx";
 import './assets/fonts/fonts.css';
 
@@ -34,6 +35,10 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
     global: [
       { key: 'react-overlay', plugin: ReactOverlay, start: true, mapping: 'reactOverlay' },
       { key: 'game-session', plugin: GameSession, start: true, mapping: 'session' },
+    ],
+    // One per scene, so each scene has its own FX and lighting, cleaned up on shutdown.
+    scene: [
+      { key: 'fx', plugin: FxSystem, mapping: 'fx' },
     ],
   },
 };

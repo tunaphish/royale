@@ -5,12 +5,13 @@ import { motion } from 'framer-motion';
 import styles from './boot.module.css';
 import ReactOverlay from '../../plugins/ReactOverlay';
 import { compileStories } from '../../assets/ink';
+import { checkFxData } from '../../fx/validate';
 import { IMAGES, INK_INCLUDES, INK_STORIES, MUSIC, SFX } from '../../assets/manifest';
 
 type StartTarget = { scene: string; data: Record<string, string> };
 
 /** Where the game goes once loading finishes. */
-const DEFAULT_START: StartTarget = { scene: 'LightingTest', data: { storyKey: 'final-battle' } };
+const DEFAULT_START: StartTarget = { scene: 'Dialogue', data: { storyKey: 'final-battle' } };
 
 /** URL params that aren't scene data. */
 const RESERVED_PARAMS = ['scene', 'newgame'];
@@ -100,5 +101,7 @@ export class Boot extends Phaser.Scene {
   public create(): void {
     const compiled = compileStories(INK_STORIES, INK_INCLUDES);
     Object.entries(compiled).forEach(([key, json]) => this.cache.json.add(key, json));
+    // Bad FX or lighting data fails here, not halfway through a story.
+    checkFxData(this.textures);
   }
 }

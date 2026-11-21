@@ -1,0 +1,50 @@
+import type * as Phaser from 'phaser';
+import { FX } from '../data/fx';
+import { LIGHTING } from '../data/lighting';
+import { isColor } from './random';
+import { builtinNames, isBuiltin } from './textures';
+import type { ColorChoice } from './types';
+
+/**
+ * Checks what TypeScript can't: sprite keys exist, colors parse, moods are
+ * sane. Boot calls it after loading, so bad data fails at startup.
+ */
+export function checkFxData(textures: Phaser.Textures.TextureManager): void {
+  const problems: string[] = [];
+  const color = (where: string, value: string) => {
+    if (!isColor(value)) problems.push(`${where}: "${value}" isn't a #rrggbb color`);
+  };
+  const colorChoice = (where: string, choice: ColorChoice) =>
+    color(where, typeof choice === 'string' ? choice : choice.color);
+
+  for (const [id, def] of Object.entries(FX)) {
+    if (def.layers.length === 0) problems.push(`fx "${id}": no layers`);
+    if (typeof def.duration === 'number' && def.duration <= 0) problems.push(`fx "${id}": duration must be > 0 or 'infinite'`);
+    def.layers.forEach((layer, i) => {
+      const where = `fx "${id}" layer ${i}`;
+      if (layer.kind === 'particles') {
+        if (isBuiltin(layer.sprite)) {
+          const name = layer.sprite.slice('builtin:'.length);
+          if (!(builtinNames as string[]).includes(name)) problems.push(`${where}: no built-in sprite "${name}" (have: ${builtinNames.join(', ')})`);
+        } else if (!textures.exists(layer.sprite)) {
+          problems.push(`${where}: no image "${layer.sprite}" (put it in src/assets/images/)`);
+        }
+        if (layer.colors.length === 0) problems.push(`${where}: needs at least one color`);
+        layer.colors.forEach((c) => colorChoice(where, c));
+        if (!layer.rate && !layer.burst) problems.push(`${where}: needs a rate or a burst, or it never spawns`);
+      } else if (layer.kind === 'flash') {
+        color(where, layer.color);
+      } else if (layer.kind === 'vignette' && layer.color) {
+        color(where, layer.color);
+      }
+    });
+  }
+
+  if (!LIGHTING.flat) problems.push('lighting: "flat" is the default mood and must exist');
+  for (const [id, mood] of Object.entries(LIGHTING)) {
+    color(`mood "${id}" ambient`, mood.ambient);
+    mood.lights.forEach((light, i) => color(`mood "${id}" light ${i}`, light.color));
+  }
+
+  if (problems.length > 0) throw new Error(`FX data has problems:\n- ${problems.join('\n- ')}`);
+}
