@@ -133,6 +133,7 @@ give a time. Stories start with `flat`, which shows the art exactly as drawn.
 | `forest-day` | Daytime under trees: green shade, brightened by sunlight FX like `dappled-light`. |
 | `dim` | A dim room, an overcast day: everything readable, nothing bright. |
 | `rainy` | Rain or a storm by day: grey-blue and gloomy. Pairs with `rain`. |
+| `snowy` | Snow by day: cold, pale blue-grey. Pairs with `snow`. |
 | `firelit` | Indoors at night, lit by fire or candles: warm, deep shadows. |
 | `night` | Outdoors at night: cool blue. Add the moon, a campfire, street lights. |
 | `pitch-dark` | Almost black: for scenes lit only by effects (a lamp, a spell, a single fire). |
@@ -185,6 +186,7 @@ Options combine: `#fx heal-burst 800 at eji`.
 | `god-rays` | God rays: slanted shafts of sunlight from the upper left, slowly fading in and out across the stage in front of the character, with dust drifting through them and a soft warm light. Looks best in a dim mood, like `forest-day`. |
 | `god-rays-behind` | God rays from behind: the same shafts of sunlight as `god-rays`, but between the background and the character, with the sun behind them lighting their edges. Dust still drifts in front. Looks best in a dim mood, like `forest-day`. |
 | `rain` | Steady rain over the whole stage: fine drops far behind the character, bigger faster ones in front, and splashes along the ground. Play it `at bottom` so the splashes land on the ground. Pairs with `#light rainy`. |
+| `snow` | Gentle snowfall over the whole stage: small flakes drifting down behind the character, a few big soft ones close in front. Runs until stopped. Pairs with `#light snowy`, or `#light night` and `#fx moonlight` for a snowy night. |
 <!-- end generated -->
 
 Effects are defined in `src/data/fx.ts` and tuned in the FX lab (`?scene=FxLab`). These tables are written from the comments there by `npm run docs`; edit those, not the tables.

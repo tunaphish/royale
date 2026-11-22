@@ -21,6 +21,8 @@ export const LIGHTING: Record<string, LightingMood> = {
   dim: { ambient: '#5a5868', bands: 3, bandSoftness: 0.15 },
   /** Rain or a storm by day: grey-blue and gloomy. Pairs with `rain`. */
   rainy: { ambient: '#4b5566', bands: 3, bandSoftness: 0.1 },
+  /** Snow by day: cold, pale blue-grey. Pairs with `snow`. */
+  snowy: { ambient: '#8a94a8', bands: 3, bandSoftness: 0.15 },
   /** Indoors at night, lit by fire or candles: warm, deep shadows. */
   firelit: { ambient: '#321a1c', bands: 3, bandSoftness: 0 },
   /** Outdoors at night: cool blue. Add the moon, a campfire, street lights. */

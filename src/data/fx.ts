@@ -429,4 +429,48 @@ export const FX: Record<string, FxDef> = {
       },
     ],
   },
+
+  /**
+   * Gentle snowfall over the whole stage: small flakes drifting down behind the
+   * character, a few big soft ones close in front. Runs until stopped. Pairs with
+   * `#light snowy`, or `#light night` and `#fx moonlight` for a snowy night.
+   */
+  snow: {
+    duration: 'infinite',
+    prewarm: 8000,
+    layers: [
+      {
+        kind: 'particles',
+        sprite: 'builtin:square',
+        depth: 'behind',
+        area: 'stage',
+        rate: 20,
+        lifespan: [6000, 9000],
+        velocity: { x: [-4, 4], y: [20, 35] },
+        wind: [1, 4],
+        sway: { distance: 10, speed: 0.3 },
+        size: [0.7, 1.1],
+        fade: 'in-out',
+        blend: 'normal',
+        colors: [{ color: '#ffffff', weight: 2 }, '#e6eefa'],
+        maxAlive: 110,
+      },
+      {
+        kind: 'particles',
+        sprite: 'builtin:orb',
+        depth: 'top',
+        area: 'stage',
+        rate: 2.5,
+        lifespan: [4000, 6000],
+        velocity: { x: [-6, 6], y: [45, 70] },
+        wind: [2, 6],
+        sway: { distance: 18, speed: 0.4 },
+        size: [0.45, 0.65],
+        fade: 'in-out',
+        blend: 'normal',
+        colors: ['#ffffff', '#eef3fc'],
+        maxAlive: 14,
+      },
+    ],
+  },
 };
