@@ -11,6 +11,8 @@ const BUILTINS = {
   orb: drawOrb,
   /** A small leaf, lying sideways with its stem on the left. Tint it any color. */
   leaf: drawLeaf,
+  /** A long soft shaft of light, standing upright, fading at both ends. For god rays: tilt it with `angle`. */
+  ray: drawRay,
   /** Smooth falloff used for the light map. Not pixel art: the light map is low-res anyway. */
   blob: drawBlob,
 } as const;
@@ -135,6 +137,31 @@ function drawBlob(textures: Phaser.Textures.TextureManager, key: string) {
       // Phaser premultiplies canvas textures on upload, so color stays white here.
       image.data[i] = image.data[i + 1] = image.data[i + 2] = 255;
       image.data[i + 3] = Math.round(a * 255);
+    }
+  }
+  ctx.putImageData(image, 0, 0);
+  texture.refresh();
+}
+
+const RAY_WIDTH = 56;
+const RAY_LENGTH = 320;
+
+function drawRay(textures: Phaser.Textures.TextureManager, key: string) {
+  const texture = textures.createCanvas(key, RAY_WIDTH, RAY_LENGTH)!;
+  const ctx = texture.getContext();
+  const image = ctx.createImageData(RAY_WIDTH, RAY_LENGTH);
+  const c = (RAY_WIDTH - 1) / 2;
+  const smooth = (t: number) => t * t * (3 - 2 * t);
+  for (let y = 0; y < RAY_LENGTH; y++) {
+    const t = y / (RAY_LENGTH - 1);
+    // Fades in over the top fifth and out over the bottom half: brightest near where it enters.
+    const along = smooth(Math.min(t / 0.2, 1)) * smooth(Math.min((1 - t) / 0.5, 1));
+    for (let x = 0; x < RAY_WIDTH; x++) {
+      // Soft all the way across and never fully opaque, so crossing rays glow instead of blowing out.
+      const across = 0.7 * Math.max(0, 1 - Math.abs(x - c) / c) ** 2;
+      const i = (y * RAY_WIDTH + x) * 4;
+      image.data[i] = image.data[i + 1] = image.data[i + 2] = 255;
+      image.data[i + 3] = Math.round(across * along * 255);
     }
   }
   ctx.putImageData(image, 0, 0);

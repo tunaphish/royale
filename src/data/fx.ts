@@ -290,4 +290,86 @@ export const FX: Record<string, FxDef> = {
       { kind: 'light', color: '#fff0c2', intensity: 0.6, radius: 700, height: 0.5, offset: [-0.35, -0.5], fade: 1500 },
     ],
   },
+
+  /**
+   * God rays: slanted shafts of sunlight from the upper left, slowly fading in and
+   * out across the stage in front of the character, with dust drifting through
+   * them and a soft warm light. Looks best in a dim mood, like `forest-day`.
+   */
+  'god-rays': {
+    duration: 'infinite',
+    prewarm: 6000,
+    layers: [
+      { kind: 'light', color: '#ffe8b0', intensity: 0.7, radius: 700, height: 0.5, offset: [-0.35, -0.5], fade: 1500 },
+      {
+        kind: 'particles',
+        sprite: 'builtin:ray',
+        depth: 'front',
+        area: 'stage',
+        rate: 0.9,
+        lifespan: [5000, 8000],
+        velocity: { x: [2, 6] },
+        angle: [-26, -18],
+        size: [1.3, 2.4],
+        fade: 'in-out',
+        colors: [{ color: '#ffeab8', weight: 2 }, '#fff6dc', '#ffd98a'],
+        maxAlive: 7,
+      },
+      {
+        kind: 'particles',
+        sprite: 'builtin:square',
+        depth: 'front',
+        area: 'stage',
+        rate: 5,
+        lifespan: [4000, 7000],
+        velocity: { x: [3, 10], y: [-4, 6] },
+        sway: { distance: 6, speed: 0.2 },
+        size: [0.3, 0.5],
+        fade: 'in-out',
+        colors: ['#fff6d8', '#ffe6a8'],
+        maxAlive: 30,
+      },
+    ],
+  },
+
+  /**
+   * God rays from behind: the same shafts of sunlight as `god-rays`, but between
+   * the background and the character, with the sun behind them lighting their
+   * edges. Dust still drifts in front. Looks best in a dim mood, like `forest-day`.
+   */
+  'god-rays-behind': {
+    duration: 'infinite',
+    prewarm: 6000,
+    layers: [
+      { kind: 'light', color: '#ffe0a0', intensity: 1.4, radius: 750, height: 0.35, offset: [-0.3, -0.45], behind: true, fade: 1500 },
+      {
+        kind: 'particles',
+        sprite: 'builtin:ray',
+        depth: 'behind',
+        area: 'stage',
+        rate: 1.1,
+        lifespan: [5000, 8000],
+        velocity: { x: [2, 6] },
+        angle: [-26, -18],
+        size: [1.3, 2.4],
+        fade: 'in-out',
+        colors: [{ color: '#ffeab8', weight: 2 }, '#fff6dc', '#ffd98a'],
+        maxAlive: 8,
+      },
+      {
+        kind: 'particles',
+        sprite: 'builtin:square',
+        depth: 'front',
+        area: 'stage',
+        rate: 4,
+        lifespan: [4000, 7000],
+        velocity: { x: [3, 10], y: [-4, 6] },
+        sway: { distance: 6, speed: 0.2 },
+        size: [0.3, 0.5],
+        fade: 'in-out',
+        colors: ['#fff6d8', '#ffe6a8'],
+        maxAlive: 24,
+      },
+    ],
+  },
 };

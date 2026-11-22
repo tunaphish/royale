@@ -181,6 +181,8 @@ Options combine: `#fx heal-burst 800 at eji`.
 | `campfire` | A campfire with its own glow, flames, embers drifting up past the character, and smoke behind them. Play it `at bottom`. |
 | `falling-leaves` | Leaves drifting down and tumbling over the whole stage, some far behind the character, a few close in front. Runs until stopped. |
 | `dappled-light` | Sunlight through a leaf canopy: patches of sun over everything on stage, swaying a little in the wind, and a soft warm light from the upper left. Use with `#light forest-day`. |
+| `god-rays` | God rays: slanted shafts of sunlight from the upper left, slowly fading in and out across the stage in front of the character, with dust drifting through them and a soft warm light. Looks best in a dim mood, like `forest-day`. |
+| `god-rays-behind` | God rays from behind: the same shafts of sunlight as `god-rays`, but between the background and the character, with the sun behind them lighting their edges. Dust still drifts in front. Looks best in a dim mood, like `forest-day`. |
 <!-- end generated -->
 
 Effects are defined in `src/data/fx.ts` and tuned in the FX lab (`?scene=FxLab`). These tables are written from the comments there by `npm run docs`; edit those, not the tables.
