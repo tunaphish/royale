@@ -20,6 +20,7 @@ Dev-only URL params (ignored in production builds):
 - `?newgame` — start a fresh game instead of loading the save. Works in any build.
 - `?scene=` runs load and save the `dev-test` slot (`DEV_TEST_SLOT` in `GameSession`), never the real save. `?scene=…&newgame` resets that slot.
 - `?scene=FxLab` — the FX lab, for tuning FX and lighting: `?scene=FxLab&fx=campfire&mood=night`.
+- `?scene=School` — the school week. Add `&newgame` to start the week over.
 
 ## Layout
 
@@ -86,7 +87,7 @@ Dev-only URL params (ignored in production builds):
   - `#fx <id>` plays an FX from `data/fx.ts` with its own duration. Add `<ms>` or `infinite` to override it, and `at <character> [face|chest|feet]` to follow the character on stage (chest by default; `CHARACTER_PARTS`), `at <spot>` for a named spot (`STAGE_SPOTS`: `bottom`, `top-left`…), or `at <x> <y>` for a point as fractions of the stage. `#fx <id> stop` stops it (live particles finish, lights fade); `#fx stop` stops every FX, lights included. Looping FX keep going across lines, like `#music`.
   - `#light <mood> [fade ms]` changes the mood, the scene's darkness (`data/lighting.ts`), fading over 500ms by default. Stories start `flat`. Lights (the moon, a fire, a lamp) are FX: `#light night` then `#fx moon-behind`.
   - Tags are parsed in `model/storyTags.ts` (pure, shared by the scene and the startup check), against what exists (`TAG_ASSETS` in `dialogue/tagAssets.ts`). To add a tag: add a `StageCommand` kind and its usage, parse it in `parseTag` (returning a `problem` for wrong arguments or missing assets), and run it in `Dialogue.runCommand`.
-- **External functions are for game state:** `stat`, `flag`, `set_flag`, `relationship`, `add_relationship`.
+- **External functions are for game state:** `stat`, `flag`, `set_flag`, `disposition`, `add_disposition`, `mood`, `set_mood`, `has_star`, `history`. `relationship` and `add_relationship` are kept as old names for `disposition` and `add_disposition`.
   - Declare them in `game.ink`, with a fallback so stories still run in Inky, and bind them in `dialogue/inkBindings.ts`.
   - Functions that only read are lookahead-safe; functions that change state are not.
 - Values only one story needs stay in ink variables. Values the rest of the game needs live in `GameState`.
@@ -111,6 +112,17 @@ Dev-only URL params (ignored in production builds):
 - **Per frame, allocate nothing** in FX and lighting code: pooled light candidates, uniform arrays allocated once. Garbage collection on phones shows up as stutter.
 - Phaser's `ADD` blend is `(ONE, DST_ALPHA)`, not plain addition, which is why the light map is cleared to opaque black.
 
+### School sim
+
+- The design is in `docs/design.md` (School Sim). Content is data in `src/data/school/` (items, locations, activities, students, stars, events, intel names); its shapes are in `model/school.ts`.
+- **Time is a slot count** (`calendar.time`): 2 slots a day, Saturday to Thursday, 12 a week, 0 is the first Saturday morning. Friday is the royale. `model/calendar.ts` turns it into week, day and slot.
+- **One condition language** (`model/conditions.ts`) locks activities, stars, events and locations; write them with `when.*`. A condition or effect that leaves out `student` means the student involved (the one you're with, the star's student).
+- **Scenes play in Dialogue:** School starts it with `returnTo: 'School'` and `returnData: { played }`; when the story ends, School comes back and `finishScene` lights the star or marks the event, then applies its effects. Picked stars and activities use up the slot; events and `auto` stars don't.
+- Events are checked when a day starts, `auto` stars whenever the player arrives at a slot. Event rolls come from the save's `calendar.seed`, so they're repeatable. `always` events (the opening) skip the roll and happen as soon as their conditions hold; after a reload only those are checked.
+- **The week ends** after Thursday afternoon: a briefing lists the intel, then Friday's royale, then the next Saturday. Intel is cleared after each royale.
+- The constellation view's layout (`model/constellation.ts`) comes from the data: a star sits after the stars its `when` needs.
+- Boot runs `checkSchoolData` (`model/schoolValidate.ts`) and fails loudly on missing IDs or stories; `data/school/school.test.ts` runs the same check.
+
 ### TypeScript
 
 `strict` is on. `strictPropertyInitialization` is off on purpose, because Phaser
@@ -132,3 +144,4 @@ scenes assign their fields in `init`/`create`, not in the constructor.
 - `Battle` and `GameOver` still create sounds with `this.sound.add` on every visit.
 - Battle doesn't use `Stage` or lighting yet; it's meant to adopt Dialogue's presentation later.
 - There's no settings screen for `fxQuality` and `reducedMotion` yet; they're read from `royale:settings`.
+- Friday's royale is a stub (`model/royaleStub.ts`): it makes up a placement, ELO, gold and history so the school loop can be played. Nothing starts the School scene yet except `?scene=School`.

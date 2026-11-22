@@ -1,4 +1,6 @@
 import type { GameStateData } from './gameState';
+import { clampDisposition } from '../model/disposition';
+import { newSeed, STARTING_ELO } from '../data/new-game';
 
 /**
  * Where saves are kept. Browser localStorage for now; a phone build can swap
@@ -17,7 +19,7 @@ export const localStorageStorage: SaveStorage = {
 };
 
 /** Bump this whenever GameStateData changes shape, and add a migration below. */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /**
  * Upgrades a save from version N to N + 1. To change the save format:
@@ -28,6 +30,23 @@ export const SAVE_VERSION = 2;
 const MIGRATIONS: Record<number, (state: any) => any> = {
   // v2 added the values ink reads and writes
   1: (state) => ({ ...state, stats: {}, flags: {}, relationships: {} }),
+  // v3 added the school sim: spirits became gold, relationships became students' dispositions
+  2: ({ spirits, relationships, ...state }) => ({
+    ...state,
+    gold: spirits ?? 0,
+    elo: STARTING_ELO,
+    students: Object.fromEntries(
+      Object.entries((relationships ?? {}) as Record<string, number>).map(([student, value]) => [
+        student,
+        { disposition: clampDisposition(value), moods: [] },
+      ]),
+    ),
+    calendar: { time: 0, lostSlots: [], seed: newSeed() },
+    stars: [],
+    history: [],
+    intel: [],
+    inventory: {},
+  }),
 };
 
 export type SaveFile = { version: number; savedAt: number; state: GameStateData };

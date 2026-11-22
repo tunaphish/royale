@@ -4,5 +4,6 @@ import { GameOver } from './game-over/GameOver';
 import { DialogueList } from './dialogue-list/DialogueList';
 import { Dialogue } from './dialogue/Dialogue';
 import { FxLab } from './fx-lab/FxLab';
+import { School } from './school/School';
 
-export default [Boot, Battle, GameOver, DialogueList, Dialogue, FxLab];  
+export default [Boot, Battle, GameOver, DialogueList, Dialogue, FxLab, School];  

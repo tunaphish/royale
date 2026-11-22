@@ -11,7 +11,7 @@ stage directions, text effects and game state.
 - Nothing else to register. The game finds the file and compiles it when it starts;
   a compile error stops the game with the error message.
 - Every story plays from the top. The player's place in a story isn't saved,
-  only game state (stats, flags, relationships, see below).
+  only game state (stats, flags, dispositions, see below).
 
 **Testing:** run `npm run dev` and open
 `http://localhost:5173/royale/?scene=Dialogue&storyKey=<key>` to jump straight into a story.
@@ -22,7 +22,7 @@ stage directions, text effects and game state.
   loading screen lists each problem with its file and line (`forest.ink:28`),
   and you tap "continue anyway" to play. A tag with a problem does nothing.
 - **Testing doesn't touch your real save.** Runs started with `?scene=` use their
-  own save slot, so flags and relationships carry over from one test to the next.
+  own save slot, so flags and dispositions carry over from one test to the next.
   Add `&newgame` to start the test fresh.
 
 ## Lines
@@ -201,8 +201,12 @@ choices can matter beyond one story:
 | `stat("perception")` | A number, 0 if never set |
 | `flag("knows_timeline")` | true or false |
 | `~ set_flag("knows_timeline", true)` | Sets a flag |
-| `relationship("ava")` | A number, 0 if never set |
-| `~ add_relationship("ava", 1)` | Changes a relationship |
+| `disposition("rena")` | How a student feels about the player: -10 (hostile) to 10 (close), 0 if never set |
+| `~ add_disposition("rena", 1)` | Changes a disposition (kept within -10 to 10) |
+| `mood("rena", "embarrassed")` | true while the student has that mood |
+| `~ set_mood("rena", "embarrassed", 4)` | Gives a mood for 4 slots (2 slots a day); `0` removes it |
+| `has_star("rena-first-meeting")` | true once that constellation star is lit |
+| `history("rena", "humiliated")` | true if that happened between you and the student in a royale |
 
 ```ink
 { flag("knows_timeline"):
@@ -216,6 +220,21 @@ choices can matter beyond one story:
 - Values only one story needs can be plain ink variables (`VAR`); they reset each time the story plays.
 - Values the rest of the game needs go through these functions; they're saved.
 - In Inky, these functions return 0 or false and change nothing, so stories still preview there.
+- Dispositions fall into bands: -10 to -6 hostile, -5 to -2 cold, -1 to 1 neutral, 2 to 5 warm, 6 to 10 close.
+  Check a band with a comparison: `{ disposition("rena") >= 2: ... }` is warm or better.
+- `relationship()` and `add_relationship()` are the old names for `disposition()` and `add_disposition()`. They still work.
+
+## School scenes
+
+Constellation stars and school events are stories too. Each one in
+`src/data/school/stars.ts` or `events.ts` names its story (`scene: 'rena-first-words'`),
+and the game plays it when the player picks the star or the event happens.
+
+- When the story ends, the player goes back to the school, and the star lights
+  or the event's effects apply (disposition, gold, lost time…). Those live in the data,
+  so a scene doesn't have to change anything itself, but it can with the functions above.
+- `has_star(...)` is true from the next scene on: a star lights after its own scene ends.
+- To test one: `?scene=Dialogue&storyKey=rena-first-words`, or play it from the school with `?scene=School`.
 
 ## Example
 
@@ -237,7 +256,7 @@ You're still awake? #display
 * [Just keeping watch] -> watch
 
 === talk ===
-~ add_relationship("rena", 1)
+~ add_disposition("rena", 1)
 Me neither. #display
 -> END
 

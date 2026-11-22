@@ -1,0 +1,393 @@
+.container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+  font-size: 18px;
+  background: var(--ink-black);
+}
+
+/* index.html sets every element to 12px; let text inherit its container's size instead */
+.container * {
+  font-size: inherit;
+}
+
+.container button {
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* Header */
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.titleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.title {
+  font-size: 24px;
+  text-transform: capitalize;
+}
+
+.gold {
+  font-size: 22px;
+  color: gold;
+}
+
+.calendar {
+  display: flex;
+  gap: 4px;
+}
+
+.day {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.dayName {
+  font-size: 14px;
+  color: var(--dust-gray);
+}
+
+.slots {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+}
+
+.slot {
+  flex: 1;
+  height: 10px;
+  border: 1px solid var(--dust-gray);
+}
+
+.past {
+  background: var(--dust-gray);
+}
+
+.current {
+  background: yellow;
+  border-color: yellow;
+}
+
+.lost {
+  border-color: #c33;
+  background: repeating-linear-gradient(45deg, #c33 0 2px, transparent 2px 5px);
+}
+
+.royale {
+  font-size: 14px;
+  line-height: 10px;
+  color: #c33;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+}
+
+.stat b {
+  font-size: 18px;
+  color: yellow;
+}
+
+.statNext {
+  font-size: 13px;
+  color: var(--dust-gray);
+}
+
+/* Campus map */
+
+.map {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tile {
+  min-height: 92px;
+  padding: 6px;
+  text-align: left;
+  background: transparent;
+  border: 2px solid var(--dust-gray);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tile:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.selected {
+  border-color: yellow;
+}
+
+.tileName {
+  font-size: 18px;
+}
+
+.starMark {
+  color: yellow;
+}
+
+.closed {
+  font-size: 14px;
+  color: var(--dust-gray);
+}
+
+.students {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px 1px 1px;
+  font-size: 14px;
+  border: 1px solid currentColor;
+  border-radius: 14px;
+}
+
+.face {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: top;
+  background: #333;
+}
+
+.hostile { color: #e44; }
+.cold { color: #7ab; }
+.neutral { color: var(--paper-offwhite); }
+.warm { color: #fb6; }
+.close { color: #f7a; }
+
+/* Location panel */
+
+.panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 2px solid currentColor;
+  padding-top: 8px;
+}
+
+.panelTitle {
+  font-size: 22px;
+}
+
+.hint {
+  color: var(--dust-gray);
+}
+
+.notice {
+  color: yellow;
+  font-size: 16px;
+}
+
+.options {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.option {
+  padding: 8px 10px;
+  font-size: 18px;
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--dust-gray);
+}
+
+.option:hover:not(:disabled) {
+  color: yellow;
+  border-color: yellow;
+}
+
+.option:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.starOption {
+  border-color: yellow;
+}
+
+.free {
+  font-size: 14px;
+  color: var(--dust-gray);
+}
+
+/* Result and Friday cards */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--ink-black);
+  border: 2px solid currentColor;
+}
+
+.cardTitle {
+  font-size: 24px;
+}
+
+.changes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 20px;
+  color: yellow;
+}
+
+.gifts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.giftTitle {
+  color: var(--dust-gray);
+}
+
+.continue {
+  align-self: flex-end;
+  padding: 8px 16px;
+  font-size: 20px;
+  background: transparent;
+  border: 2px solid currentColor;
+}
+
+.continue:hover {
+  color: yellow;
+}
+
+/* Header extras */
+
+.elo {
+  font-size: 16px;
+  color: var(--dust-gray);
+}
+
+.headerButton {
+  padding: 2px 8px;
+  font-size: 16px;
+  background: transparent;
+  border: 1px solid currentColor;
+}
+
+.headerButton:hover {
+  color: yellow;
+}
+
+/* Constellation */
+
+.constellation {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #0b0b14;
+}
+
+.sky {
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.edge {
+  stroke: #444;
+  stroke-width: 0.006;
+}
+
+.edgeLit {
+  stroke: #cc9;
+  stroke-width: 0.01;
+}
+
+.playerLabel,
+.studentLabel {
+  font-size: 0.07px;
+  text-anchor: middle;
+  fill: var(--paper-offwhite);
+}
+
+.studentLabel {
+  fill: currentColor;
+  paint-order: stroke;
+  stroke: #0b0b14;
+  stroke-width: 0.02;
+}
+
+.starNode {
+  cursor: pointer;
+}
+
+.star {
+  font-size: 0.11px;
+  text-anchor: middle;
+}
+
+.lit {
+  fill: yellow;
+}
+
+.ready {
+  fill: transparent;
+  stroke: yellow;
+  stroke-width: 0.008;
+}
+
+.dim {
+  fill: #555;
+}
+
+.picked {
+  stroke: white;
+  stroke-width: 0.01;
+}
+
+.starDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

@@ -6,7 +6,9 @@ import styles from './boot.module.css';
 import ReactOverlay from '../../plugins/ReactOverlay';
 import { compileStories } from '../../assets/ink';
 import { checkFxData } from '../../fx/validate';
-import { IMAGES, INK_INCLUDES, INK_STORIES, MUSIC, SFX } from '../../assets/manifest';
+import { checkSchoolData } from '../../model/schoolValidate';
+import { SCHOOL } from '../../data/school';
+import { IMAGES, INK_INCLUDES, INK_STORIES, MUSIC, SFX, STORY_KEYS } from '../../assets/manifest';
 import { checkStory, type TagProblem } from '../../model/storyTags';
 import { TAG_ASSETS } from '../dialogue/tagAssets';
 
@@ -145,6 +147,11 @@ export class Boot extends Phaser.Scene {
     Object.entries(compiled).forEach(([key, json]) => this.cache.json.add(key, json));
     // Bad FX or lighting data fails here, not halfway through a story.
     checkFxData(this.textures);
+    // Same for the school sim's data: students, stars, events and the stories they play.
+    const schoolProblems = checkSchoolData(SCHOOL, STORY_KEYS);
+    if (schoolProblems.length > 0) {
+      throw new Error(`[Boot] school data has ${schoolProblems.length} problem(s):\n${schoolProblems.join('\n')}`);
+    }
     this.storyProblems = checkStoryTags();
     if (this.storyProblems.length > 0) {
       console.warn(`[Boot] story tag problems:\n${this.storyProblems.map((p) => `${p.story}.ink:${p.line} ${p.problem}`).join('\n')}`);

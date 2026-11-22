@@ -25,8 +25,11 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   key: 'Dialogue',
 };
 
-/** `crt` (any value, e.g. `?scene=Dialogue&storyKey=final-battle&crt`) tests the CRT TV filter over the stage. */
-type DialogueData = { storyKey: string; crt?: string };
+/**
+ * `crt` (any value, e.g. `?scene=Dialogue&storyKey=final-battle&crt`) tests the CRT TV filter over the stage.
+ * `returnTo` is the scene to start when the story ends (the story list if left out), with `returnData` as its data.
+ */
+export type DialogueData = { storyKey: string; crt?: string; returnTo?: string; returnData?: object };
 
 /** How long the stage takes to fade in and out, matching the UI's fade. */
 const FADE_MS = 1000;
@@ -100,6 +103,8 @@ export class Dialogue extends Phaser.Scene {
   /** FX started by `#fx`, by ID, so `#fx <id> stop` can find them. */
   private runningFx = new Map<string, FxHandle[]>();
   private crt = false;
+  private returnTo = 'DialogueList';
+  private returnData?: object;
 
   /** Blip state for the line being typed. */
   private voice: Voice | null = null;
@@ -119,6 +124,8 @@ export class Dialogue extends Phaser.Scene {
     bindGameFunctions(this.story, this.session.state);
     this.store = new DialogueStore();
     this.crt = data.crt !== undefined;
+    this.returnTo = data.returnTo ?? 'DialogueList';
+    this.returnData = data.returnData;
     this.warnMissingVoiceSounds();
 
     // leaving the scene is an autosave checkpoint, for anything ink changed
@@ -181,7 +188,7 @@ export class Dialogue extends Phaser.Scene {
   }
 
   leave(): void {
-    this.scene.start('DialogueList');
+    this.scene.start(this.returnTo, this.returnData);
   }
   // #endregion
 
