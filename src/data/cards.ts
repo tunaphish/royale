@@ -1,5 +1,6 @@
 import { Card, TargetType } from "../model/card";
 import { dealDamage, gainBlock } from "./effects";
+import { randomId } from '../model/uid';
 
 export const strike: Card = {
     name: 'Strike',
@@ -69,7 +70,7 @@ export type CardId = keyof typeof CARDS;
 export type CardInstance = { uid: string; cardId: CardId };
 
 export const createCardInstance = (cardId: CardId): CardInstance => ({
-  uid: crypto.randomUUID(),
+  uid: randomId(),
   cardId,
 });
 

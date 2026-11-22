@@ -47,7 +47,7 @@ Someone who knows better than to ask that in these woods. #display
 === flare ===
 She flicks her fingers at the flames.
 #sfx magic
-#fx heal-burst at 0.5 0.92
+#fx heal-burst at bottom
 The fire <frenzy>roars</frenzy> up, then settles.
 Look. They come for the warmth. #display
 // spirits drift in around the fire
