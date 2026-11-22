@@ -98,7 +98,7 @@ export class Boot extends Phaser.Scene {
 
       React.useEffect(() => {    
         this.load.on('progress', (value: number) => (setPercent(Math.trunc(value * 100))));
-        this.load.on('fileprogress', (file: any) => (setFileKey(file.key)));
+        this.load.on('fileprogress', (file: Phaser.Loader.File) => (setFileKey(file.key)));
         this.load.on('complete', () => setOpacity(0));
       });
 

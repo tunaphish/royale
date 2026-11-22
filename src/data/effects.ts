@@ -2,7 +2,7 @@ import { Combatant } from "../model/combatant";
 import { clamp } from "../model/math";
 
 export const dealDamage = (caster: Combatant, targets: Combatant[], potency: number): void => {
-  for (let activeTechnique of caster.activeTechniques) {
+  for (const activeTechnique of caster.activeTechniques) {
     if (activeTechnique.technique.onModifyDamage) {
       potency += activeTechnique.technique.onModifyDamage(caster, targets) * activeTechnique.amount;
     }

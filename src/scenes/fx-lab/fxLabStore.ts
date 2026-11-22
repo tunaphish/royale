@@ -161,15 +161,20 @@ export class FxLabStore {
   }
 
   setDraft(path: DraftPath, value: unknown) {
-    const parent = path.slice(0, -1).reduce<any>((node, key) => node[key], this.draft);
-    parent[path[path.length - 1]] = value;
+    this.draftParent(path)[path[path.length - 1]] = value;
   }
 
   removeDraft(path: DraftPath) {
-    const parent = path.slice(0, -1).reduce<any>((node, key) => node[key], this.draft);
+    const parent = this.draftParent(path);
     const key = path[path.length - 1];
     if (Array.isArray(parent)) parent.splice(Number(key), 1);
     else delete parent[key];
+  }
+
+  /** The object or array that holds the last key of `path` in the draft. */
+  private draftParent(path: DraftPath): Record<string | number, unknown> & unknown[] {
+    type Node = Record<string | number, unknown> & unknown[];
+    return path.slice(0, -1).reduce<Node>((node, key) => node[key] as Node, this.draft as unknown as Node);
   }
 
   setRepeat(on: boolean) {

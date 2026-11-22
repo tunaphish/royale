@@ -23,6 +23,8 @@ export const SAVE_VERSION = 2;
  * Upgrades a save from version N to N + 1. To change the save format:
  * bump SAVE_VERSION and add `[oldVersion]: (state) => newState`.
  */
+// Old saves have no type of their own (that's why they need migrating), so steps take and return any.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MIGRATIONS: Record<number, (state: any) => any> = {
   // v2 added the values ink reads and writes
   1: (state) => ({ ...state, stats: {}, flags: {}, relationships: {} }),

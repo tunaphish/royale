@@ -8,9 +8,10 @@ Dialogue is written in ink. Built with Vite and TypeScript.
 
 - `npm run dev` — dev server at `http://localhost:5173/royale/` (Vite `base` is `/royale`)
 - `npm run typecheck` — `tsc --noEmit`
-- `npm run build` — checks the writers' guide tables (warns only), typecheck, then `vite build`. GitLab Pages runs this, so a type error blocks deploys.
+- `npm run build` — checks the writers' guide tables (warns only), then typecheck, lint (without fixing), tests, and `vite build`. GitLab Pages runs this, so a type error, a lint error or a failing test blocks deploys.
 - `npm run docs` — rewrites the mood and FX tables in `src/assets/scripts/AUTHORING.md` from the doc comments in `data/lighting.ts` and `data/fx.ts` (`scripts/authoring-tables.mjs`).
-- `npm run lint`
+- `npm test` — Vitest, once (`npm run test:watch` to keep it running). Tests sit next to their module: `storyTags.test.ts`.
+- `npm run lint` — ESLint 9 (`eslint.config.mjs`: typescript-eslint and React hooks, no formatting rules), fixing what it can.
 
 Dev-only URL params (ignored in production builds):
 
@@ -122,7 +123,7 @@ scenes assign their fields in `init`/`create`, not in the constructor.
 - **Don't commit unless asked.** The owner commits between steps.
 - **Before saying something works:** run `npm run typecheck`, and play the change in the browser when it's visible on screen.
   - The browser pane has to be visible. When it's hidden, animations stall and Boot's fade never finishes.
-  - There's no test runner yet. Plain modules can be checked by bundling a script with esbuild and running it in Node.
+  - Run `npm test` and `npm run lint`. Add tests for plain modules (no Phaser at import time); `src/stories.test.ts` compiles every story and checks its tags, like Boot does.
 
 ## Known gaps
 - `ReactOverlay` shows one scene's UI at a time, so UI can't stack (e.g. dialogue over a battle).

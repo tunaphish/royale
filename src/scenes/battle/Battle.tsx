@@ -5,7 +5,6 @@ import ReactOverlay from '../../plugins/ReactOverlay';
 import { BattleView } from './BattleView';
 import { BattleStore, PileType } from './battleStore';
 
-import { toJS } from 'mobx';
 import { TargetType } from '../../model/card';
 import { Combatant } from '../../model/combatant';
 import { PlayerCombatant } from '../../model/playerCombatant';
@@ -39,7 +38,7 @@ export class Battle extends Phaser.Scene {
     super(sceneConfig);
   }
 
-  init(data: {  }): void {
+  init(): void {
     const { state } = this.session;
     TEST_ENCOUNTER.forEach((enemyId) => state.recordEnemySeen(enemyId));
 
@@ -119,33 +118,26 @@ export class Battle extends Phaser.Scene {
     if (!selectedCard) return;
 
     const isEnemy = 'name' in target;
-    switch(cardDef(selectedCard).targetType) {
-      case TargetType.SINGLE:
-      case TargetType.AOE:
-      case TargetType.RANDOM:
-        if (!isEnemy || target.health === 0) {
-          this.choiceDisabledSound.play();
-          return;
-        }
-        this.choiceSelectSound.play();
+    const { targetType } = cardDef(selectedCard);
 
+    // a self card needs the player tapped; every other card needs a living enemy
+    const validTarget = targetType === TargetType.SELF ? !isEnemy : isEnemy && target.health > 0;
+    if (!validTarget) {
+      this.choiceDisabledSound.play();
+      return;
+    }
+    this.choiceSelectSound.play();
+
+    switch (targetType) {
       case TargetType.SINGLE:
+      case TargetType.SELF:
         this.store.setTargets([target]);
         break;
       case TargetType.AOE:
         this.store.setTargets(this.store.enemyCombatants);
         break;
-      case TargetType.RANDOM: // might have to refactor this for multi hit 
+      case TargetType.RANDOM: // might have to refactor this for multi hit
         this.store.setTargets([randomItem(this.store.enemyCombatants)]);
-        break;
-      case TargetType.SELF:
-        if (isEnemy) {
-          this.choiceDisabledSound.play();
-          return;
-        }
-        this.choiceSelectSound.play();
-        this.store.setTargets([target]);
-      default:
         break;
     }
 
@@ -183,7 +175,7 @@ export class Battle extends Phaser.Scene {
   endTurn(): void {
     this.store.discardHand();
     
-    for (let enemyCombatant of this.store.enemyCombatants.filter(enemy => enemy.health > 0)) {
+    for (const enemyCombatant of this.store.enemyCombatants.filter(enemy => enemy.health > 0)) {
       enemyCombatant.block = 0;
 
       const state = enemyCombatant.states[enemyCombatant.stateIndex];

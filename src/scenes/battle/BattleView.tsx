@@ -82,7 +82,8 @@ export const CombatantView = observer((props: { battle: Battle, combatant: Comba
 });
 
 export const TechniqueView  = observer((props: { battle: Battle, activeTechnique: ActiveTechnique, idx: number, isPlayer: boolean }): JSX.Element => { 
-  const { battle, activeTechnique, idx, isPlayer  } = props;
+  // battle, idx and isPlayer are for sacrificing a technique (commented out below)
+  const { activeTechnique } = props;
 
   // const onClickTechnique = () => {
   //   if (!isPlayer) return;

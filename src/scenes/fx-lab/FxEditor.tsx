@@ -379,7 +379,7 @@ export const FxEditor = observer(({ scene }: { scene: FxLab }) => {
       </div>
       {store.source !== null && (
         <>
-          <div className={styles.hint}>Copied. Paste over "{store.fxId}" in src/data/fx.ts (or select it here):</div>
+          <div className={styles.hint}>Copied. Paste over &quot;{store.fxId}&quot; in src/data/fx.ts (or select it here):</div>
           <textarea className={styles.source} readOnly value={store.source} onFocus={(e) => e.target.select()} />
         </>
       )}
