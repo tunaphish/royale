@@ -7,6 +7,10 @@ import type { FxDef } from '../fx/types';
  * Every light in the game is an FX: a `light` layer is a steady light at the
  * FX's position (plus its `offset`). Light-only FX below are placed so they look
  * right played without `at`, i.e. from the middle of the stage.
+ *
+ * The doc comment above each FX is its description in the writers' guide
+ * (`npm run docs` copies them into src/assets/scripts/AUTHORING.md), so write it
+ * for writers: what it looks like, and where to play it if that matters.
  */
 export const FX: Record<string, FxDef> = {
   /** A soft, warm key light on the character's face. */
@@ -78,7 +82,7 @@ export const FX: Record<string, FxDef> = {
     layers: [{ kind: 'light', color: '#4fd7ff', intensity: 0.7, radius: 360, height: 0.1, offset: [0, 0.55] }],
   },
 
-  /** Green and gold sparkles drifting up over the whole stage. */
+  /** Green and gold sparkles drifting up over the whole stage, until stopped. */
   'green-motes': {
     duration: 'infinite',
     prewarm: true,
@@ -153,8 +157,8 @@ export const FX: Record<string, FxDef> = {
   },
 
   /**
-   * A campfire, made to play at the bottom of the stage (`at bottom`): its glow
-   * on the character, flames, embers drifting up past them, and smoke behind.
+   * A campfire with its own glow, flames, embers drifting up past the character,
+   * and smoke behind them. Play it `at bottom`.
    */
   campfire: {
     duration: 'infinite',

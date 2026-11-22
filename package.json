@@ -8,7 +8,8 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "node scripts/authoring-tables.mjs --check && tsc --noEmit && vite build",
+    "docs": "node scripts/authoring-tables.mjs",
     "typecheck": "tsc --noEmit",
     "serve": "vite preview",
     "lint": "eslint src --fix"

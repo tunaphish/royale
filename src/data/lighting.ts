@@ -7,8 +7,13 @@ import type { LightingMood } from '../fx/types';
  *
  * Set with `#light <mood> [fade ms]` in ink, or `this.fx.setMood(id, { fade })`.
  * `flat` shows art exactly as drawn and is every scene's default.
+ *
+ * The doc comment above each mood is its description in the writers' guide
+ * (`npm run docs` copies them into src/assets/scripts/AUTHORING.md), so write it
+ * for writers: where you'd use the mood.
  */
 export const LIGHTING: Record<string, LightingMood> = {
+  /** No lighting: art exactly as drawn. Every story starts here. */
   flat: { ambient: '#ffffff', bands: 0, bandSoftness: 0 },
   /** A dim room, an overcast day: everything readable, nothing bright. */
   dim: { ambient: '#5a5868', bands: 3, bandSoftness: 0.15 },
@@ -16,7 +21,7 @@ export const LIGHTING: Record<string, LightingMood> = {
   firelit: { ambient: '#321a1c', bands: 3, bandSoftness: 0 },
   /** Outdoors at night: cool blue. Add the moon, a campfire, street lights. */
   night: { ambient: '#1c2238', bands: 3, bandSoftness: 0.05 },
-  /** Almost black: for scenes lit only by FX (a lamp, a spell, a single fire). */
+  /** Almost black: for scenes lit only by effects (a lamp, a spell, a single fire). */
   'pitch-dark': { ambient: '#1b161f', bands: 3, bandSoftness: 0 },
   /** A purple city night under signs and screens. */
   'city-night': { ambient: '#2a1f36', bands: 2, bandSoftness: 0 },

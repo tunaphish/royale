@@ -8,7 +8,8 @@ Dialogue is written in ink. Built with Vite and TypeScript.
 
 - `npm run dev` — dev server at `http://localhost:5173/royale/` (Vite `base` is `/royale`)
 - `npm run typecheck` — `tsc --noEmit`
-- `npm run build` — typecheck, then `vite build`. GitLab Pages runs this, so a type error blocks deploys.
+- `npm run build` — checks the writers' guide tables (warns only), typecheck, then `vite build`. GitLab Pages runs this, so a type error blocks deploys.
+- `npm run docs` — rewrites the mood and FX tables in `src/assets/scripts/AUTHORING.md` from the doc comments in `data/lighting.ts` and `data/fx.ts` (`scripts/authoring-tables.mjs`).
 - `npm run lint`
 
 Dev-only URL params (ignored in production builds):
@@ -61,7 +62,8 @@ Dev-only URL params (ignored in production builds):
 
 ### Ink
 
-- **Writers' guide:** `src/assets/scripts/AUTHORING.md` explains lines, tags, effects and game state for story writers. Keep it in step when adding or changing tags, moods, FX, text effects or ink functions.
+- **Writers' guide:** `src/assets/scripts/AUTHORING.md` explains lines, tags, effects and game state for story writers. Keep it in step when adding or changing tags, text effects or ink functions.
+  - Its mood and FX tables are generated: the doc comment above each entry in `data/lighting.ts` and `data/fx.ts` is its description, so write those for writers. Run `npm run docs` after adding or changing a mood or FX; don't edit between the `<!-- generated -->` markers.
 - **Adding a story:** put it in `src/assets/scripts/stories/<key>.ink`. Boot compiles every story once and fails loudly on compile errors.
 - **Dev builds check every tag of every story at startup** (`checkStory` in `model/storyTags.ts`, read from the `.ink` source so problems have line numbers). Problems are listed on the loading screen until the player taps "continue anyway", and logged.
 - Every story starts with `INCLUDE game.ink`.

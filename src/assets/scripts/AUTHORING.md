@@ -126,16 +126,18 @@ A typical scene uses one mood and a light or two:
 `#light <mood> [fade ms]` changes the darkness, fading over 500 ms unless you
 give a time. Stories start with `flat`, which shows the art exactly as drawn.
 
+<!-- generated: moods -->
 | Mood | Use it for |
 | --- | --- |
-| `flat` | No lighting, art as drawn |
-| `dim` | A dim room, an overcast day |
-| `firelit` | Indoors at night, lit by fire or candles |
-| `night` | Outdoors at night, cool blue |
-| `pitch-dark` | Almost black: only effects light the scene |
-| `city-night` | A purple city night under signs |
+| `flat` | No lighting: art exactly as drawn. Every story starts here. |
+| `dim` | A dim room, an overcast day: everything readable, nothing bright. |
+| `firelit` | Indoors at night, lit by fire or candles: warm, deep shadows. |
+| `night` | Outdoors at night: cool blue. Add the moon, a campfire, street lights. |
+| `pitch-dark` | Almost black: for scenes lit only by effects (a lamp, a spell, a single fire). |
+| `city-night` | A purple city night under signs and screens. |
+<!-- end generated -->
 
-Moods are defined in `src/data/lighting.ts`.
+Moods are defined in `src/data/lighting.ts`. This table is written from the comments there by `npm run docs`; edit those, not the table.
 
 ### Effects
 
@@ -153,28 +155,32 @@ Options combine: `#fx heal-burst 800 at eji`.
 
 **Lights.** Each is placed to look right played without `at`.
 
+<!-- generated: lights -->
 | Effect | What it is |
 | --- | --- |
-| `soft-light` | A soft warm light on the character's face |
-| `warm-light` | A strong warm light on the face, like a fire just off stage |
-| `candlelight` | A small flickering candle near the face |
-| `moonlight` | Moonlight from the front, deeper blue from the upper right |
-| `moon-behind` | The moon behind the character: lights the background, outlines the character in blue |
-| `neon-signs` | Pink and cyan signs |
-| `hanging-lamp` | A lamp swinging overhead |
-| `street-lights` | Street lights passing overhead, like the passenger seat of a car |
-| `dashboard-glow` | A cool glow from below, like a car's dashboard |
+| `soft-light` | A soft, warm key light on the character's face. |
+| `warm-light` | A strong warm light on the character's face, like a fire just off stage. |
+| `candlelight` | A small flickering candle close to the character's face. |
+| `moonlight` | Moonlight from the front, with a deeper blue from the upper right. |
+| `moon-behind` | The moon behind the character: lights the background and outlines them in blue. |
+| `neon-signs` | Pink and cyan signs, one in front, one to the upper right. |
+| `hanging-lamp` | A lamp swinging overhead. |
+| `street-lights` | Passenger seat at night: street lights passing overhead, again and again. |
+| `dashboard-glow` | A cool glow from below the stage, like a car's dashboard. |
+<!-- end generated -->
 
 **Other effects.**
 
+<!-- generated: effects -->
 | Effect | What it is |
 | --- | --- |
-| `campfire` | A fire with its own glow, flames, embers and smoke. Play it at the bottom: `at bottom`. |
-| `green-motes` | Green and gold sparkles drifting up, forever |
-| `heal-burst` | A quick upward burst of light |
-| `impact` | A screen shake and white flash |
+| `green-motes` | Green and gold sparkles drifting up over the whole stage, until stopped. |
+| `heal-burst` | A quick upward burst of light, e.g. healing. |
+| `impact` | Screen hit: a short shake and white flash. |
+| `campfire` | A campfire with its own glow, flames, embers drifting up past the character, and smoke behind them. Play it `at bottom`. |
+<!-- end generated -->
 
-Effects are defined in `src/data/fx.ts` and tuned in the FX lab (`?scene=FxLab`).
+Effects are defined in `src/data/fx.ts` and tuned in the FX lab (`?scene=FxLab`). These tables are written from the comments there by `npm run docs`; edit those, not the tables.
 
 ## Game state
 
