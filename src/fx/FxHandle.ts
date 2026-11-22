@@ -2,10 +2,22 @@ import * as Phaser from 'phaser';
 import { resolveDuration, prewarmMs } from './duration';
 import { toEmitterConfig, type FxParticle } from './emitter';
 import { channels, colorInt } from './random';
-import { flickerAt, type CandidatePool } from './lights';
+import { applyMotion, flickerAt, pointLightCandidate, type CandidatePool } from './lights';
 import { spriteKey } from './textures';
-import { DEPTH, type CameraLayerDef, type Duration, type FxDef, type ParticleLayerDef, type PlayOptions, type StagePoint, type StopOptions } from './types';
+import {
+  DEPTH, type CameraLayerDef, type Duration, type FxDef, type LightLayerDef, type ParticleLayerDef, type PlayOptions,
+  type StagePoint, type StopOptions,
+} from './types';
 import type { FxSystem } from './FxSystem';
+
+/** Default fade in and out of a light layer, in ms. */
+export const LIGHT_FADE_MS = 500;
+
+interface LightLayer {
+  layer: LightLayerDef;
+  /** Keeps flickers out of sync. */
+  seed: number;
+}
 
 interface EmitterLayer {
   layer: ParticleLayerDef;
@@ -24,6 +36,12 @@ export class FxHandle {
   private resolveDone!: () => void;
   private readonly emitters: EmitterLayer[] = [];
   private readonly vignettes: Phaser.Filters.Vignette[] = [];
+  private readonly lights: LightLayer[] = [];
+  /** Where the FX is now: a fixed point, the followed object, or the stage-point anchor. */
+  private position: { x: number; y: number };
+  /** Scene time (ms) when it started and stopped, for light fades. */
+  private startedAt: number;
+  private stoppedAt = 0;
   private stopTimer?: Phaser.Time.TimerEvent;
   private stopped = false;
   private finished = false;
@@ -42,9 +60,12 @@ export class FxHandle {
     if ('stage' in at) this.anchor = { x: at.stage[0] * width, y: at.stage[1] * height, at: at.stage };
     const follow = 'follow' in at ? at.follow : this.anchor;
     const origin = follow ? { x: follow.x, y: follow.y } : (at as { x: number; y: number });
+    this.position = follow ?? origin;
+    this.startedAt = scene.time.now;
 
     for (const layer of def.layers) {
       if (layer.kind === 'particles') this.addParticles(layer, origin, follow);
+      else if (layer.kind === 'light') this.lights.push({ layer, seed: Math.random() * 1000 });
       else this.addCamera(layer);
     }
     if (def.sfx) {
@@ -136,6 +157,7 @@ export class FxHandle {
   stop(options: StopOptions = {}): void {
     if (!this.stopped) {
       this.stopped = true;
+      this.stoppedAt = this.fx.host.time.now;
       this.stopTimer?.remove();
       for (const { emitter } of this.emitters) emitter.stop();
       const camera = this.fx.host.cameras.main;
@@ -145,13 +167,38 @@ export class FxHandle {
     if (options.immediate) this.finish();
   }
 
-  /** Pushes this FX's lights into `pool`. Called by `FxSystem` every frame. */
-  collectLights(pool: CandidatePool, timeSeconds: number): void {
+  /** Pushes this FX's lights into `pool`. Called by `FxSystem` every frame. `width`/`height` are the stage's. */
+  collectLights(pool: CandidatePool, timeSeconds: number, width: number, height: number): void {
     this.pool = pool;
     this.time = timeSeconds;
     for (const entry of this.emitters) {
       if (entry.collect) entry.emitter.forEachAlive(entry.collect, this);
     }
+    if (this.finished) return;
+    const now = this.fx.host.time.now;
+    for (const { layer, seed } of this.lights) {
+      const fade = this.lightFade(layer, now);
+      if (fade <= 0) continue;
+      const c = pool.next();
+      const offset = layer.offset;
+      const x = this.position.x + (offset ? offset[0] * width : 0);
+      const y = this.position.y + (offset ? offset[1] * height : 0);
+      pointLightCandidate(layer, x, y, timeSeconds, seed, c);
+      if (layer.motion) applyMotion(layer.motion, width, height, timeSeconds, c);
+      c.intensity *= fade;
+      c.behind = layer.behind ?? false;
+      c.bands = layer.bands ?? -1;
+      c.bandSoftness = layer.bandSoftness ?? -1;
+    }
+  }
+
+  /** 0 to 1: a light layer fading in after the start, and out after a stop. */
+  private lightFade(layer: LightLayerDef, now: number): number {
+    const time = layer.fade ?? LIGHT_FADE_MS;
+    if (time <= 0) return this.stopped ? 0 : 1;
+    const fadeIn = Math.min((now - this.startedAt) / time, 1);
+    const fadeOut = this.stopped ? 1 - (now - this.stoppedAt) / time : 1;
+    return Math.max(Math.min(fadeIn, fadeOut), 0);
   }
 
   /**
@@ -180,7 +227,9 @@ export class FxHandle {
   tick(): void {
     if (this.anchor) this.moveAnchor();
     if (this.finished || !this.stopped) return;
-    if (this.emitters.every(({ emitter }) => emitter.getAliveParticleCount() === 0)) this.finish();
+    const now = this.fx.host.time.now;
+    const lightsOut = this.lights.every(({ layer }) => this.lightFade(layer, now) <= 0);
+    if (lightsOut && this.emitters.every(({ emitter }) => emitter.getAliveParticleCount() === 0)) this.finish();
   }
 
   private finish(): void {

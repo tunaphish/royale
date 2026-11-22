@@ -39,19 +39,28 @@ uniform vec3 uLightPos[POINT_SLOTS];
 uniform vec3 uLightColor[POINT_SLOTS];
 uniform float uLightRadius[POINT_SLOTS];
 uniform float uLightIntensity[POINT_SLOTS];
-// 1 for lights between the background and the characters (see MoodLight.behind).
+// 1 for lights between the background and the characters (see LightLayerDef.behind).
 uniform float uLightBehind[POINT_SLOTS];
+// Each light's steps and step edge (the mood's when a light has none of its own).
+uniform float uLightBands[POINT_SLOTS];
+uniform float uLightBandSoftness[POINT_SLOTS];
 
 uniform vec2 uStageSize;
 // The light map stores light / uMapGain, so it can hold more than 1.
 uniform float uMapGain;
 
-float band (float value) {
-  if (uBands < 0.5) return value;
-  float scaled = value * uBands;
+// Rounds light to steps. bands 0 is smooth; softness 0 is a hard edge, 1 a ramp.
+float bandWith (float value, float bands, float softness) {
+  if (bands < 0.5) return value;
+  float scaled = value * bands;
   float step = floor(scaled);
-  float soft = max(uBandSoftness, 0.001);
-  return (step + smoothstep(1.0 - soft, 1.0, scaled - step)) / uBands;
+  float soft = max(softness, 0.001);
+  return (step + smoothstep(1.0 - soft, 1.0, scaled - step)) / bands;
+}
+
+// The mood's steps, for the light map.
+float band (float value) {
+  return bandWith(value, uBands, uBandSoftness);
 }
 
 vec3 band3 (vec3 value) {

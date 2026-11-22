@@ -213,7 +213,7 @@ const isFraction = (word: string | undefined): boolean => word !== undefined && 
 /**
  * `#fx heal-burst`, `#fx green-motes infinite`, `#fx heal-burst 800 at eji`,
  * `#fx campfire infinite at 0.5 0.95` (a point on the stage, as fractions of its size),
- * `#fx green-motes stop`, `#fx stop` (stops every FX started with `#fx`).
+ * `#fx green-motes stop`, `#fx stop` (stops every FX, lights like `moonlight` included).
  */
 const parseFxTag = (tag: string, args: string[]): Command | null => {
   const warn = (problem: string) => {
@@ -466,10 +466,10 @@ export class Dialogue extends Phaser.Scene {
     this.runningFx.set(id, [...handles, handle]);
   }
 
-  /** Stops one FX by ID (every copy of it running), or all of them. FX that came with the mood keep going. */
+  /** Stops one FX by ID (every copy of it running), or all of them, lights included. */
   private stopFx(id?: string): void {
     if (!id) {
-      this.runningFx.forEach((handles) => handles.forEach((handle) => handle.stop()));
+      this.fx.stopAll();
       this.runningFx.clear();
       return;
     }

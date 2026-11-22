@@ -1,88 +1,37 @@
 import * as React from 'react';
 import { observer } from 'mobx-react-lite';
 import type { FxLab } from './FxLab';
-import { PRESETS, RIM_AT } from './fxLabStore';
-import type { LightMotion } from '../../fx/types';
+import { PRESETS } from './fxLabStore';
 import { ColorRow, Slider, Toggle } from './controls';
 import { FxEditor } from './FxEditor';
 import type { CrtSettings } from '../../fx/crt';
 import styles from './fxlab.module.css';
 
-const LightControls = observer(({ scene, light, title }: { scene: FxLab; light: 'key' | 'rim'; title: string }) => {
+/** The lab's test light, which follows the pointer. */
+const LightControls = observer(({ scene }: { scene: FxLab }) => {
   const { store } = scene;
-  const settings = store.settings[light];
+  const settings = store.settings.key;
   return (
     <section className={styles.group}>
       <div className={styles.groupHeader}>
-        <span className={styles.groupTitle}>{title}</span>
-        <Toggle on={settings.on} onClick={() => store.setLight(light, 'on', !settings.on)}>
+        <span className={styles.groupTitle}>pointer light (lab only)</span>
+        <Toggle on={settings.on} onClick={() => store.setLight('on', !settings.on)}>
           {settings.on ? 'on' : 'off'}
         </Toggle>
       </div>
       {settings.on && (
         <>
           <ColorRow label="color" value={settings.color}
-            onChange={(v) => store.setLight(light, 'color', v)} />
+            onChange={(v) => store.setLight('color', v)} />
           <Slider label="brightness" value={settings.intensity} min={0} max={3} step={0.05}
-            onChange={(v) => store.setLight(light, 'intensity', v)} />
+            onChange={(v) => store.setLight('intensity', v)} />
           <Slider label="reach" value={settings.radius} min={50} max={900} step={10}
-            onChange={(v) => store.setLight(light, 'radius', v)} />
+            onChange={(v) => store.setLight('radius', v)} />
           <Slider label="height" value={settings.height} min={0} max={1} step={0.01}
-            onChange={(v) => store.setLight(light, 'height', v)} />
-          {light === 'rim' && <RimPlacement scene={scene} />}
+            onChange={(v) => store.setLight('height', v)} />
         </>
       )}
     </section>
-  );
-});
-
-/** The rim light's place, whether it's behind the characters, and how it moves. */
-const RimPlacement = observer(({ scene }: { scene: FxLab }) => {
-  const { store } = scene;
-  const rim = store.settings.rim;
-  const at = rim.at ?? RIM_AT;
-  const motion = rim.motion;
-  const point = (name: string, value: [number, number], set: (i: number, v: number) => void) => (
-    <>
-      <Slider label={`${name} x`} value={value[0]} min={-0.5} max={1.5} step={0.01} onChange={(v) => set(0, v)} />
-      <Slider label={`${name} y`} value={value[1]} min={-0.5} max={1.5} step={0.01} onChange={(v) => set(1, v)} />
-    </>
-  );
-  const field = (label: string, path: (string | number)[], value: number, min: number, max: number, step: number) => (
-    <Slider label={label} value={value} min={min} max={max} step={step} onChange={(v) => store.setRimMotionField(path, v)} />
-  );
-  const kinds: (LightMotion['kind'] | null)[] = [null, 'swing', 'pass'];
-  return (
-    <>
-      <div className={styles.buttons}>
-        <Toggle on={!!rim.behind} onClick={() => store.setLight('rim', 'behind', !rim.behind)}>behind characters</Toggle>
-      </div>
-      {point('at', at, (i, v) => store.setLight('rim', 'at', i === 0 ? [v, at[1]] : [at[0], v]))}
-      <div className={styles.subTitle}>
-        <span>motion</span>
-        <span className={styles.buttons}>
-          {kinds.map((kind) => (
-            <Toggle key={kind ?? 'none'} on={(motion?.kind ?? null) === kind} onClick={() => store.setRimMotion(kind)}>
-              {kind ?? 'none'}
-            </Toggle>
-          ))}
-        </span>
-      </div>
-      {motion?.kind === 'swing' && (
-        <>
-          {point('pivot', motion.pivot, (i, v) => store.setRimMotionField(['pivot', i], v))}
-          {field('angle', ['angle'], motion.angle, 0, 90, 1)}
-          {field('period ms', ['period'], motion.period, 200, 10000, 50)}
-        </>
-      )}
-      {motion?.kind === 'pass' && (
-        <>
-          {point('to', motion.to, (i, v) => store.setRimMotionField(['to', i], v))}
-          {field('time ms', ['time'], motion.time, 100, 5000, 50)}
-          {field('gap ms', ['gap'], motion.gap ?? 0, 0, 5000, 50)}
-        </>
-      )}
-    </>
   );
 });
 
@@ -200,7 +149,7 @@ const LightingPanel = observer(({ scene }: { scene: FxLab }) => {
   const { settings } = store;
   return (
     <>
-      <div className={styles.label}>mood{store.activePreset ? '' : ' | custom'}</div>
+      <div className={styles.label}>mood (data/lighting.ts){store.activePreset ? '' : ' | custom'}</div>
       <div className={styles.buttons}>
         {Object.keys(PRESETS).map((name) => (
           <Toggle key={name} on={store.activePreset === name} onClick={() => store.applyPreset(name)}>
@@ -209,16 +158,9 @@ const LightingPanel = observer(({ scene }: { scene: FxLab }) => {
         ))}
       </div>
 
-      <div className={styles.buttons}>
-        <Toggle on={store.exactMood} onClick={() => store.setExactMood(!store.exactMood)}>
-          as written: {store.preset}
-        </Toggle>
+      <div className={styles.hint}>
+        A mood is only the darkness: ambient color and light steps. Lights are FX (fx tab).
       </div>
-      {store.exactMood && (
-        <div className={styles.hint}>
-          shows {store.preset} exactly as data/lighting.ts has it, FX included. The sliders below don't apply.
-        </div>
-      )}
 
       <div className={styles.label}>mode</div>
       <div className={styles.buttons}>
@@ -249,8 +191,7 @@ const LightingPanel = observer(({ scene }: { scene: FxLab }) => {
 
       {store.mode === 'pixel' && <PixelControls scene={scene} />}
 
-      <LightControls scene={scene} light="key" title="main light" />
-      <LightControls scene={scene} light="rim" title="rim light" />
+      <LightControls scene={scene} />
       <ForegroundControls scene={scene} />
       <CrtControls scene={scene} />
     </>

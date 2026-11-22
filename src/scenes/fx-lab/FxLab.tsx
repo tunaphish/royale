@@ -8,7 +8,7 @@ import type { LitMaterial } from '../../fx/LitMaterial';
 import { DEPTH } from '../../fx/types';
 import { FX } from '../../data/fx';
 import { LIGHTING } from '../../data/lighting';
-import { FxLabStore, RIM_AT, settingsToMood } from './fxLabStore';
+import { FxLabStore, settingsToMood } from './fxLabStore';
 import { FxLabView } from './FxLabView';
 import { fxEntrySource } from './toSource';
 import { addCrt, removeCrt, type CrtFilter } from '../../fx/crt';
@@ -37,9 +37,11 @@ type FxLabData = { fx?: string; mood?: string };
  *
  * - fx tab: pick an FX from data/fx.ts and edit a copy of it live (it restarts
  *   on every change), see the light map and point slots, then "copy definition"
- *   to paste the result back into data/fx.ts.
- * - lighting tab: moods from data/lighting.ts and the materials' settings. A key
- *   light follows the pointer. "smooth (phaser)" compares with Phaser's Light2D.
+ *   to paste the result back into data/fx.ts. Lights (fires, the moon, lamps) are
+ *   FX too: tune them here as light layers. FX play from the middle of the stage.
+ * - lighting tab: moods (the scene's darkness) from data/lighting.ts and the
+ *   materials' settings. A test light follows the pointer; turn it off to see
+ *   only the FX's lights. "smooth (phaser)" compares with Phaser's Light2D.
  *
  * L toggles the light map.
  */
@@ -90,7 +92,7 @@ export class FxLab extends Phaser.Scene {
     petals.shader.enableFilters();
     const blur = petals.shader.filters!.internal.addBlur(1, 2, 2, 0);
 
-    // The key light is the scene's own, so it can follow the pointer; the rim is part of the mood.
+    // The lab's own light, a scene light so it can follow the pointer. Other lights come from FX.
     const key = this.fx.addLight({ x: width / 2, y: height / 3, color: '#ffffff', intensity: 1, radius: 400, height: 0.2 });
     const moveKey = (pointer: Phaser.Input.Pointer) => {
       if (this.store.settings.followPointer) {
@@ -104,7 +106,6 @@ export class FxLab extends Phaser.Scene {
     // Phaser's Light2D, for the comparison mode only.
     this.lights.enable();
     const phaserKey = this.lights.addLight(key.x, key.y);
-    const phaserRim = this.lights.addLight(width * RIM_AT[0], height * RIM_AT[1]);
     this.events.on(Phaser.Scenes.Events.UPDATE, () => phaserKey.setPosition(key.x, key.y));
 
     const stopSync = autorun(() => {
@@ -118,13 +119,8 @@ export class FxLab extends Phaser.Scene {
       // The petals share the portrait's art-pixel size on screen.
       petals.pixelSize = (this.store.grid.size * scale) / (this.foreground.displayWidth / this.foreground.width);
 
-      if (this.store.exactMood) {
-        this.fx.setMood(this.store.preset);
-        this.syncKey(key, { ...s.key, on: false });
-      } else {
-        this.fx.setMood(settingsToMood(s));
-        this.syncKey(key, s.key);
-      }
+      this.fx.setMood(settingsToMood(s));
+      this.syncKey(key, s.key);
 
       // Light2D mode.
       sprite.setLighting(s.lit && !pixelMode);
@@ -135,7 +131,6 @@ export class FxLab extends Phaser.Scene {
       sprite.setSelfShadow(s.selfShadow, s.penumbra);
       this.lights.setAmbientColor(hex(s.ambient));
       phaserKey.setColor(hex(s.key.color)).setIntensity(s.key.on ? s.key.intensity : 0).setRadius(s.key.radius).setZNormal(s.key.height);
-      phaserRim.setColor(hex(s.rim.color)).setIntensity(s.rim.on ? s.rim.intensity : 0).setRadius(s.rim.radius).setZNormal(s.rim.height);
     });
     const stopForegroundSync = autorun(() => {
       const fg = this.store.foreground;
@@ -204,9 +199,8 @@ export class FxLab extends Phaser.Scene {
     this.stopFx(true);
     const draft = toJS(this.store.draft);
     if (draft.layers.length === 0) return;
-    // above the panel, which covers the bottom of the screen
-    const { width, height } = this.scale;
-    this.handle = this.fx.playDef(draft, { at: { x: width / 2, y: height * 0.3 } }, this.store.fxId);
+    // the middle of the stage, like `#fx <id>` without `at`, so light layers' offsets land as in a story
+    this.handle = this.fx.playDef(draft, { at: { stage: [0.5, 0.5] } }, this.store.fxId);
     const handle = this.handle;
     if (draft.duration !== 'infinite') {
       handle.done.then(() => {

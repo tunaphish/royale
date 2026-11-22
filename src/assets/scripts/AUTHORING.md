@@ -93,45 +93,70 @@ Music and ambience stop when the story ends.
 
 ### Lighting
 
-`#light <mood> [fade ms]` changes the lighting, fading over 500 ms unless you
+Lighting has two parts:
+
+- **The mood** (`#light`) is the darkness: how dark and what color everything is
+  where no light reaches. It has no lights of its own.
+- **Lights are effects** (`#fx`): the moon, a fire, a lamp, a spell. Start, stop
+  and place them like any other effect.
+
+A typical scene uses one mood and a light or two:
+
+```ink
+#light night 2000
+#fx moon-behind
+#fx campfire at 0.5 0.97
+```
+
+`#light <mood> [fade ms]` changes the darkness, fading over 500 ms unless you
 give a time. Stories start with `flat`, which shows the art exactly as drawn.
 
-| Mood | Feel |
+| Mood | Use it for |
 | --- | --- |
 | `flat` | No lighting, art as drawn |
-| `soft` | Gentle warm light |
-| `ember` | Dark red, warm light from the front |
-| `candle` | Dim, flickering candlelight |
-| `moonlight` | Cool blue night |
-| `neon` | Pink and cyan |
-| `night` | Almost dark, for scenes lit by effects |
-| `campfire` | Night by a fire: fire at the bottom lights the character, the moon behind them outlines them in blue. Brings its own fire, embers and smoke. |
-| `lamp-swing` | A lamp swinging overhead |
-| `night-drive` | Passenger seat at night: street lights pass overhead |
+| `dim` | A dim room, an overcast day |
+| `firelit` | Indoors at night, lit by fire or candles |
+| `night` | Outdoors at night, cool blue |
+| `pitch-dark` | Almost black: only effects light the scene |
+| `city-night` | A purple city night under signs |
 
-Some moods bring their own effects (like the campfire's fire). Those stay while
-the mood is on and stop when the mood changes. The full list, with the exact
-settings, is in `src/data/lighting.ts`.
+Moods are defined in `src/data/lighting.ts`.
 
 ### Effects
 
 | Tag | What it does |
 | --- | --- |
-| `#fx <id>` | Plays an effect for its usual length. |
+| `#fx <id>` | Plays an effect for its usual length (lights last until stopped). |
 | `#fx <id> <ms>` / `#fx <id> infinite` | Plays it for that long, or until stopped. |
 | `#fx <id> at <character>` | Plays it on the character on stage, following them. |
 | `#fx <id> at <x> <y>` | Plays it at a spot on the stage, as fractions of its size: `at 0.5 0.95` is bottom middle. |
-| `#fx <id> stop` | Stops it; particles already in the air finish. |
-| `#fx stop` | Stops every effect started with `#fx`. Effects that came with the mood keep going. |
+| `#fx <id> stop` | Stops it; particles already in the air finish and lights fade out. |
+| `#fx stop` | Stops every effect, lights included. To keep the moon up, stop effects by name instead. |
 
 Options combine: `#fx heal-burst 800 at eji`.
 
+**Lights.** Each is placed to look right played without `at`.
+
 | Effect | What it is |
 | --- | --- |
+| `soft-light` | A soft warm light on the character's face |
+| `warm-light` | A strong warm light on the face, like a fire just off stage |
+| `candlelight` | A small flickering candle near the face |
+| `moonlight` | Moonlight from the front, deeper blue from the upper right |
+| `moon-behind` | The moon behind the character: lights the background, outlines the character in blue |
+| `neon-signs` | Pink and cyan signs |
+| `hanging-lamp` | A lamp swinging overhead |
+| `street-lights` | Street lights passing overhead, like the passenger seat of a car |
+| `dashboard-glow` | A cool glow from below, like a car's dashboard |
+
+**Other effects.**
+
+| Effect | What it is |
+| --- | --- |
+| `campfire` | A fire with its own glow, flames, embers and smoke. Play it at the bottom: `at 0.5 0.97`. |
 | `green-motes` | Green and gold sparkles drifting up, forever |
 | `heal-burst` | A quick upward burst of light |
 | `impact` | A screen shake and white flash |
-| `campfire` | Flames, embers and smoke, forever. The `campfire` mood already brings one. |
 
 Effects are defined in `src/data/fx.ts` and tuned in the FX lab (`?scene=FxLab`).
 
@@ -169,9 +194,11 @@ INCLUDE game.ink
 -> camp
 
 === camp ===
-#bg forest // not drawn yet: any background in images/backgrounds/
+#bg forest
 #enter rena
-#light campfire 1500
+#light night 1500
+#fx moon-behind
+#fx campfire at 0.5 0.97
 #ambience fire 0.6
 The fire crackles.
 You're still awake? #display
@@ -184,8 +211,9 @@ Me neither. #display
 -> END
 
 === watch ===
+// the fire and the moon go out
 #fx stop
-#light night 2000
+#light pitch-dark 2000
 Suit yourself. #display
 -> END
 ```

@@ -5,12 +5,12 @@ import { FxHandle } from './FxHandle';
 import { LightMap, MAP_GAIN } from './LightMap';
 import { LitMaterial, type LitOptions } from './LitMaterial';
 import {
-  assignSlots, CandidatePool, flickerAt, moodBetween, moodLightCandidate,
+  assignSlots, CandidatePool, moodBetween, pointLightCandidate,
   newPointUniforms, packPointUniforms, POINT_SLOTS,
 } from './lights';
 import { channels, colorInt } from './random';
 import { ensureBuiltinTextures } from './textures';
-import { DEPTH, type FxDef, type FxQuality, type LightingMood, type MoodLight, type PlayOptions } from './types';
+import { DEPTH, type FxDef, type FxQuality, type LightingMood, type PlayOptions, type PointLightDef } from './types';
 import type GameSession from '../plugins/GameSession';
 
 /** Size of one art pixel on screen. Light snaps to this grid. */
@@ -20,8 +20,8 @@ export const ART_PIXEL = 4;
 export const PARTICLE_BUDGET = 300;
 
 /** A light a scene owns directly (a torch prop, a light following the pointer). Always gets a point slot. */
-export interface SceneLight extends MoodLight {
-  /** Screen position. `at` is ignored for scene lights. */
+export interface SceneLight extends PointLightDef {
+  /** Screen position. */
   x: number;
   y: number;
   /** Turn off without removing. */
@@ -30,12 +30,12 @@ export interface SceneLight extends MoodLight {
 
 /**
  * Scene plugin, `this.fx` in every scene: plays FX, owns the lighting
- * (mood, scene lights, point slots, light map) and cleans everything up when
+ * (the mood's darkness, scene lights, point slots, light map) and cleans everything up when
  * the scene shuts down. Scenes that never use it pay nothing: lighting is set
  * up the first time something is lit.
  *
  * Each frame, after the scene's `update`:
- *   1. gather every light: mood, scene lights, lit particles
+ *   1. gather every light: scene lights, FX light layers, lit particles
  *   2. give the best ones point slots; the rest go into the light map
  *   3. pack the shared uniforms that every lit material reads
  */
@@ -58,9 +58,6 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
   host: Phaser.Scene;
 
   private mood: LightingMood = LIGHTING.flat;
-  /** The mood whose FX are playing (the target of a fade), and those FX. */
-  private moodTarget: LightingMood = LIGHTING.flat;
-  private moodFx: FxHandle[] = [];
   private fade?: { from: LightingMood; to: LightingMood; start: number; time: number };
 
   /** Last frame's numbers, for the FX lab. */
@@ -82,8 +79,6 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
     this.quality = settings?.fxQuality ?? 'high';
     this.reducedMotion = settings?.reducedMotion ?? false;
     this.mood = LIGHTING.flat;
-    this.moodTarget = LIGHTING.flat;
-    this.moodFx = [];
     this.fade = undefined;
   }
 
@@ -119,16 +114,15 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
     return handle;
   }
 
-  /** Stops every running FX, the mood's included. */
+  /** Stops every running FX. */
   stopAll(options?: { immediate?: boolean }): void {
     for (const handle of this.handles) handle.stop(options);
   }
 
-  /** Changes the lighting mood: an ID from `data/lighting.ts`, or a mood object. */
+  /** Changes the mood (the scene's darkness): an ID from `data/lighting.ts`, or a mood object. */
   setMood(mood: string | LightingMood, options: { fade?: number } = {}): void {
     const target = typeof mood === 'string' ? LIGHTING[mood] : mood;
     if (!target) throw new Error(`Unknown lighting mood "${mood}". Add it to src/data/lighting.ts.`);
-    this.startMoodFx(target);
     const fade = options.fade ?? 0;
     if (fade <= 0) {
       this.mood = target;
@@ -136,15 +130,6 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
     } else {
       this.fade = { from: this.currentMood, to: target, start: this.host.time.now, time: fade };
     }
-  }
-
-  /** Stops the old mood's FX and starts the new one's. The same mood again keeps them running. */
-  private startMoodFx(target: LightingMood): void {
-    if (target === this.moodTarget) return;
-    this.moodTarget = target;
-    for (const handle of this.moodFx) handle.stop();
-    this.moodFx = (target.fx ?? []).map(({ id, at }) =>
-      this.play(id, { at: { stage: at ?? [0.5, 0.5] }, duration: 'infinite' }));
   }
 
   /** The mood being drawn right now (mid-fade, a blend). */
@@ -167,7 +152,7 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
 
   /**
    * The stage's size: the main camera's view. FX play in the middle of it by
-   * default, `stage` areas fill it, and mood light positions are fractions of it.
+   * default, `stage` areas fill it, and stage points (`at 0.5 0.9`, light offsets) are fractions of it.
    */
   get stage(): { width: number; height: number } {
     const camera = this.host.cameras.main;
@@ -185,8 +170,8 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
   }
 
   /** Adds a light the scene controls directly. Move it by changing `x`/`y`. */
-  addLight(light: Omit<SceneLight, 'at' | 'on'> & { on?: boolean }): SceneLight {
-    const sceneLight: SceneLight = { ...light, at: [0, 0], on: light.on ?? true };
+  addLight(light: Omit<SceneLight, 'on'> & { on?: boolean }): SceneLight {
+    const sceneLight: SceneLight = { ...light, on: light.on ?? true };
     this.sceneLights.push(sceneLight);
     return sceneLight;
   }
@@ -219,6 +204,8 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
     setUniform('uLightRadius[0]', this.points.radius);
     setUniform('uLightIntensity[0]', this.points.intensity);
     setUniform('uLightBehind[0]', this.points.behind);
+    setUniform('uLightBands[0]', this.points.bands);
+    setUniform('uLightBandSoftness[0]', this.points.bandSoftness);
     setUniform('uStageSize', this.stageSize);
     setUniform('uMapGain', MAP_GAIN);
   }
@@ -259,16 +246,10 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
     this.ambient[0] = this.rgb.r;
     this.ambient[1] = this.rgb.g;
     this.ambient[2] = this.rgb.b;
-    mood.lights.forEach((light, i) => moodLightCandidate(light, width, height, seconds, i * 17.3, pool.next()));
     this.sceneLights.forEach((light, i) => {
-      if (!light.on) return;
-      const c = pool.next();
-      moodLightCandidate(light, width, height, seconds, 100 + i * 17.3, c);
-      c.x = light.x;
-      c.y = light.y;
-      c.intensity = light.intensity * flickerAt(light.flicker, seconds, 100 + i * 17.3);
+      if (light.on) pointLightCandidate(light, light.x, light.y, seconds, 100 + i * 17.3, pool.next());
     });
-    for (const handle of this.handles) handle.collectLights(pool, seconds);
+    for (const handle of this.handles) handle.collectLights(pool, seconds, width, height);
 
     // 2. Assign.
     this.stats.pointLights = assignSlots(pool, POINT_SLOTS);
@@ -276,15 +257,13 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
     this.stats.mapLights = this.lightMap?.lastCount ?? 0;
 
     // 3. Pack.
-    packPointUniforms(pool, this.points);
+    packPointUniforms(pool, this.points, mood);
     for (const material of this.materials) material.sync();
   }
 
   private shutdown(): void {
     for (const handle of this.handles) handle.stop({ immediate: true });
     this.handles = [];
-    this.moodFx = [];
-    this.moodTarget = LIGHTING.flat;
     for (const material of this.materials) material.destroy();
     this.materials = [];
     this.sceneLights = [];

@@ -16,7 +16,7 @@ Dev-only URL params (ignored in production builds):
 - `?scene=Battle` — jump straight to a scene after loading. Other params become
   the scene's data: `?scene=Dialogue&storyKey=final-battle`.
 - `?newgame` — start a fresh game instead of loading the save. Works in any build.
-- `?scene=FxLab` — the FX lab, for tuning FX and lighting: `?scene=FxLab&fx=heal-burst&mood=night`.
+- `?scene=FxLab` — the FX lab, for tuning FX and lighting: `?scene=FxLab&fx=campfire&mood=night`.
 
 ## Layout
 
@@ -77,8 +77,8 @@ Dev-only URL params (ignored in production builds):
 - **Tags are for stage directions (visuals and sound):** `#bg <key>`, `#enter <character> [emotion]`, `#foreground <key|none> [backlit]`, `#music <song>` (loops, replaces the current song), `#sfx <sound>` (plays once).
   - `#ambience <sound> [volume 0-1]` loops a sound alongside the music, fading in over 1s; several can play at once. The same sound again changes its volume. `#ambience <sound> stop` fades one out, `#ambience stop` all of them. They stop at the end of the story.
   - `#foreground` takes a file in `images/foregrounds/`, any image key (`layers/sakura`) or a URL. `backlit` lights it from behind.
-  - `#fx <id>` plays an FX from `data/fx.ts` with its own duration. Add `<ms>` or `infinite` to override it, and `at <character>` to follow the character on stage, or `at <x> <y>` for a point on the stage as fractions of its size (`at 0.5 0.95`). `#fx <id> stop` stops it (live particles finish); `#fx stop` stops every FX started with `#fx` (a mood's own FX keep going). Looping FX keep going across lines, like `#music`.
-  - `#light <mood> [fade ms]` changes the lighting mood (`data/lighting.ts`), fading over 500ms by default. Stories start `flat`.
+  - `#fx <id>` plays an FX from `data/fx.ts` with its own duration. Add `<ms>` or `infinite` to override it, and `at <character>` to follow the character on stage, or `at <x> <y>` for a point on the stage as fractions of its size (`at 0.5 0.95`). `#fx <id> stop` stops it (live particles finish, lights fade); `#fx stop` stops every FX, lights included. Looping FX keep going across lines, like `#music`.
+  - `#light <mood> [fade ms]` changes the mood, the scene's darkness (`data/lighting.ts`), fading over 500ms by default. Stories start `flat`. Lights (the moon, a fire, a lamp) are FX: `#light night` then `#fx moon-behind`.
   - To add a tag in `Dialogue.tsx`: add a `Command` kind, parse it in `parseTag` (which warns on wrong arguments), and run it in `runCommand`.
 - **External functions are for game state:** `stat`, `flag`, `set_flag`, `relationship`, `add_relationship`.
   - Declare them in `game.ink`, with a fallback so stories still run in Inky, and bind them in `dialogue/inkBindings.ts`.
@@ -89,15 +89,16 @@ Dev-only URL params (ignored in production builds):
 
 - **An FX is data:** add it to `data/fx.ts` by ID; every field is documented in `fx/types.ts`. Tune it in the FX lab (`?scene=FxLab`), then "copy definition" and paste it back. Boot checks the data (`fx/validate.ts`) and fails loudly.
 - **Playing:** `this.fx.play(id, { at, duration })` returns an `FxHandle`. `duration` is ms or `'infinite'`; an infinite FX runs until `handle.stop()`. `stop()` lets particles finish, `stop({ immediate: true })` clears them, `await handle.done` waits for the end. Everything stops when the scene shuts down.
-- **Layers:** `particles`, `shake`, `flash`, `vignette`. Particle layers draw at a `depth`: `behind` the characters, in `front` of them, or on `top` of the foreground (`DEPTH` in `fx/types.ts`). Nothing in Phaser can draw over the React UI.
-- **Light from FX:** a particle layer's `light` is `map` (soft colored light in the low-res light map: cheap, any number, no normal map) or `point` (uses normal maps; only `POINT_SLOTS` exist, given to the brightest, and the rest fall back to `map`).
+- **Every light is an FX; a mood is only darkness.** Fires, lamps, the moon and spells are FX with `light` layers, so they start, stop, move and follow characters like any FX. A mood (`data/lighting.ts`) is just the ambient color and light steps, one at a time.
+- **Layers:** `particles`, `light`, `shake`, `flash`, `vignette`. Particle layers draw at a `depth`: `behind` the characters, in `front` of them, or on `top` of the foreground (`DEPTH` in `fx/types.ts`). Nothing in Phaser can draw over the React UI.
+- **Light layers:** a steady light at the FX's position plus `offset` (stage fractions), following a character if the FX does. It gets a point slot before any particle light, and fades in on start and out on stop (`fade`, 500ms default).
+  - `behind: true` puts the light between the background and the characters (a moon behind someone): it lights the background as usual, but only rims characters and anything in front of them. The rim's strength and width are `rim` on the front material.
+  - `motion` moves it: `swing` (a pendulum from a pivot) or `pass` (travels by `to`, fading in and out, then a gap; street lights overhead). Points are stage fractions from the light's own place; times are ms. Worked out from time each frame, allocating nothing.
+  - `bands`/`bandSoftness` give one light its own steps, defined in the data only; without them it uses the mood's. Particle `map` light always uses the mood's.
+  - Light-only FX in `data/fx.ts` are placed to look right played without `at` (from the middle of the stage), which is also where the lab plays FX.
+- **Light from particles:** a particle layer's `light` is `map` (soft colored light in the low-res light map: cheap, any number, no normal map) or `point` (uses normal maps; only `POINT_SLOTS` exist, given to the brightest, and the rest fall back to `map`).
 - **Lit art:** `this.fx.lit(image, { material })` draws an image through the `front` (default) or `backlit` shader. A `<texture>_n` image next to the art is used as its normal map. The image stays the source of position, size and alpha; move or tween the image, not the material.
-- **Moods** live in `data/lighting.ts`: ambient color, lights placed as fractions of the stage, and light steps. `this.fx.setMood(id, { fade })`. `flat` is every scene's default and shows art as drawn.
-  - A mood light with `behind: true` sits between the background and the characters (a moon behind someone): it lights the background as usual, but only rims the edges of characters and anything in front of them. The rim's strength and width are `rim` on the front material.
-  - A mood light's `motion` moves it: `swing` (a pendulum from a pivot) or `pass` (from `at` to `to`, fading in and out, then a gap; street lights going overhead). Times are ms. Motion is worked out from time each frame and allocates nothing.
-  - A mood's `fx` are FX that come with it (the `campfire` mood brings its fire), played forever at a stage point. Another mood stops them; the same mood again leaves them running.
-  - In the FX lab, "as written" shows the picked mood exactly as `data/lighting.ts` has it, FX included. Otherwise the panel shows a mood as a pointer-following main light and a rim light, and only the rim light has `behind` and motion controls.
-- **Particle movement:** besides velocity and gravity, a layer can have `wind` (sideways push), `sway` (drifting side to side, like embers) and `endSize` (size at the end of its life, as a multiple of the start).
+- **Moods** live in `data/lighting.ts`: ambient color and light steps, named for where they're used (`night`, `firelit`, `pitch-dark`). `this.fx.setMood(id, { fade })`. `flat` is every scene's default and shows art as drawn. The lab's lighting tab edits moods with a pointer-following test light; FX lights are edited in its fx tab.
 - **The stage is the main camera's view.** Story scenes point the camera at the stage's box (`Stage.setRectFromElement`), so FX and lights use stage coordinates.
 - **Budgets for phones:** `POINT_SLOTS` (8), `PARTICLE_BUDGET` (300), `ART_PIXEL` (light map texel size). The `fxQuality` and `reducedMotion` settings halve particles and drop bloom, and skip shake and flash.
 - **Per frame, allocate nothing** in FX and lighting code: pooled light candidates, uniform arrays allocated once. Garbage collection on phones shows up as stutter.

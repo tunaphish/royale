@@ -2,7 +2,7 @@ import * as React from 'react';
 import { observer } from 'mobx-react-lite';
 import { FX } from '../../data/fx';
 import { builtinNames } from '../../fx/textures';
-import type { ColorChoice, LayerDef, ParticleLayerDef } from '../../fx/types';
+import type { ColorChoice, LayerDef, LightLayerDef, LightMotion, ParticleLayerDef } from '../../fx/types';
 import type { FxLab } from './FxLab';
 import type { DraftPath } from './fxLabStore';
 import { ColorRow, Slider, Small, Toggle } from './controls';
@@ -41,12 +41,43 @@ const RANGES: Record<string, [number, number, number]> = {
   circle: [1, 300, 1],
   weight: [0.1, 10, 0.1],
   endSize: [0, 4, 0.05],
+  // light layers: their own ranges where a name means something else elsewhere
+  'light.intensity': [0, 4, 0.05],
+  'light.radius': [10, 1000, 10],
+  'light.angle': [0, 90, 1],
+  'light.time': [100, 5000, 50],
+  period: [200, 10000, 50],
+  gap: [0, 5000, 50],
+  delay: [0, 5000, 50],
+  fade: [0, 5000, 50],
+  bands: [0, 6, 1],
+  bandSoftness: [0, 1, 0.05],
   wind: [-300, 300, 1],
   distance: [0, 120, 1],
 };
 
-const rangeFor = (key: string, value: number): [number, number, number] =>
-  RANGES[key] ?? [Math.min(0, value * 2), Math.max(1, Math.abs(value) * 3), 0.01];
+const rangeFor = (key: string, value: number, layerKind?: string): [number, number, number] =>
+  RANGES[`${layerKind}.${key}`] ?? RANGES[key] ?? [Math.min(0, value * 2), Math.max(1, Math.abs(value) * 3), 0.01];
+
+/** Fields that are a point on the stage (fractions), not a [min, max] range. */
+const POINTS = new Set(['offset', 'pivot', 'to']);
+
+/** Starting values when a light's motion is switched to another kind. */
+const NEW_MOTION: Record<LightMotion['kind'], LightMotion> = {
+  swing: { kind: 'swing', pivot: [0, -0.4], angle: 25, period: 3000 },
+  pass: { kind: 'pass', to: [0.7, 0.8], time: 1000, gap: 1500 },
+};
+
+/** Fields a light layer can gain, with starting values. */
+const LIGHT_OPTIONAL: Partial<LightLayerDef> = {
+  offset: [0, 0],
+  flicker: { amount: 0.25, speed: 3 },
+  behind: true,
+  motion: NEW_MOTION.swing,
+  bands: 2,
+  bandSoftness: 0,
+  fade: 500,
+};
 
 const CHOICES: Record<string, string[]> = {
   fade: ['in-out', 'in', 'out', 'none'],
@@ -84,6 +115,7 @@ const NEW_LAYERS: Record<string, LayerDef> = {
   shake: { kind: 'shake', time: 200, intensity: 0.01 },
   flash: { kind: 'flash', time: 150, color: '#ffffff' },
   vignette: { kind: 'vignette', strength: 0.5, radius: 0.5, color: '#000000' },
+  light: { kind: 'light', color: '#ffd29a', intensity: 1.2, radius: 400, height: 0.2 },
 };
 
 /** Extra fields nested objects can gain. */
@@ -109,7 +141,31 @@ const Field = observer(({ scene, path, name, value, removable }: FieldProps): JS
   const set = (v: unknown) => store.setDraft(path, v);
   const remove = removable ? <Small onClick={() => store.removeDraft(path)} title="remove">x</Small> : undefined;
 
+  const layerKind = path[0] === 'layers' ? store.draft.layers[Number(path[1])]?.kind : undefined;
+
+  if (name === 'kind' && path[path.length - 2] === 'motion') {
+    const motionPath = path.slice(0, -1);
+    return (
+      <div className={styles.subTitle}>
+        <span>kind</span>
+        <span className={styles.buttons}>
+          {(['swing', 'pass'] as const).map((k) => (
+            <Toggle key={k} on={value === k} onClick={() => store.setDraft(motionPath, JSON.parse(JSON.stringify(NEW_MOTION[k])))}>{k}</Toggle>
+          ))}
+        </span>
+      </div>
+    );
+  }
   if (name === 'kind') return null;
+  if (POINTS.has(name) && isPair(value)) {
+    return (
+      <div>
+        <Slider label={`${name} x`} value={value[0]} min={-1} max={1} step={0.01} onChange={(v) => set([v, value[1]])} />
+        <Slider label={`${name} y`} value={value[1]} min={-1} max={1} step={0.01} onChange={(v) => set([value[0], v])} />
+        {remove && <div className={styles.buttons}>{remove}</div>}
+      </div>
+    );
+  }
   if (name === 'area') return <AreaField scene={scene} path={path} value={value as ParticleLayerDef['area']} remove={remove} />;
   if (name === 'colors') return <ColorsField scene={scene} path={path} colors={value as ColorChoice[]} />;
   if (name === 'sprite') return <SpriteField scene={scene} path={path} value={value as string} />;
@@ -130,7 +186,7 @@ const Field = observer(({ scene, path, name, value, removable }: FieldProps): JS
     return <div className={styles.buttons}><Toggle on={value} onClick={() => set(!value)}>{name}</Toggle>{remove}</div>;
   }
   if (typeof value === 'number') {
-    const [min, max, step] = rangeFor(name, value);
+    const [min, max, step] = rangeFor(name, value, layerKind);
     return (
       <div>
         <Slider label={name} value={value} min={min} max={max} step={step} onChange={set} />
@@ -142,7 +198,7 @@ const Field = observer(({ scene, path, name, value, removable }: FieldProps): JS
     );
   }
   if (isPair(value)) {
-    const [min, max, step] = rangeFor(name, value[0]);
+    const [min, max, step] = rangeFor(name, value[0], layerKind);
     return (
       <div>
         <Slider label={`${name} min`} value={value[0]} min={min} max={max} step={step} onChange={(v) => set([v, value[1]])} />
@@ -273,11 +329,11 @@ const SpriteField = observer(({ scene, path, value }: { scene: FxLab; path: Draf
 const LayerEditor = observer(({ scene, index, layer }: { scene: FxLab; index: number; layer: LayerDef }) => {
   const { store } = scene;
   const path: DraftPath = ['layers', index];
-  const addable = layer.kind === 'particles'
-    ? Object.entries(PARTICLE_OPTIONAL).filter(([key]) => !(key in layer))
-    : [];
+  const optional = layer.kind === 'particles' ? PARTICLE_OPTIONAL : layer.kind === 'light' ? LIGHT_OPTIONAL : {};
+  const addable = Object.entries(optional).filter(([key]) => !(key in layer));
   // fields every layer of its kind must have can't be removed
   const required = new Set(['kind', 'sprite', 'lifespan', 'colors', 'time', 'intensity', 'color', 'strength', 'radius']);
+  if (layer.kind === 'light') required.add('height');
   return (
     <section className={styles.group}>
       <div className={styles.groupHeader}>

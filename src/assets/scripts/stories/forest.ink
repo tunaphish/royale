@@ -1,7 +1,7 @@
 // A witch's campfire deep in the forest.
-// Uses: the campfire mood (moon rim light, fire, embers), #ambience with volume
-// changes, #fx at a stage point and at a character, mood-owned FX surviving
-// #fx stop, and the witch's flag/relationship state.
+// Uses: a night mood with the moon behind the witch and a campfire as FX,
+// #ambience with volume changes, #fx at a stage point and at a character,
+// stopping one FX by name, and the witch's flag/relationship state.
 
 INCLUDE game.ink
 
@@ -9,7 +9,7 @@ INCLUDE game.ink
 
 === path ===
 #bg forest
-#light night 0
+#light pitch-dark 0
 // the fire is still far off: quiet crackling through the trees
 #ambience fire 0.15
 { flag("met_witch"):
@@ -23,7 +23,9 @@ Branches snap under your feet. The crackling gets louder.
 
 === camp ===
 #enter witch
-#light campfire 2000
+#light night 2000
+#fx moon-behind
+#fx campfire at 0.5 0.97
 { flag("met_witch"):
     Back again? You must like the cold. #display
 - else:
@@ -67,8 +69,8 @@ A price. Nothing is <i>free</i> out here, not even warmth. #display
 
 === farewell ===
 ~ set_flag("met_witch", true)
-// the spirits go, but the fire stays: it belongs to the mood
-#fx stop
+// the spirits go, but the fire stays
+#fx green-motes stop
 The lights scatter into the dark. The fire keeps burning.
 { relationship("witch") >= 2:
     You can stay until dawn. I won't bite. #display
@@ -83,8 +85,9 @@ Smart. #display
 -> douse
 
 === douse ===
-// changing the mood puts the fire out (its FX stop with it)
-#light night 2500
+// the fire and the moon go out, and the woods go dark
+#fx stop
+#light pitch-dark 2500
 #ambience stop
 The fire dies down to embers, then to nothing.
 -> END

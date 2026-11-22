@@ -34,6 +34,12 @@ export function checkFxData(textures: Phaser.Textures.TextureManager): void {
         if (!layer.rate && !layer.burst) problems.push(`${where}: needs a rate or a burst, or it never spawns`);
         if (layer.endSize !== undefined && layer.endSize < 0) problems.push(`${where}: endSize can't be negative`);
         if (layer.sway && layer.sway.speed <= 0) problems.push(`${where}: sway speed must be > 0`);
+      } else if (layer.kind === 'light') {
+        color(where, layer.color);
+        if (layer.radius <= 0) problems.push(`${where}: radius must be > 0`);
+        const motion = layer.motion;
+        if (motion?.kind === 'swing' && motion.period <= 0) problems.push(`${where}: swing period must be > 0`);
+        if (motion?.kind === 'pass' && motion.time <= 0) problems.push(`${where}: pass time must be > 0`);
       } else if (layer.kind === 'flash') {
         color(where, layer.color);
       } else if (layer.kind === 'vignette' && layer.color) {
@@ -45,16 +51,6 @@ export function checkFxData(textures: Phaser.Textures.TextureManager): void {
   if (!LIGHTING.flat) problems.push('lighting: "flat" is the default mood and must exist');
   for (const [id, mood] of Object.entries(LIGHTING)) {
     color(`mood "${id}" ambient`, mood.ambient);
-    mood.lights.forEach((light, i) => {
-      const where = `mood "${id}" light ${i}`;
-      color(where, light.color);
-      const motion = light.motion;
-      if (motion?.kind === 'swing' && motion.period <= 0) problems.push(`${where}: swing period must be > 0`);
-      if (motion?.kind === 'pass' && motion.time <= 0) problems.push(`${where}: pass time must be > 0`);
-    });
-    mood.fx?.forEach(({ id: fxId }) => {
-      if (!FX[fxId]) problems.push(`mood "${id}": no FX "${fxId}" in data/fx.ts`);
-    });
   }
 
   if (problems.length > 0) throw new Error(`FX data has problems:\n- ${problems.join('\n- ')}`);

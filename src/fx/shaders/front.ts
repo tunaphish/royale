@@ -53,11 +53,11 @@ void main () {
       // An edge faces the light when the art runs out in the light's direction.
       vec2 toward = toLight.xy / max(length(toLight.xy), 0.0001);
       float edge = clamp(alphaHere - alphaAt(cell + toward * uRimWidth * uPixelSize), 0.0, 1.0);
-      rim += uLightColor[i] * band(edge * attenuation(dist, uLightRadius[i]) * uLightIntensity[i] * uRim);
+      rim += uLightColor[i] * bandWith(edge * attenuation(dist, uLightRadius[i]) * uLightIntensity[i] * uRim, uLightBands[i], uLightBandSoftness[i]);
       continue;
     }
     float diffuse = max(dot(normal, toLight / max(dist, 0.0001)), 0.0);
-    light += uLightColor[i] * band(diffuse * attenuation(dist, uLightRadius[i]) * uLightIntensity[i]);
+    light += uLightColor[i] * bandWith(diffuse * attenuation(dist, uLightRadius[i]) * uLightIntensity[i], uLightBands[i], uLightBandSoftness[i]);
   }
 
   // albedo is premultiplied, so this keeps transparency intact.

@@ -7,7 +7,8 @@ INCLUDE game.ink
 === start ===
 #bg supermarket
 #enter rena
-#light moonlight 0
+#light night 0
+#fx moonlight
 // the souls they saved, drifting around them for the rest of the scene
 #fx green-motes
 We saved those <span class="red big">souls</span>... Without <b>reaping</b> them, and that changed <frenzy>everything about who we are</frenzy> forever.
@@ -24,7 +25,9 @@ Did it change anything? Huh Eji? #display
 === fight ===
 #music knight
 #enter rena
-#light ember 1500
+#light firelit 1500
+#fx moonlight stop
+#fx warm-light
 #fx heal-burst at rena
 It changed me.
 #foreground layers/sakura backlit
@@ -35,7 +38,8 @@ So be it #display
 === giveup ===
 // the souls fade out with his resolve
 #fx green-motes stop
-#light night 2000
+#fx moonlight stop
+#light pitch-dark 2000
 Glad you could see reason #display
 This is for the best #display
 -> END

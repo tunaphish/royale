@@ -125,7 +125,7 @@ export type CameraLayerDef =
   | { kind: 'flash'; time: number; color: Color }
   | { kind: 'vignette'; strength: number; radius: number; color?: Color };
 
-export type LayerDef = ParticleLayerDef | CameraLayerDef;
+export type LayerDef = ParticleLayerDef | CameraLayerDef | LightLayerDef;
 
 export interface FxDef {
   /** Default duration. `play` can override it. */
@@ -141,56 +141,63 @@ export interface FxDef {
 export type StagePoint = [x: number, y: number];
 
 /**
- * A mood light that moves. Positions are stage fractions, times are ms.
- * - `swing`: hangs from `pivot` and swings like a pendulum. `at` is where it rests (straight below
- *   the pivot, usually); it swings `angle` degrees either side, one full swing every `period`.
- * - `pass`: travels from `at` to `to` over `time`, fading in and out on the way, then waits `gap`
- *   and goes again. Street lights going overhead. `delay` shifts its timing, to stagger several.
+ * A light that moves. Points are fractions of the stage, measured from the
+ * light's own place (where the FX plays, plus its `offset`); times are ms.
+ * - `swing`: hangs from `pivot` and swings like a pendulum, `angle` degrees either
+ *   side, one full swing every `period`. Pivot `[0, -0.4]` hangs it from above.
+ * - `pass`: travels by `to` over `time`, fading in and out on the way, then waits
+ *   `gap` and goes again. Street lights going overhead. `delay` shifts its timing.
  */
 export type LightMotion =
   | { kind: 'swing'; pivot: StagePoint; angle: number; period: number }
   | { kind: 'pass'; to: StagePoint; time: number; gap?: number; delay?: number };
 
-/** A light that's part of a mood, placed as a fraction of the stage (`[0.5, 0.5]` is the middle). */
-export interface MoodLight {
+/** A steady light: what scene lights and FX light layers share. */
+export interface PointLightDef {
   color: Color;
   intensity: number;
   /** Reach, in screen pixels. */
   radius: number;
-  /** Height above the art, as a fraction of the radius. */
+  /** Height above the art, as a fraction of the radius. Low is raking light. */
   height: number;
-  at: StagePoint;
   flicker?: Flicker;
+}
+
+/**
+ * A steady light that's part of an FX: a fire's glow, a lamp, the moon. It sits
+ * where the FX plays (following a character if the FX does), gets a point slot
+ * before any particle light, fades in when the FX starts and out when it stops.
+ */
+export interface LightLayerDef extends PointLightDef {
+  kind: 'light';
+  /** From where the FX plays, as fractions of the stage. `[0, -0.2]` is a fifth of the stage higher. */
+  offset?: StagePoint;
   /**
    * Sits between the background and the characters, like the moon behind someone:
    * it lights the background as usual, but on characters and anything in front of
-   * them it only lights the edges that face it (a rim). Needs a point slot; a
-   * behind light that doesn't get one lights everything like a normal light.
+   * them it only lights the edges that face it (a rim). If more lights want point
+   * slots than there are, it may light everything like a normal light.
    */
   behind?: boolean;
   motion?: LightMotion;
+  /** Light steps for this light only. Default: the mood's. */
+  bands?: number;
+  /** Step edge for this light only, 0 hard to 1 smooth. Default: the mood's. */
+  bandSoftness?: number;
+  /** Fade in when the FX starts and out when it stops, in ms. Default 500. */
+  fade?: number;
 }
 
-/** An FX a mood brings with it, e.g. the fire of a campfire. Plays forever while the mood is on. */
-export interface MoodFx {
-  id: string;
-  /** Default: the middle of the stage. */
-  at?: StagePoint;
-}
-
-/** The base light of a scene. `flat` (white ambient, no lights, no steps) shows art as drawn. */
+/**
+ * The darkness of a scene: the color where no light reaches, and how lighting is
+ * stepped. Every light comes from FX. `flat` (white, no steps) shows art as drawn.
+ */
 export interface LightingMood {
   ambient: Color;
-  lights: MoodLight[];
   /** Number of light steps. 0 is smooth. */
   bands: number;
   /** 0 is a hard edge between steps, 1 a smooth ramp. */
   bandSoftness: number;
-  /**
-   * FX that come with the mood: started (forever) when the mood is set, stopped when
-   * another mood replaces it. Setting the same mood again leaves them running.
-   */
-  fx?: MoodFx[];
 }
 
 /**

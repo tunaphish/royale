@@ -2,8 +2,9 @@ import { makeAutoObservable } from 'mobx';
 import { FX } from '../../data/fx';
 import { LIGHTING } from '../../data/lighting';
 import { DEFAULT_CRT, type CrtSettings } from '../../fx/crt';
-import type { Flicker, FxDef, FxQuality, LightingMood, LightMotion, MoodLight, StagePoint } from '../../fx/types';
+import type { Flicker, FxDef, FxQuality, LightingMood } from '../../fx/types';
 
+/** The lab's own light, which follows the pointer. Lights in scenes come from FX (light layers). */
 export interface LightSettings {
   on: boolean;
   color: string;
@@ -12,10 +13,6 @@ export interface LightSettings {
   /** Height above the sprite, as a fraction of the radius. Low is raking side light, high is flat overhead light. */
   height: number;
   flicker?: Flicker;
-  /** Rim light only: where it is (default `RIM_AT`), whether it's behind the characters, how it moves. */
-  at?: StagePoint;
-  behind?: boolean;
-  motion?: LightMotion;
 }
 
 export interface LightingSettings {
@@ -31,22 +28,11 @@ export interface LightingSettings {
   /** Pixel mode: 0 is a hard edge between steps, 1 a smooth ramp. */
   bandSoftness: number;
   key: LightSettings;
-  /** A second light fixed behind her shoulder, for colored edge light. */
-  rim: LightSettings;
 }
 
-/** The test panel edits one key light and one rim light; moods are turned into that shape. */
-const OFF_LIGHT: LightSettings = { on: false, color: '#ffffff', intensity: 1, radius: 400, height: 0.15 };
+const DEFAULT_KEY: LightSettings = { on: true, color: '#ffffff', intensity: 1, radius: 400, height: 0.2 };
 
-const toLightSettings = (light: MoodLight | undefined): LightSettings =>
-  light
-    ? {
-      on: true, color: light.color, intensity: light.intensity, radius: light.radius, height: light.height, flicker: light.flicker,
-      at: light.at, behind: light.behind, motion: light.motion,
-    }
-    : { ...OFF_LIGHT };
-
-/** Turns a mood from `data/lighting.ts` into panel settings: its first light is the key, its second the rim. */
+/** Turns a mood from `data/lighting.ts` into panel settings. The pointer light and view toggles are kept. */
 export const moodToSettings = (mood: LightingMood, current?: LightingSettings): LightingSettings => ({
   lit: current?.lit ?? true,
   followPointer: current?.followPointer ?? true,
@@ -55,36 +41,20 @@ export const moodToSettings = (mood: LightingMood, current?: LightingSettings): 
   ambient: mood.ambient,
   bands: mood.bands,
   bandSoftness: mood.bandSoftness,
-  key: toLightSettings(mood.lights[0]),
-  rim: toLightSettings(mood.lights[1]),
+  key: { ...(current?.key ?? DEFAULT_KEY) },
 });
 
-/** Where the rim light sits: behind her right shoulder. */
-export const RIM_AT: [number, number] = [0.85, 0.2];
-
-/** The mood the panel describes, minus the key light (which the scene moves itself). */
+/** The mood the panel describes. */
 export const settingsToMood = (s: LightingSettings): LightingMood => ({
   ambient: s.ambient,
   bands: s.bands,
   bandSoftness: s.bandSoftness,
-  lights: s.rim.on
-    ? [{
-      color: s.rim.color, intensity: s.rim.intensity, radius: s.rim.radius, height: s.rim.height,
-      at: s.rim.at ?? RIM_AT, flicker: s.rim.flicker, behind: s.rim.behind, motion: s.rim.motion,
-    }]
-    : [],
 });
 
 /** Moods the panel offers: every one in `data/lighting.ts`. */
 export const PRESETS = LIGHTING;
 
 const copy = (settings: LightingSettings): LightingSettings => clone(settings);
-
-/** Starting values when the rim light is given a motion in the panel. */
-export const NEW_MOTION: Record<LightMotion['kind'], LightMotion> = {
-  swing: { kind: 'swing', pivot: [0.5, -0.2], angle: 25, period: 3000 },
-  pass: { kind: 'pass', to: [0.7, 0.6], time: 900, gap: 1500 },
-};
 
 /** How the art is lit: Phaser's smooth Light2D, or the pixel-snapped banded shader. */
 export type LightingMode = 'pixel' | 'phaser';
@@ -117,8 +87,8 @@ export interface ForegroundSettings {
   parallax: number;
 }
 
-/** The settings that make up a preset's look; viewing toggles like `lit` don't count. */
-const lookOf = ({ lit, followPointer, selfShadow, penumbra, ...look }: LightingSettings) => JSON.stringify(look);
+/** The settings that make up a mood: the panel matches a preset when these do. */
+const lookOf = ({ ambient, bands, bandSoftness }: LightingSettings) => JSON.stringify({ ambient, bands, bandSoftness });
 
 /** A path into an FX definition, e.g. `['layers', 0, 'light', 'radius']`. */
 export type DraftPath = (string | number)[];
@@ -128,14 +98,7 @@ export type LabTab = 'fx' | 'lighting';
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 
 export class FxLabStore {
-  settings: LightingSettings = moodToSettings(LIGHTING.ember);
-  /** The mood last picked. */
-  preset = 'ember';
-  /**
-   * Shows the picked mood exactly as `data/lighting.ts` has it (every light where
-   * it is, its FX playing) instead of as the panel's key and rim lights.
-   */
-  exactMood = false;
+  settings: LightingSettings = moodToSettings(LIGHTING.firelit);
   mode: LightingMode = 'pixel';
   grid: PixelGrid = { size: 6, offsetX: 0, offsetY: 0 };
   /** Off lights the art as if it were flat, to compare with and without the normal map. */
@@ -255,8 +218,8 @@ export class FxLabStore {
     this.settings[field] = value;
   }
 
-  setLight<K extends keyof LightSettings>(light: 'key' | 'rim', field: K, value: LightSettings[K]) {
-    this.settings[light][field] = value;
+  setLight<K extends keyof LightSettings>(field: K, value: LightSettings[K]) {
+    this.settings.key[field] = value;
   }
 
   setMode(mode: LightingMode) {
@@ -268,23 +231,7 @@ export class FxLabStore {
   }
 
   applyPreset(name: string) {
-    this.preset = name;
     this.settings = copy(moodToSettings(PRESETS[name], this.settings));
-  }
-
-  setExactMood(on: boolean) {
-    this.exactMood = on;
-  }
-
-  /** Rim light motion: a kind's starting values, or none. */
-  setRimMotion(kind: LightMotion['kind'] | null) {
-    this.settings.rim.motion = kind ? clone(NEW_MOTION[kind]) : undefined;
-  }
-
-  /** Sets one field of the rim light's motion, e.g. `['pivot', 0]`. */
-  setRimMotionField(path: (string | number)[], value: number) {
-    const parent = path.slice(0, -1).reduce<any>((node, key) => node[key], this.settings.rim.motion);
-    parent[path[path.length - 1]] = value;
   }
 
   setPanelOpen(open: boolean) {

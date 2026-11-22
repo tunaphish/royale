@@ -35,12 +35,12 @@ void main () {
     vec3 toLight = vec3(uLightPos[i].xy - screen, uDepth);
     toLight.y = -toLight.y;
     float strength = attenuation(length(toLight), uLightRadius[i]) * uLightIntensity[i];
-    glow += uLightColor[i] * band(strength * uTranslucency);
+    glow += uLightColor[i] * bandWith(strength * uTranslucency, uLightBands[i], uLightBandSoftness[i]);
 
     // An edge faces the light when the art runs out in the light's direction.
     vec2 toward = toLight.xy / max(length(toLight.xy), 0.0001);
     float edge = clamp(alphaHere - alphaAt(cell + toward * uRimWidth * uPixelSize), 0.0, 1.0);
-    rim += uLightColor[i] * band(edge * strength * uRim);
+    rim += uLightColor[i] * bandWith(edge * strength * uRim, uLightBands[i], uLightBandSoftness[i]);
   }
 
   // albedo is premultiplied: tint light by it, keep its alpha.

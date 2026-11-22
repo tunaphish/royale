@@ -3,8 +3,81 @@ import type { FxDef } from '../fx/types';
 /**
  * FX definitions, keyed by ID. Play with `this.fx.play(id, { at, duration })`.
  * See `src/fx/types.ts` for every field. Tune them in the FX lab.
+ *
+ * Every light in the game is an FX: a `light` layer is a steady light at the
+ * FX's position (plus its `offset`). Light-only FX below are placed so they look
+ * right played without `at`, i.e. from the middle of the stage.
  */
 export const FX: Record<string, FxDef> = {
+  /** A soft, warm key light on the character's face. */
+  'soft-light': {
+    duration: 'infinite',
+    layers: [{ kind: 'light', color: '#ffe9cc', intensity: 1, radius: 420, height: 0.25, offset: [0, -0.17] }],
+  },
+
+  /** A strong warm light on the character's face, like a fire just off stage. */
+  'warm-light': {
+    duration: 'infinite',
+    layers: [{ kind: 'light', color: '#ffc890', intensity: 1.6, radius: 650, height: 0.2, offset: [0, -0.17] }],
+  },
+
+  /** A small flickering candle close to the character's face. */
+  candlelight: {
+    duration: 'infinite',
+    layers: [{
+      kind: 'light', color: '#ffb36b', intensity: 1.4, radius: 300, height: 0.08, offset: [0, -0.17],
+      flicker: { amount: 0.25, speed: 3 },
+    }],
+  },
+
+  /** Moonlight from the front, with a deeper blue from the upper right. */
+  moonlight: {
+    duration: 'infinite',
+    layers: [
+      { kind: 'light', color: '#b9ccff', intensity: 0.9, radius: 460, height: 0.3, offset: [0, -0.17] },
+      { kind: 'light', color: '#6f8cff', intensity: 0.9, radius: 380, height: 0.1, offset: [0.35, -0.3] },
+    ],
+  },
+
+  /** The moon behind the character: lights the background and outlines them in blue. */
+  'moon-behind': {
+    duration: 'infinite',
+    layers: [{ kind: 'light', color: '#7f9fff', intensity: 1.3, radius: 750, height: 0.35, offset: [0.28, -0.4], behind: true }],
+  },
+
+  /** Pink and cyan signs, one in front, one to the upper right. */
+  'neon-signs': {
+    duration: 'infinite',
+    layers: [
+      { kind: 'light', color: '#ff6ad5', intensity: 1.1, radius: 380, height: 0.12, offset: [0, -0.17] },
+      { kind: 'light', color: '#3ef0ff', intensity: 1.2, radius: 400, height: 0.08, offset: [0.35, -0.3] },
+    ],
+  },
+
+  /** A lamp swinging overhead. */
+  'hanging-lamp': {
+    duration: 'infinite',
+    layers: [{
+      kind: 'light', color: '#ffd7a0', intensity: 1.5, radius: 480, height: 0.3, offset: [0, -0.3],
+      motion: { kind: 'swing', pivot: [0, -0.45], angle: 28, period: 3200 },
+    }],
+  },
+
+  /** Passenger seat at night: street lights passing overhead, again and again. */
+  'street-lights': {
+    duration: 'infinite',
+    layers: [{
+      kind: 'light', color: '#ffb35c', intensity: 1.8, radius: 520, height: 0.35, offset: [-0.35, -0.65],
+      motion: { kind: 'pass', to: [0.7, 0.85], time: 1100, gap: 1400 },
+    }],
+  },
+
+  /** A cool glow from below the stage, like a car's dashboard. */
+  'dashboard-glow': {
+    duration: 'infinite',
+    layers: [{ kind: 'light', color: '#4fd7ff', intensity: 0.7, radius: 360, height: 0.1, offset: [0, 0.55] }],
+  },
+
   /** Green and gold sparkles drifting up over the whole stage. */
   'green-motes': {
     duration: 'infinite',
@@ -80,14 +153,17 @@ export const FX: Record<string, FxDef> = {
   },
 
   /**
-   * A campfire, played at the bottom of the stage: flames, embers drifting up
-   * past the character, and smoke behind them. The `campfire` mood brings it and
-   * owns the fire's main light; the flames and embers only add a little glow.
+   * A campfire, made to play at the bottom of the stage (`at 0.5 0.97`): its glow
+   * on the character, flames, embers drifting up past them, and smoke behind.
    */
   campfire: {
     duration: 'infinite',
     prewarm: 2500,
     layers: [
+      {
+        kind: 'light', color: '#ff9442', intensity: 1.7, radius: 560, height: 0.12, offset: [0, 0.03],
+        flicker: { amount: 0.3, speed: 2.5 }, fade: 1500,
+      },
       {
         kind: 'particles',
         sprite: 'builtin:orb',
