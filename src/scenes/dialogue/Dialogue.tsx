@@ -7,15 +7,15 @@ import { Choice, DialogueStore, Line, TypingTarget } from './dialogueStore';
 import { parseMarkup, plainText } from '../ui/markup';
 import { createStory } from '../../assets/ink';
 import { bindGameFunctions } from './inkBindings';
-import { MUSIC, SFX } from '../../assets/manifest';
+import { SFX } from '../../assets/manifest';
 import { DEFAULT_VOICE, Voice, VOICES } from '../../data/voices';
 import GameSession from '../../plugins/GameSession';
 import { comparer, reaction } from 'mobx';
 import type { FxSystem } from '../../fx/FxSystem';
 import type { FxHandle } from '../../fx/FxHandle';
-import type { Duration, FxTarget, StagePoint } from '../../fx/types';
-import { FX } from '../../data/fx';
-import { LIGHTING } from '../../data/lighting';
+import type { FxTarget } from '../../fx/types';
+import { CHARACTER_PARTS, parseTag, type StageCommand } from '../../model/storyTags';
+import { TAG_ASSETS } from './tagAssets';
 import { Stage } from '../../stage/Stage';
 import { addCrt } from '../../fx/crt';
 
@@ -30,8 +30,6 @@ type DialogueData = { storyKey: string; crt?: string };
 
 /** How long the stage takes to fade in and out, matching the UI's fade. */
 const FADE_MS = 1000;
-/** Default fade for `#light`, in ms. */
-const LIGHT_FADE_MS = 500;
 /** How long `#ambience` loops take to fade in and out. */
 const AMBIENCE_FADE_MS = 1000;
 
@@ -70,184 +68,21 @@ const BLIP_VOLUME_JITTER = 0.15;
 
 const randomBetween = (min: number, max: number): number => min + Math.random() * (max - min);
 
-/** Tags that change the line they're on instead of becoming commands of their own. */
-const DISPLAY_TAG = 'display';
-const VOICE_TAG = 'voice';
-
-const tagName = (tag: string): string => tag.split(/\s+/)[0];
-const isLineModifier = (tag: string): boolean => tag === DISPLAY_TAG || tagName(tag) === VOICE_TAG;
-
-/** Reads `#voice <key|none>` from a line's tags. Unknown keys warn and fall back to the default voice. */
-const readVoice = (tags: string[]): string | undefined => {
-  const tag = tags.find((t) => tagName(t) === VOICE_TAG);
-  if (!tag) return undefined;
-
-  const [, key, ...extra] = tag.split(/\s+/);
-  if (!key || extra.length > 0) {
-    console.warn(`[Dialogue] #${tag} expects: #voice <key|none>`);
-    return undefined;
-  }
-  if (key !== 'none' && !(key in VOICES)) {
-    console.warn(`[Dialogue] #${tag}: no voice "${key}" in data/voices.ts; using the default voice`);
-  }
-  return key;
-};
-
 /** The voice for a key: `none` is silent, and keys without an entry use the default. */
 const resolveVoice = (key: string | undefined): Voice | null =>
   key === 'none' ? null : (key && VOICES[key]) || DEFAULT_VOICE;
 
 /**
- * One thing the scene does, read from ink in script order.
- * Stage directions (`bg`, `enter`, `foreground`, `music`, `ambience`, `sfx`, `fx`, `light`) run straight away;
- * the rest block until the player advances or picks a choice, so they always
- * come last in a batch.
+ * One thing the scene does, read from ink in script order. Stage directions
+ * (tags, parsed by `model/storyTags.ts`) run straight away; the rest block until
+ * the player advances or picks a choice, so they always come last in a batch.
  */
 type Command =
-  | { kind: 'bg'; background: string }
-  | { kind: 'enter'; character: string; emotion?: string }
-  | { kind: 'foreground'; foreground: string | null; backlit: boolean }
-  | { kind: 'fx'; id: string; duration?: Duration; at?: string | StagePoint }
-  | { kind: 'fxStop'; id?: string }
-  | { kind: 'light'; mood: string; fade: number }
-  | { kind: 'music'; song: string }
-  | { kind: 'ambience'; sound: string; volume: number }
-  | { kind: 'ambienceStop'; sound?: string }
-  | { kind: 'sfx'; sound: string }
+  | StageCommand
   | { kind: 'line'; text: string; voice?: string }
   | { kind: 'display'; text: string; voice?: string }
   | { kind: 'choices'; choices: Choice[] }
   | { kind: 'end' };
-
-/**
- * Turns a stage-direction tag like `enter eji angry` into a command.
- * Warns and returns null for unknown tags or wrong arguments.
- */
-const parseTag = (tag: string): Command | null => {
-  const [name, ...args] = tag.split(/\s+/);
-
-  const expects = (usage: string, min: number, max = min): boolean => {
-    if (args.length >= min && args.length <= max) return true;
-    console.warn(`[Dialogue] #${tag} expects: ${usage}`);
-    return false;
-  };
-
-  switch (name) {
-    case 'bg':
-      return expects('#bg <background>', 1)
-        ? { kind: 'bg', background: args[0] }
-        : null;
-    case 'enter':
-      return expects('#enter <character> [emotion]', 1, 2)
-        ? { kind: 'enter', character: args[0], emotion: args[1] }
-        : null;
-    case 'foreground': {
-      if (!expects('#foreground <key|none> [backlit]', 1, 2)) return null;
-      if (args[1] !== undefined && args[1] !== 'backlit') {
-        console.warn(`[Dialogue] #${tag}: the second word can only be "backlit"`);
-        return null;
-      }
-      return { kind: 'foreground', foreground: args[0] === 'none' ? null : args[0], backlit: args[1] === 'backlit' };
-    }
-    case 'fx':
-      return parseFxTag(tag, args);
-    case 'light': {
-      if (!expects('#light <mood> [fade ms]', 1, 2)) return null;
-      if (!(args[0] in LIGHTING)) {
-        console.warn(`[Dialogue] #${tag}: no mood "${args[0]}" in data/lighting.ts`);
-        return null;
-      }
-      const fade = args[1] === undefined ? LIGHT_FADE_MS : Number(args[1]);
-      if (!Number.isFinite(fade) || fade < 0) {
-        console.warn(`[Dialogue] #${tag}: fade must be a number of ms`);
-        return null;
-      }
-      return { kind: 'light', mood: args[0], fade };
-    }
-    case 'music':
-      return expects('#music <song>', 1)
-        ? { kind: 'music', song: args[0] }
-        : null;
-    case 'ambience':
-      return parseAmbienceTag(tag, args);
-    case 'sfx':
-      if (!expects('#sfx <sound>', 1)) return null;
-      if (!(args[0] in SFX)) {
-        console.warn(`[Dialogue] #${tag}: no sound "${args[0]}" in src/assets/audio/sfx`);
-        return null;
-      }
-      return { kind: 'sfx', sound: args[0] };
-    default:
-      console.warn(`[Dialogue] unknown tag: #${tag}`);
-      return null;
-  }
-};
-
-const AMBIENCE_USAGE = '#ambience <sound> [volume 0-1], #ambience <sound> stop, or #ambience stop';
-
-/**
- * Looping background sounds that play alongside the music, several at once:
- * `#ambience fire`, `#ambience wind 0.4` (starts it, or changes its volume),
- * `#ambience fire stop`, `#ambience stop` (stops every one).
- */
-const parseAmbienceTag = (tag: string, args: string[]): Command | null => {
-  const warn = (problem: string) => {
-    console.warn(`[Dialogue] #${tag}: ${problem}. Expects: ${AMBIENCE_USAGE}`);
-    return null;
-  };
-  const [sound, option, ...extra] = args;
-  if (!sound) return warn('missing sound');
-  if (extra.length > 0) return warn('too many words');
-  if (sound === 'stop') return option === undefined ? { kind: 'ambienceStop' } : warn('nothing can follow "stop"');
-  if (!(sound in SFX) && !(sound in MUSIC)) return warn(`no sound "${sound}" in src/assets/audio`);
-  if (option === 'stop') return { kind: 'ambienceStop', sound };
-  const volume = option === undefined ? 1 : Number(option);
-  if (!Number.isFinite(volume) || volume < 0 || volume > 1) return warn('volume must be a number from 0 to 1');
-  return { kind: 'ambience', sound, volume };
-};
-
-const FX_USAGE = '#fx <id> [ms|infinite] [at <character>|at <x> <y>], #fx <id> stop, or #fx stop';
-
-const isFraction = (word: string | undefined): boolean => word !== undefined && /^-?\d*\.?\d+$/.test(word);
-
-/**
- * `#fx heal-burst`, `#fx green-motes infinite`, `#fx heal-burst 800 at eji`,
- * `#fx campfire infinite at 0.5 0.95` (a point on the stage, as fractions of its size),
- * `#fx green-motes stop`, `#fx stop` (stops every FX, lights like `moonlight` included).
- */
-const parseFxTag = (tag: string, args: string[]): Command | null => {
-  const warn = (problem: string) => {
-    console.warn(`[Dialogue] #${tag}: ${problem}. Expects: ${FX_USAGE}`);
-    return null;
-  };
-  const [id, ...rest] = args;
-  if (!id) return warn('missing FX id');
-  if (id === 'stop' && rest.length === 0) return { kind: 'fxStop' };
-  if (!(id in FX)) return warn(`no FX "${id}" in data/fx.ts`);
-  if (rest[0] === 'stop') return rest.length === 1 ? { kind: 'fxStop', id } : warn('nothing can follow "stop"');
-
-  const command: Command & { kind: 'fx' } = { kind: 'fx', id };
-  for (let i = 0; i < rest.length; i++) {
-    const word = rest[i];
-    if (word === 'at') {
-      if (isFraction(rest[i + 1]) || isFraction(rest[i + 2])) {
-        if (!isFraction(rest[i + 1]) || !isFraction(rest[i + 2])) return warn('"at" needs a character, or x and y as fractions of the stage');
-        command.at = [Number(rest[i + 1]), Number(rest[i + 2])];
-        i += 2;
-        continue;
-      }
-      if (!rest[i + 1]) return warn('"at" needs a character, or x and y as fractions of the stage');
-      command.at = rest[++i];
-    } else if (word === 'infinite') {
-      command.duration = 'infinite';
-    } else if (/^\d+$/.test(word) && Number(word) > 0) {
-      command.duration = Number(word);
-    } else {
-      return warn(`didn't understand "${word}"`);
-    }
-  }
-  return command;
-};
 
 export class Dialogue extends Phaser.Scene {
   reactOverlay: ReactOverlay;
@@ -362,23 +197,23 @@ export class Dialogue extends Phaser.Scene {
    */
   private collectCommands(): Command[] {
     const commands: Command[] = [];
-    // modifier tags (#display, #voice) apply to the next line of text, even from a tag-only line above it
-    const modifiers: string[] = [];
+    // #display and #voice apply to the next line of text, even from a tag-only line above it
+    let display = false;
+    let voice: string | undefined;
 
     while (this.story.canContinue) {
       const text = this.story.Continue()?.trim() ?? '';
-      const tags = (this.story.currentTags ?? []).map((tag) => tag.trim());
-
-      modifiers.push(...tags.filter(isLineModifier));
-      tags
-        .filter((tag) => !isLineModifier(tag))
-        .map(parseTag)
-        .forEach((command) => command && commands.push(command));
+      for (const tag of this.story.currentTags ?? []) {
+        const result = parseTag(tag, TAG_ASSETS);
+        if ('problem' in result) console.warn(`[Dialogue] ${result.problem}`);
+        else if ('command' in result) commands.push(result.command);
+        else if (result.modifier === 'display') display = true;
+        else voice = result.voice;
+      }
 
       if (!text) continue;
 
-      const voice = readVoice(modifiers);
-      commands.push(modifiers.includes(DISPLAY_TAG) ? { kind: 'display', text, voice } : { kind: 'line', text, voice });
+      commands.push(display ? { kind: 'display', text, voice } : { kind: 'line', text, voice });
       return commands;
     }
 
@@ -399,7 +234,7 @@ export class Dialogue extends Phaser.Scene {
         store.setBackground(command.background);
         break;
       case 'enter':
-        store.setPortrait({ character: command.character, emotion: command.emotion });
+        store.setPortrait(command.portrait);
         break;
       case 'foreground':
         store.setForeground(command.foreground, command.backlit);
@@ -414,7 +249,8 @@ export class Dialogue extends Phaser.Scene {
         this.fx.setMood(command.mood, { fade: command.fade });
         break;
       case 'music':
-        this.playSong(command.song);
+        if (command.song) this.playSong(command.song);
+        else this.stopMusic();
         break;
       case 'ambience':
         this.playAmbience(command.sound, command.volume);
@@ -452,14 +288,15 @@ export class Dialogue extends Phaser.Scene {
     }
   }
 
-  private playFx({ id, duration, at }: Command & { kind: 'fx' }): void {
+  private playFx({ id, duration, at }: StageCommand & { kind: 'fx' }): void {
     let target: FxTarget | undefined;
-    if (Array.isArray(at)) {
-      target = { stage: at };
+    if (at && 'stage' in at) {
+      target = at;
     } else if (at) {
-      const follow = this.stage.characterImage(at);
-      if (follow) target = { follow };
-      else console.warn(`[Dialogue] #fx ${id} at ${at}: ${at} isn't on stage; playing in the middle`);
+      const follow = this.stage.characterImage(at.character);
+      // a point on the portrait, e.g. its chest, as fractions of the image (x across, y down)
+      if (follow) target = { follow, point: [0.5, CHARACTER_PARTS[at.part]] };
+      else console.warn(`[Dialogue] #fx ${id} at ${at.character}: ${at.character} isn't on stage; playing in the middle`);
     }
     const handle = this.fx.play(id, { duration, at: target });
     const handles = (this.runningFx.get(id) ?? []).filter((h) => !h.isFinished);

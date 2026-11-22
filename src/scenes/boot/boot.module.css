@@ -1,4 +1,5 @@
 .loadingContainer {
+  position: relative;
   height: 100%;
   width: 100%;
   display: flex;
@@ -60,4 +61,49 @@
     transform: rotate(-360deg);
     -webkit-transform: rotate(-360deg);
   }
+}
+/* dev builds: problems in story tags, over the loading screen */
+.problems {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background-color: var(--ink-black);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.problemsTitle {
+  font-size: 18px;
+  color: #ff8a65;
+  margin-bottom: 8px;
+}
+
+.problemList {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.problemList li {
+  margin-bottom: 6px;
+}
+
+.problemWhere {
+  color: #ffd54f;
+}
+
+.problemsHint {
+  margin-top: 12px;
+  opacity: 0.7;
+}
+
+.continueButton {
+  margin-top: 12px;
+  padding: 8px 14px;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 1px solid currentColor;
+  cursor: pointer;
 }

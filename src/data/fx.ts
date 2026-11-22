@@ -153,7 +153,7 @@ export const FX: Record<string, FxDef> = {
   },
 
   /**
-   * A campfire, made to play at the bottom of the stage (`at 0.5 0.97`): its glow
+   * A campfire, made to play at the bottom of the stage (`at bottom`): its glow
    * on the character, flames, embers drifting up past them, and smoke behind.
    */
   campfire: {
@@ -161,7 +161,7 @@ export const FX: Record<string, FxDef> = {
     prewarm: 2500,
     layers: [
       {
-        kind: 'light', color: '#ff9442', intensity: 1.7, radius: 560, height: 0.12, offset: [0, 0.03],
+        kind: 'light', color: '#ff9442', intensity: 1.7, radius: 560, height: 0.12, offset: [0, 0.05],
         flicker: { amount: 0.3, speed: 2.5 }, fade: 1500,
       },
       {

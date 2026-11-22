@@ -1,6 +1,6 @@
 // A witch's campfire deep in the forest.
 // Uses: a night mood with the moon behind the witch and a campfire as FX,
-// #ambience with volume changes, #fx at a stage point and at a character,
+// #ambience with volume changes, #fx at a named spot and on a character,
 // stopping one FX by name, and the witch's flag/relationship state.
 
 INCLUDE game.ink
@@ -25,7 +25,7 @@ Branches snap under your feet. The crackling gets louder.
 #enter witch
 #light night 2000
 #fx moon-behind
-#fx campfire at 0.5 0.97
+#fx campfire at bottom
 { flag("met_witch"):
     Back again? You must like the cold. #display
 - else:

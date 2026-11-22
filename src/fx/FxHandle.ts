@@ -5,8 +5,8 @@ import { channels, colorInt } from './random';
 import { applyMotion, flickerAt, pointLightCandidate, type CandidatePool } from './lights';
 import { spriteKey } from './textures';
 import {
-  DEPTH, type CameraLayerDef, type Duration, type FxDef, type LightLayerDef, type ParticleLayerDef, type PlayOptions,
-  type StagePoint, type StopOptions,
+  DEPTH, type CameraLayerDef, type Duration, type FollowTarget, type FxDef, type LightLayerDef, type ParticleLayerDef,
+  type PlayOptions, type StagePoint, type StopOptions,
 } from './types';
 import type { FxSystem } from './FxSystem';
 
@@ -50,6 +50,8 @@ export class FxHandle {
   private time = 0;
   /** For FX played at a stage point: where that point is now. Emitters follow it. */
   private anchor?: { x: number; y: number; at: StagePoint };
+  /** For FX on a spot of a followed image (a portrait's chest): where that spot is now. Emitters follow it. */
+  private onObject?: { target: FollowTarget; point: StagePoint; x: number; y: number };
 
   constructor(private fx: FxSystem, readonly id: string, def: FxDef, options: PlayOptions) {
     this.done = new Promise((resolve) => (this.resolveDone = resolve));
@@ -58,7 +60,11 @@ export class FxHandle {
     const { width, height } = fx.stage;
     const at = options.at ?? { x: width / 2, y: height / 2 };
     if ('stage' in at) this.anchor = { x: at.stage[0] * width, y: at.stage[1] * height, at: at.stage };
-    const follow = 'follow' in at ? at.follow : this.anchor;
+    if ('follow' in at && at.point) {
+      this.onObject = { target: at.follow, point: at.point, x: 0, y: 0 };
+      this.moveOnObject();
+    }
+    const follow = 'follow' in at ? (this.onObject ?? at.follow) : this.anchor;
     const origin = follow ? { x: follow.x, y: follow.y } : (at as { x: number; y: number });
     this.position = follow ?? origin;
     this.startedAt = scene.time.now;
@@ -223,9 +229,20 @@ export class FxHandle {
     }
   }
 
+  /** Puts `onObject` on its spot of the followed image, which may have moved (parallax) or changed size. */
+  private moveOnObject(): void {
+    const on = this.onObject!;
+    const { target, point } = on;
+    const width = target.displayWidth ?? 0;
+    const height = target.displayHeight ?? 0;
+    on.x = target.x + (point[0] - (target.originX ?? 0.5)) * width;
+    on.y = target.y + (point[1] - (target.originY ?? 0.5)) * height;
+  }
+
   /** Called each frame: finishes the handle once it's stopped and empty. */
   tick(): void {
     if (this.anchor) this.moveAnchor();
+    if (this.onObject) this.moveOnObject();
     if (this.finished || !this.stopped) return;
     const now = this.fx.host.time.now;
     const lightsOut = this.lights.every(({ layer }) => this.lightFade(layer, now) <= 0);

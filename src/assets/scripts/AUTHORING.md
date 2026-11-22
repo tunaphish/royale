@@ -15,8 +15,15 @@ stage directions, text effects and game state.
 
 **Testing:** run `npm run dev` and open
 `http://localhost:5173/royale/?scene=Dialogue&storyKey=<key>` to jump straight into a story.
-Mistakes in tags (unknown names, wrong arguments, missing images or sounds) show
-as warnings in the browser console, and the line still plays.
+
+- **Tag mistakes show up when the game starts.** Every tag in every story is
+  checked when `npm run dev` loads the game: unknown tags, misspelled moods or
+  effects, missing images or sounds, wrong arguments. If anything is wrong, the
+  loading screen lists each problem with its file and line (`forest.ink:28`),
+  and you tap "continue anyway" to play. A tag with a problem does nothing.
+- **Testing doesn't touch your real save.** Runs started with `?scene=` use their
+  own save slot, so flags and relationships carry over from one test to the next.
+  Add `&newgame` to start the test fresh.
 
 ## Lines
 
@@ -70,12 +77,19 @@ Things ink won't allow inside text:
 Tags set the scene. They take effect as soon as the story reaches them and stay
 until something changes them, across lines and choices.
 
+Two words remove things, always the same way:
+
+- **Pictures go away with `none`:** `#bg none`, `#enter none`, `#foreground none`.
+- **Sounds and effects end with `stop`:** `#music stop`, `#ambience stop`, `#fx stop`.
+
 ### Picture
 
 | Tag | What it does |
 | --- | --- |
 | `#bg <key>` | Background, from `images/backgrounds/`: `#bg supermarket` |
+| `#bg none` | Removes the background. |
 | `#enter <character> [emotion]` | Puts a character on stage, from `images/characters/`. `#enter eji angry` shows `eji-angry.png`. |
+| `#enter none` | The character leaves the stage. |
 | `#foreground <key> [backlit]` | An image over everything, e.g. leaves: `#foreground layers/sakura`. `backlit` lights it from behind. |
 | `#foreground none` | Removes the foreground. |
 
@@ -84,6 +98,7 @@ until something changes them, across lines and choices.
 | Tag | What it does |
 | --- | --- |
 | `#music <song>` | Loops a song from `audio/music/`, replacing the current one. |
+| `#music stop` | Stops the music. |
 | `#sfx <sound>` | Plays a sound from `audio/sfx/` once. |
 | `#ambience <sound> [volume]` | Loops a background sound (fire, wind, rain) alongside the music, fading in. Volume is 0 to 1, default 1. Several can play at once; the same sound again changes its volume. |
 | `#ambience <sound> stop` | Fades that sound out. |
@@ -105,7 +120,7 @@ A typical scene uses one mood and a light or two:
 ```ink
 #light night 2000
 #fx moon-behind
-#fx campfire at 0.5 0.97
+#fx campfire at bottom
 ```
 
 `#light <mood> [fade ms]` changes the darkness, fading over 500 ms unless you
@@ -128,8 +143,9 @@ Moods are defined in `src/data/lighting.ts`.
 | --- | --- |
 | `#fx <id>` | Plays an effect for its usual length (lights last until stopped). |
 | `#fx <id> <ms>` / `#fx <id> infinite` | Plays it for that long, or until stopped. |
-| `#fx <id> at <character>` | Plays it on the character on stage, following them. |
-| `#fx <id> at <x> <y>` | Plays it at a spot on the stage, as fractions of its size: `at 0.5 0.95` is bottom middle. |
+| `#fx <id> at <character> [part]` | Plays it on the character on stage, following them: on their `chest` (the default), `face` or `feet`. `#fx heal-burst at rena face` |
+| `#fx <id> at <spot>` | Plays it at a named spot on the stage: `center`, `top`, `bottom`, `left`, `right`, `top-left`, `top-right`, `bottom-left`, `bottom-right`. |
+| `#fx <id> at <x> <y>` | Plays it at an exact spot, as fractions of the stage: `at 0.5 0.95` is bottom middle. |
 | `#fx <id> stop` | Stops it; particles already in the air finish and lights fade out. |
 | `#fx stop` | Stops every effect, lights included. To keep the moon up, stop effects by name instead. |
 
@@ -153,7 +169,7 @@ Options combine: `#fx heal-burst 800 at eji`.
 
 | Effect | What it is |
 | --- | --- |
-| `campfire` | A fire with its own glow, flames, embers and smoke. Play it at the bottom: `at 0.5 0.97`. |
+| `campfire` | A fire with its own glow, flames, embers and smoke. Play it at the bottom: `at bottom`. |
 | `green-motes` | Green and gold sparkles drifting up, forever |
 | `heal-burst` | A quick upward burst of light |
 | `impact` | A screen shake and white flash |
@@ -198,7 +214,7 @@ INCLUDE game.ink
 #enter rena
 #light night 1500
 #fx moon-behind
-#fx campfire at 0.5 0.97
+#fx campfire at bottom
 #ambience fire 0.6
 The fire crackles.
 You're still awake? #display

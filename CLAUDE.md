@@ -16,6 +16,7 @@ Dev-only URL params (ignored in production builds):
 - `?scene=Battle` — jump straight to a scene after loading. Other params become
   the scene's data: `?scene=Dialogue&storyKey=final-battle`.
 - `?newgame` — start a fresh game instead of loading the save. Works in any build.
+- `?scene=` runs load and save the `dev-test` slot (`DEV_TEST_SLOT` in `GameSession`), never the real save. `?scene=…&newgame` resets that slot.
 - `?scene=FxLab` — the FX lab, for tuning FX and lighting: `?scene=FxLab&fx=campfire&mood=night`.
 
 ## Layout
@@ -62,24 +63,26 @@ Dev-only URL params (ignored in production builds):
 
 - **Writers' guide:** `src/assets/scripts/AUTHORING.md` explains lines, tags, effects and game state for story writers. Keep it in step when adding or changing tags, moods, FX, text effects or ink functions.
 - **Adding a story:** put it in `src/assets/scripts/stories/<key>.ink`. Boot compiles every story once and fails loudly on compile errors.
+- **Dev builds check every tag of every story at startup** (`checkStory` in `model/storyTags.ts`, read from the `.ink` source so problems have line numbers). Problems are listed on the loading screen until the player taps "continue anyway", and logged.
 - Every story starts with `INCLUDE game.ink`.
 - **Lines:**
   - Plain text goes in the message box.
   - A line ending in `#display` is large text over the stage.
   - Lines and `#display` text type out one letter at a time (`LETTER_MS` in `Dialogue.tsx`). A tap finishes the line; the next tap continues.
   - **Voices:** typing plays blips. Message box lines use the `player` voice; `#display` lines use the voice of the character on stage (the last `#enter`). `#voice <key>` picks another for that line, `#voice none` makes it silent. Voices live in `data/voices.ts`; characters without one use `DEFAULT_VOICE`.
-  - `#display` and `#voice` change the line they're on (or the next line, from a tag-only line), so `collectCommands` reads them into the `line`/`display` command instead of making commands of their own.
+  - `#display` and `#voice` change the line they're on (or the next line, from a tag-only line): `parseTag` returns them as modifiers, which `collectCommands` folds into the `line`/`display` command.
 - **Text markup:** lines and choices can use HTML-like tags: `<frenzy>Huh?</frenzy>`, `<span class="red big">me</span>`, `<b>`, `<i>`.
   - Parsed by `model/markup.ts`, rendered by `scenes/ui/RichText.tsx`. Unknown tags or classes warn; the text still shows.
   - One-off styles: add a class to `scenes/ui/textStyles.module.css`.
   - New effects: write a component in `scenes/ui/effects/` and add it to `TAGS` in `RichText.tsx`. A plain effect wraps its children; `perLetter: true` gets each letter instead (like `Frenzy`), and should use `groupWords` so words don't break across lines.
   - Never write an empty tag like `<i></i>`: `<>` is glue in ink. `#` and `//` can't appear inside tags either.
-- **Tags are for stage directions (visuals and sound):** `#bg <key>`, `#enter <character> [emotion]`, `#foreground <key|none> [backlit]`, `#music <song>` (loops, replaces the current song), `#sfx <sound>` (plays once).
+- **Tags are for stage directions (visuals and sound):** `#bg <key|none>`, `#enter <character> [emotion]` or `#enter none`, `#foreground <key|none> [backlit]`, `#music <song|stop>` (loops, replaces the current song), `#sfx <sound>` (plays once).
+  - One rule for removing things: pictures take `none` (`#bg`, `#enter`, `#foreground`), sounds and effects take `stop` (`#music`, `#ambience`, `#fx`).
   - `#ambience <sound> [volume 0-1]` loops a sound alongside the music, fading in over 1s; several can play at once. The same sound again changes its volume. `#ambience <sound> stop` fades one out, `#ambience stop` all of them. They stop at the end of the story.
   - `#foreground` takes a file in `images/foregrounds/`, any image key (`layers/sakura`) or a URL. `backlit` lights it from behind.
-  - `#fx <id>` plays an FX from `data/fx.ts` with its own duration. Add `<ms>` or `infinite` to override it, and `at <character>` to follow the character on stage, or `at <x> <y>` for a point on the stage as fractions of its size (`at 0.5 0.95`). `#fx <id> stop` stops it (live particles finish, lights fade); `#fx stop` stops every FX, lights included. Looping FX keep going across lines, like `#music`.
+  - `#fx <id>` plays an FX from `data/fx.ts` with its own duration. Add `<ms>` or `infinite` to override it, and `at <character> [face|chest|feet]` to follow the character on stage (chest by default; `CHARACTER_PARTS`), `at <spot>` for a named spot (`STAGE_SPOTS`: `bottom`, `top-left`…), or `at <x> <y>` for a point as fractions of the stage. `#fx <id> stop` stops it (live particles finish, lights fade); `#fx stop` stops every FX, lights included. Looping FX keep going across lines, like `#music`.
   - `#light <mood> [fade ms]` changes the mood, the scene's darkness (`data/lighting.ts`), fading over 500ms by default. Stories start `flat`. Lights (the moon, a fire, a lamp) are FX: `#light night` then `#fx moon-behind`.
-  - To add a tag in `Dialogue.tsx`: add a `Command` kind, parse it in `parseTag` (which warns on wrong arguments), and run it in `runCommand`.
+  - Tags are parsed in `model/storyTags.ts` (pure, shared by the scene and the startup check), against what exists (`TAG_ASSETS` in `dialogue/tagAssets.ts`). To add a tag: add a `StageCommand` kind and its usage, parse it in `parseTag` (returning a `problem` for wrong arguments or missing assets), and run it in `Dialogue.runCommand`.
 - **External functions are for game state:** `stat`, `flag`, `set_flag`, `relationship`, `add_relationship`.
   - Declare them in `game.ink`, with a fallback so stories still run in Inky, and bind them in `dialogue/inkBindings.ts`.
   - Functions that only read are lookahead-safe; functions that change state are not.
