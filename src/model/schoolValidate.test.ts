@@ -5,7 +5,7 @@ import type { SchoolData } from './school';
 
 const valid = (): SchoolData => ({
   items: { pie: { name: 'Pie', price: 5 } },
-  locations: { cafeteria: { name: 'Cafeteria' } },
+  locations: { cafeteria: { name: 'Cafeteria', background: 'bg' } },
   activities: {
     'hang-out': {
       name: 'Hang out',
@@ -22,7 +22,7 @@ const valid = (): SchoolData => ({
 
 describe('checkSchoolData', () => {
   it('passes valid data', () => {
-    expect(checkSchoolData(valid(), ['rena-1', 'rain'])).toEqual([]);
+    expect(checkSchoolData(valid(), ['rena-1', 'rain'], ['backgrounds/bg'])).toEqual([]);
   });
 
   it('finds missing IDs, stories and bad numbers', () => {
@@ -33,7 +33,7 @@ describe('checkSchoolData', () => {
     data.stars['rena-1'].when = when.all(when.star('rena-0'), when.rank('charm', 6));
     data.events.rain.effects = [{ kind: 'item', item: 'umbrella', amount: 1 }];
 
-    expect(checkSchoolData(data, ['rena-1'])).toEqual([
+    expect(checkSchoolData(data, ['rena-1'], ['backgrounds/bg'])).toEqual([
       'activity "hang-out": no location "moon"',
       'student "rena" sun morning: no location "attic"',
       'student "rena" sun morning: weights must be > 0',
@@ -49,7 +49,7 @@ describe('checkSchoolData', () => {
     const data = valid();
     data.stars['rena-2'] = { student: 'rena', name: 'Two', hint: '', scene: 'rena-1', when: when.star('rena-1') };
     data.stars['rena-1'].when = when.star('rena-2');
-    expect(checkSchoolData(data, ['rena-1', 'rain'])).toEqual([
+    expect(checkSchoolData(data, ['rena-1', 'rain'], ['backgrounds/bg'])).toEqual([
       'star "rena-1": needs itself (through the stars it needs), so it can never light',
       'star "rena-2": needs itself (through the stars it needs), so it can never light',
     ]);
@@ -61,7 +61,7 @@ describe('checkSchoolData', () => {
     data.events.rain.effects = [{ kind: 'disposition', amount: 1 }];
     data.activities['hang-out'].with = undefined;
 
-    expect(checkSchoolData(data, ['rena-1', 'rain'])).toEqual([
+    expect(checkSchoolData(data, ['rena-1', 'rain'], ['backgrounds/bg'])).toEqual([
       'activity "hang-out": "band" condition needs a student; none is involved here',
       'activity "hang-out": "disposition" effect needs a student; none is involved here',
       'event "rain": "band" condition needs a student; none is involved here',

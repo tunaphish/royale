@@ -12,9 +12,9 @@ import {
 const DATA: SchoolData = {
   items: { pie: { name: 'Pie', price: 5 } },
   locations: {
-    cafeteria: { name: 'Cafeteria' },
-    library: { name: 'Library' },
-    town: { name: 'Town', open: when.weekend() },
+    cafeteria: { name: 'Cafeteria', background: 'bg' },
+    library: { name: 'Library', background: 'bg' },
+    town: { name: 'Town', background: 'bg', open: when.weekend() },
   },
   activities: {
     study: { name: 'Study', location: 'library', effects: [{ kind: 'stat', stat: 'wit', points: 2 }] },

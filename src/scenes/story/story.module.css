@@ -102,6 +102,8 @@
 
 .optionDiv {
   padding: 10px;
+  font-size: 22px;
+  cursor: pointer;
 }
 
 .optionDiv:hover {

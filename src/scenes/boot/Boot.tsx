@@ -10,7 +10,7 @@ import { checkSchoolData } from '../../model/schoolValidate';
 import { SCHOOL } from '../../data/school';
 import { IMAGES, INK_INCLUDES, INK_STORIES, MUSIC, SFX, STORY_KEYS } from '../../assets/manifest';
 import { checkStory, type TagProblem } from '../../model/storyTags';
-import { TAG_ASSETS } from '../dialogue/tagAssets';
+import { TAG_ASSETS } from '../story/tagAssets';
 
 type StartTarget = { scene: string; data: Record<string, string> };
 
@@ -148,7 +148,7 @@ export class Boot extends Phaser.Scene {
     // Bad FX or lighting data fails here, not halfway through a story.
     checkFxData(this.textures);
     // Same for the school sim's data: students, stars, events and the stories they play.
-    const schoolProblems = checkSchoolData(SCHOOL, STORY_KEYS);
+    const schoolProblems = checkSchoolData(SCHOOL, STORY_KEYS, Object.keys(IMAGES));
     if (schoolProblems.length > 0) {
       throw new Error(`[Boot] school data has ${schoolProblems.length} problem(s):\n${schoolProblems.join('\n')}`);
     }

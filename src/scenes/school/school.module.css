@@ -1,78 +1,158 @@
-.container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-  height: 100%;
-  padding: 12px;
-  font-size: 18px;
-  background: var(--ink-black);
-}
-
-/* index.html sets every element to 12px; let text inherit its container's size instead */
-.container * {
+/* index.html sets every element to 12px; let text inherit its container's size instead.
+   :where keeps this weaker than any class, so the story's own sizes still apply. */
+:where(.box) * {
   font-size: inherit;
 }
 
-.container button {
+.box {
+  min-height: 0;
+  font-size: 20px;
+}
+
+.box button {
   font-family: inherit;
   color: inherit;
   cursor: pointer;
 }
 
-/* Header */
-
-.header {
+/* everything above the status strip; scrolls if a location has many actions */
+.boxContent {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
-.titleRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
+/* Lines and choices, alongside the story's message and option styles */
 
-.title {
-  font-size: 24px;
-  text-transform: capitalize;
-}
-
-.gold {
+.lines {
+  padding: 10px 10px 0;
   font-size: 22px;
-  color: gold;
 }
 
-.calendar {
+.dimLines {
+  color: var(--dust-gray);
+  font-size: 18px;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+}
+
+.starChoice {
+  color: yellow;
+}
+
+.note {
+  font-size: 16px;
+  color: var(--dust-gray);
+}
+
+/* The map */
+
+.map {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  gap: 6px;
+  padding: 8px;
+}
+
+.tile {
+  min-height: 52px;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--dust-gray);
+}
+
+.tile:hover:not(:disabled) {
+  border-color: yellow;
+}
+
+.tile:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.tileName {
+  font-size: 18px;
+}
+
+.starMark {
+  color: yellow;
+}
+
+.faces {
   display: flex;
   gap: 4px;
 }
 
-.day {
-  flex: 1;
+.face {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  object-fit: cover;
+  object-position: top;
+  background: #333;
+}
+
+.faceName {
+  font-size: 14px;
+}
+
+.hostile { color: #e44; }
+.cold { color: #7ab; }
+.neutral { color: var(--paper-offwhite); }
+.warm { color: #fb6; }
+.close { color: #f7a; }
+
+/* The status strip */
+
+.status {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 3px;
+  gap: 4px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--dust-gray);
+  font-size: 15px;
 }
 
-.dayName {
-  font-size: 14px;
-  color: var(--dust-gray);
-}
-
-.slots {
+.statusRow {
   display: flex;
-  gap: 3px;
-  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.when {
+  white-space: nowrap;
+}
+
+.calendar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .slot {
   flex: 1;
-  height: 10px;
+  height: 8px;
   border: 1px solid var(--dust-gray);
+}
+
+.dayEnd {
+  margin-right: 3px;
 }
 
 .past {
@@ -86,252 +166,50 @@
 
 .lost {
   border-color: #c33;
-  background: repeating-linear-gradient(45deg, #c33 0 2px, transparent 2px 5px);
+  background: repeating-linear-gradient(45deg, #c33 0 2px, transparent 2px 4px);
 }
 
 .royale {
-  font-size: 14px;
-  line-height: 10px;
   color: #c33;
+  font-size: 12px;
 }
 
-.stats {
-  display: flex;
-  justify-content: space-between;
-  font-size: 16px;
+.gold {
+  color: gold;
+}
+
+.elo {
+  color: var(--dust-gray);
 }
 
 .stat b {
-  font-size: 18px;
   color: yellow;
 }
 
-.statNext {
-  font-size: 13px;
-  color: var(--dust-gray);
-}
-
-/* Campus map */
-
-.map {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.tile {
-  min-height: 92px;
-  padding: 6px;
-  text-align: left;
+.constellationButton {
+  padding: 0 8px;
   background: transparent;
-  border: 2px solid var(--dust-gray);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  border: 1px solid currentColor;
+  color: yellow !important;
 }
 
-.tile:disabled {
-  opacity: 0.35;
+.constellationButton:disabled {
+  opacity: 0.3;
   cursor: default;
 }
 
-.selected {
-  border-color: yellow;
+.active {
+  background: #443;
 }
 
-.tileName {
-  font-size: 18px;
-}
-
-.starMark {
-  color: yellow;
-}
-
-.closed {
-  font-size: 14px;
-  color: var(--dust-gray);
-}
-
-.students {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.chip {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 1px 6px 1px 1px;
-  font-size: 14px;
-  border: 1px solid currentColor;
-  border-radius: 14px;
-}
-
-.face {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: top;
-  background: #333;
-}
-
-.hostile { color: #e44; }
-.cold { color: #7ab; }
-.neutral { color: var(--paper-offwhite); }
-.warm { color: #fb6; }
-.close { color: #f7a; }
-
-/* Location panel */
-
-.panel {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border-top: 2px solid currentColor;
-  padding-top: 8px;
-}
-
-.panelTitle {
-  font-size: 22px;
-}
-
-.hint {
-  color: var(--dust-gray);
-}
-
-.notice {
-  color: yellow;
-  font-size: 16px;
-}
-
-.options {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.option {
-  padding: 8px 10px;
-  font-size: 18px;
-  text-align: left;
-  background: transparent;
-  border: 1px solid var(--dust-gray);
-}
-
-.option:hover:not(:disabled) {
-  color: yellow;
-  border-color: yellow;
-}
-
-.option:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.starOption {
-  border-color: yellow;
-}
-
-.free {
-  font-size: 14px;
-  color: var(--dust-gray);
-}
-
-/* Result and Friday cards */
-
-.overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(0, 0, 0, 0.7);
-}
-
-.card {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  background: var(--ink-black);
-  border: 2px solid currentColor;
-}
-
-.cardTitle {
-  font-size: 24px;
-}
-
-.changes {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 20px;
-  color: yellow;
-}
-
-.gifts {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.giftTitle {
-  color: var(--dust-gray);
-}
-
-.continue {
-  align-self: flex-end;
-  padding: 8px 16px;
-  font-size: 20px;
-  background: transparent;
-  border: 2px solid currentColor;
-}
-
-.continue:hover {
-  color: yellow;
-}
-
-/* Header extras */
-
-.elo {
-  font-size: 16px;
-  color: var(--dust-gray);
-}
-
-.headerButton {
-  padding: 2px 8px;
-  font-size: 16px;
-  background: transparent;
-  border: 1px solid currentColor;
-}
-
-.headerButton:hover {
-  color: yellow;
-}
-
-/* Constellation */
-
-.constellation {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  background: #0b0b14;
-}
+/* The constellation, over the stage */
 
 .sky {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  aspect-ratio: 1;
+  height: 100%;
+  background: #0b0b14;
 }
 
 .edge {
@@ -384,10 +262,4 @@
 .picked {
   stroke: white;
   stroke-width: 0.01;
-}
-
-.starDetails {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }

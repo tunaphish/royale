@@ -2,7 +2,7 @@
 // Shared by every story: add `INCLUDE game.ink` at the top of a story file.
 //
 // These functions read and change the game's state. The game binds the real
-// versions in code (src/scenes/dialogue/inkBindings.ts). The fallback
+// versions in code (src/scenes/story/inkBindings.ts). The fallback
 // versions below are only used when nothing is bound, e.g. when playing a
 // story in Inky, so stories can still be previewed outside the game.
 //

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { INK_INCLUDES, INK_STORIES } from './assets/manifest';
 import { compileStories } from './assets/ink';
 import { checkStory } from './model/storyTags';
-import { TAG_ASSETS } from './scenes/dialogue/tagAssets';
+import { TAG_ASSETS } from './scenes/story/tagAssets';
 
 /**
  * Every story in src/assets/scripts/stories: it compiles, and every tag in it

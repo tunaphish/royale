@@ -25,6 +25,7 @@ Dev-only URL params (ignored in production builds):
 ## Layout
 
 - `src/scenes/<name>/` — one folder per scene: the scene class, its MobX store, its views, a CSS module
+- `src/scenes/story/` — the story screen shared by scenes: `StoryPlayer` (plays ink on a `Stage` and message box: typing, voices, tags, FX, sounds), `StoryStore`, the stage and message box views, ink bindings and tag assets. Dialogue and School both use it.
 - `src/plugins/` — global Phaser plugins: `ReactOverlay` (`this.reactOverlay`), `GameSession` (`this.session`)
 - `src/fx/` — the FX and lighting package, types and pure helpers included: the `FxSystem` scene plugin (`this.fx`), lit materials and their shaders, the light map
 - `src/stage/` — `Stage`: the background, character and foreground of story scenes, drawn in Phaser so they can be lit
@@ -72,7 +73,7 @@ Dev-only URL params (ignored in production builds):
 - **Lines:**
   - Plain text goes in the message box.
   - A line ending in `#display` is large text over the stage.
-  - Lines and `#display` text type out one letter at a time (`LETTER_MS` in `Dialogue.tsx`). A tap finishes the line; the next tap continues.
+  - Lines and `#display` text type out one letter at a time (`LETTER_MS` in `story/StoryPlayer.ts`). A tap finishes the line; the next tap continues.
   - **Voices:** typing plays blips. Message box lines use the `player` voice; `#display` lines use the voice of the character on stage (the last `#enter`). `#voice <key>` picks another for that line, `#voice none` makes it silent. Voices live in `data/voices.ts`; characters without one use `DEFAULT_VOICE`.
   - `#display` and `#voice` change the line they're on (or the next line, from a tag-only line): `parseTag` returns them as modifiers, which `collectCommands` folds into the `line`/`display` command.
 - **Text markup:** lines and choices can use HTML-like tags: `<frenzy>Huh?</frenzy>`, `<span class="red big">me</span>`, `<b>`, `<i>`.
@@ -86,9 +87,9 @@ Dev-only URL params (ignored in production builds):
   - `#foreground` takes a file in `images/foregrounds/`, any image key (`layers/sakura`) or a URL, with its slashes escaped (`https:\/\/…`) because ink reads `//` as a comment. `backlit` lights it from behind. Stories start with no foreground.
   - `#fx <id>` plays an FX from `data/fx.ts` with its own duration. Add `<ms>` or `infinite` to override it, and `at <character> [face|chest|feet]` to follow the character on stage (chest by default; `CHARACTER_PARTS`), `at <spot>` for a named spot (`STAGE_SPOTS`: `bottom`, `top-left`…), or `at <x> <y>` for a point as fractions of the stage. `#fx <id> stop` stops it (live particles finish, lights fade); `#fx stop` stops every FX, lights included. Looping FX keep going across lines, like `#music`.
   - `#light <mood> [fade ms]` changes the mood, the scene's darkness (`data/lighting.ts`), fading over 500ms by default. Stories start `flat`. Lights (the moon, a fire, a lamp) are FX: `#light night` then `#fx moon-behind`.
-  - Tags are parsed in `model/storyTags.ts` (pure, shared by the scene and the startup check), against what exists (`TAG_ASSETS` in `dialogue/tagAssets.ts`). To add a tag: add a `StageCommand` kind and its usage, parse it in `parseTag` (returning a `problem` for wrong arguments or missing assets), and run it in `Dialogue.runCommand`.
+  - Tags are parsed in `model/storyTags.ts` (pure, shared by the scene and the startup check), against what exists (`TAG_ASSETS` in `story/tagAssets.ts`). To add a tag: add a `StageCommand` kind and its usage, parse it in `parseTag` (returning a `problem` for wrong arguments or missing assets), and run it in `StoryPlayer.runCommand`.
 - **External functions are for game state:** `stat`, `flag`, `set_flag`, `disposition`, `add_disposition`, `mood`, `set_mood`, `has_star`, `history`. `relationship` and `add_relationship` are kept as old names for `disposition` and `add_disposition`.
-  - Declare them in `game.ink`, with a fallback so stories still run in Inky, and bind them in `dialogue/inkBindings.ts`.
+  - Declare them in `game.ink`, with a fallback so stories still run in Inky, and bind them in `story/inkBindings.ts`.
   - Functions that only read are lookahead-safe; functions that change state are not.
 - Values only one story needs stay in ink variables. Values the rest of the game needs live in `GameState`.
 
@@ -117,7 +118,8 @@ Dev-only URL params (ignored in production builds):
 - The design is in `docs/design.md` (School Sim). Content is data in `src/data/school/` (items, locations, activities, students, stars, events, intel names); its shapes are in `model/school.ts`.
 - **Time is a slot count** (`calendar.time`): 2 slots a day, Saturday to Thursday, 12 a week, 0 is the first Saturday morning. Friday is the royale. `model/calendar.ts` turns it into week, day and slot.
 - **One condition language** (`model/conditions.ts`) locks activities, stars, events and locations; write them with `when.*`. A condition or effect that leaves out `student` means the student involved (the one you're with, the star's student).
-- **Scenes play in Dialogue:** School starts it with `returnTo: 'School'` and `returnData: { played }`; when the story ends, School comes back and `finishScene` lights the star or marks the event, then applies its effects. Picked stars and activities use up the slot; events and `auto` stars don't.
+- **One screen:** School is a story screen like Dialogue: the stage on top shows the place (`LocationDef.background`, or `CAMPUS_BACKGROUND` on the map) and the first student there; the message box shows the map grid, actions, results and Friday, with a status strip along its bottom. No modals. The constellation draws over the stage.
+- **Scenes play in place:** School plays star, event and activity stories through its own `StoryPlayer`, over the current place; when one ends it calls `player.reset()`, puts the place back, and `finishScene` lights the star or marks the event, then applies its effects. Picked stars and activities use up the slot; events and `auto` stars don't.
 - Events are checked when a day starts, `auto` stars whenever the player arrives at a slot. Event rolls come from the save's `calendar.seed`, so they're repeatable. `always` events (the opening) skip the roll and happen as soon as their conditions hold; after a reload only those are checked.
 - **The week ends** after Thursday afternoon: a briefing lists the intel, then Friday's royale, then the next Saturday. Intel is cleared after each royale.
 - The constellation view's layout (`model/constellation.ts`) comes from the data: a star sits after the stars its `when` needs.
@@ -142,6 +144,6 @@ scenes assign their fields in `init`/`create`, not in the constructor.
 - `ReactOverlay` shows one scene's UI at a time, so UI can't stack (e.g. dialogue over a battle).
 - Battle's rules live in the scene class, and enemy AI (`getNextStateIndex`) takes the scene as an argument.
 - `Battle` and `GameOver` still create sounds with `this.sound.add` on every visit.
-- Battle doesn't use `Stage` or lighting yet; it's meant to adopt Dialogue's presentation later.
+- Battle doesn't use `Stage` or lighting yet; it's meant to adopt the story screen (stage on top, message box below) later.
 - There's no settings screen for `fxQuality` and `reducedMotion` yet; they're read from `royale:settings`.
 - Friday's royale is a stub (`model/royaleStub.ts`): it makes up a placement, ELO, gold and history so the school loop can be played. Nothing starts the School scene yet except `?scene=School`.

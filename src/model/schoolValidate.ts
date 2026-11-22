@@ -7,8 +7,9 @@ import type { Effect, SchoolData, ScheduleEntry } from './school';
  * Checks what TypeScript can't in the school's data: every ID it mentions
  * (students, locations, stars, items, stories) exists, and numbers make
  * sense. Returns one line per problem. Boot throws if there are any.
+ * `imageKeys` are the images that exist (`backgrounds/forest`), for backgrounds.
  */
-export const checkSchoolData = (data: SchoolData, storyKeys: readonly string[]): string[] => {
+export const checkSchoolData = (data: SchoolData, storyKeys: readonly string[], imageKeys: readonly string[]): string[] => {
   const problems: string[] = [];
   const exists = (where: string, what: string, id: string, table: Record<string, unknown>) => {
     if (!(id in table)) problems.push(`${where}: no ${what} "${id}"`);
@@ -98,6 +99,9 @@ export const checkSchoolData = (data: SchoolData, storyKeys: readonly string[]):
 
   for (const [id, location] of Object.entries(data.locations)) {
     condition(`location "${id}"`, location.open, false);
+    if (!imageKeys.includes(`backgrounds/${location.background}`)) {
+      problems.push(`location "${id}": no background "${location.background}" (put it in src/assets/images/backgrounds/)`);
+    }
   }
 
   for (const [id, item] of Object.entries(data.items)) {

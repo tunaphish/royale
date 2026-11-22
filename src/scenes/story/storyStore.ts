@@ -14,7 +14,12 @@ export type Typing = { target: TypingTarget; revealed: number; length: number };
 
 export type Portrait = { character: string; emotion?: string };
 
-export class DialogueStore {
+/**
+ * What a story screen shows: the stage's pictures, and the message box's
+ * line, choices and typing. `StoryPlayer` fills it from ink; screens like
+ * School can also set the stage themselves when no story is playing.
+ */
+export class StoryStore {
   // the script sets the whole stage with #bg / #enter / #foreground
   background: string | null = null;
   portrait: Portrait | null = null;
@@ -27,7 +32,8 @@ export class DialogueStore {
   typing: Typing | null = null;
   choices: Choice[] | null = null;
 
-  isLeaving = false;
+  /** A story is playing: the message box belongs to it. */
+  playing = false;
 
   constructor() {
     makeAutoObservable(this);
@@ -67,7 +73,15 @@ export class DialogueStore {
     this.choices = choices;
   }
 
-  setLeaving(): void {
-    this.isLeaving = true;
+  setPlaying(playing: boolean): void {
+    this.playing = playing;
+  }
+
+  /** Clears the message box and `#display` text. */
+  clearText(): void {
+    this.message = null;
+    this.display = null;
+    this.typing = null;
+    this.choices = null;
   }
 }

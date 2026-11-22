@@ -2,8 +2,11 @@ import * as Phaser from 'phaser';
 import * as React from 'react';
 import ReactOverlay from '../../plugins/ReactOverlay';
 import GameSession from '../../plugins/GameSession';
+import type { FxSystem } from '../../fx/FxSystem';
+import { Stage } from '../../stage/Stage';
 import { SCHOOL } from '../../data/school';
 import { INTEL } from '../../data/school/intel';
+import { CAMPUS_BACKGROUND } from '../../data/school/locations';
 import { advance, calendarAt } from '../../model/calendar';
 import { seededRoll } from '../../model/random';
 import { applyRoyale, stubRoyale } from '../../model/royaleStub';
@@ -11,13 +14,10 @@ import {
   applyEffects, finishScene, giveGift, openLocations, optionsAt, pickDayEvent, readyAutoStar,
   sceneStory, scriptedEvent, studentLocations, usesSlot, type PlayedScene, type SchoolOption,
 } from '../../model/school';
-import type { DialogueData } from '../dialogue/Dialogue';
 import { describeChange, studentName } from '../../model/schoolText';
+import { StoryPlayer } from '../story/StoryPlayer';
 import { SchoolStore } from './schoolStore';
 import { SchoolView } from './SchoolView';
-
-/** `played`: the scene the player just came back from, to finish. */
-type SchoolData = { played?: PlayedScene };
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -25,41 +25,46 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   key: 'School',
 };
 
+const FADE_MS = 500;
+
 /**
- * The school week: pick a location, pick an activity, see what changed, and
- * move on to the next slot. Rules live in `model/school.ts`; this scene runs
- * them against the session's game state.
+ * The school week, on the same screen as stories: the stage on top shows
+ * where the player is, the message box below shows the map, what can be done
+ * and what happened, with the week's status along its bottom.
  *
- * Scenes (stars, events, activities with a story) play in the Dialogue
- * scene, which comes back here with what was played; its effects apply then.
+ * Pick a location, pick an activity, see what changed, move on to the next
+ * slot. Rules live in `model/school.ts`; this scene runs them against the
+ * session's game state. Scenes (stars, events, activities with a story) play
+ * right here through the `StoryPlayer`, over the place they happen.
+ *
  * Events are checked when a new day starts, `auto` stars whenever the player
- * arrives at a slot.
- *
- * After Thursday afternoon comes Friday: a briefing on what the player knows,
- * then the royale. Until the royale exists, `stubRoyale` makes up its results.
+ * arrives at a slot. After Thursday afternoon comes Friday: a briefing on
+ * what the player knows, then the royale. Until the royale exists,
+ * `stubRoyale` makes up its results.
  */
 export class School extends Phaser.Scene {
   reactOverlay: ReactOverlay;
   session: GameSession;
+  fx: FxSystem;
   store: SchoolStore;
-
-  private played?: PlayedScene;
+  player: StoryPlayer;
 
   constructor() {
     super(sceneConfig);
   }
 
-  init(data?: SchoolData): void {
+  init(): void {
     this.store = new SchoolStore();
-    this.played = data?.played;
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.session.save());
   }
 
   create(): void {
+    this.player = new StoryPlayer(this, new Stage(this, this.fx));
+    this.showPlace();
+    this.cameras.main.fadeIn(FADE_MS);
     this.reactOverlay.create(<SchoolView school={this} />, this);
-    if (this.played) this.finish(this.played);
     // a reload, or a new game: only scripted beats (the opening), so random events aren't rolled twice
-    else this.arrive(this.now.dayStart ? 'scripted' : 'none');
+    this.arrive(this.now.dayStart ? 'scripted' : 'none');
   }
 
   // #region Read by the view (observable through the game state)
@@ -80,6 +85,11 @@ export class School extends Phaser.Scene {
     return openLocations(SCHOOL, this.state);
   }
 
+  studentsAt(location: string): string[] {
+    const where = this.where;
+    return Object.keys(where).filter((student) => where[student] === location);
+  }
+
   options(location: string): SchoolOption[] {
     return optionsAt(SCHOOL, location, this.state, this.where);
   }
@@ -90,19 +100,24 @@ export class School extends Phaser.Scene {
     return option.student ? `${activity.name} with ${studentName(SCHOOL, option.student)}` : activity.name;
   }
 
-
   describe = (change: Parameters<typeof describeChange>[2]): string => describeChange(SCHOOL, INTEL, change);
   // #endregion
 
   // #region Called by the view
+  /** Busy with something the player has to finish first: a story, a result, Friday. */
+  private get busy(): boolean {
+    return this.player.playing || !!this.store.result || !!this.store.friday;
+  }
+
   selectLocation(location: string | null): void {
-    if (this.store.result || this.store.friday) return;
+    if (this.busy) return;
     this.sound.play(location ? 'choice-select' : 'menu-exit');
     this.store.setLocation(location);
+    this.showPlace();
   }
 
   pick(option: SchoolOption): void {
-    if (this.store.result) return;
+    if (this.busy) return;
     this.sound.play('choice-select');
     if (option.kind === 'star') {
       this.play({ kind: 'star', star: option.star });
@@ -125,14 +140,15 @@ export class School extends Phaser.Scene {
   }
 
   /**
-   * Dismisses the result or Friday card. After something that used the slot,
-   * moves on to the next slot that isn't lost, through Friday when the week ends.
+   * Moves on from a result or Friday. After something that used the slot,
+   * moves to the next slot that isn't lost, through Friday when the week ends.
    */
   continue(): void {
     this.sound.play('window-advance');
     const { result, friday } = this.store;
     this.store.setResult(null);
     this.store.setLocation(null);
+    this.showPlace();
 
     if (friday?.stage === 'briefing') {
       this.runRoyale();
@@ -159,8 +175,10 @@ export class School extends Phaser.Scene {
   }
 
   toggleConstellation(): void {
+    if (this.player.playing) return;
     this.sound.play(this.store.constellationOpen ? 'menu-exit' : 'choice-select');
     this.store.setConstellationOpen(!this.store.constellationOpen);
+    this.showPlace();
   }
 
   selectStar(star: string | null): void {
@@ -169,17 +187,44 @@ export class School extends Phaser.Scene {
   }
   // #endregion
 
-  // #region Scenes
+  // #region The stage
 
-  /** Plays a scene's story in the Dialogue scene, which comes back here to finish it. Without a story, finishes it now. */
-  private play(played: PlayedScene): void {
-    const storyKey = sceneStory(SCHOOL, played);
-    if (!storyKey) {
-      this.finish(played);
+  /**
+   * Sets the stage for where the player is: the constellation's empty sky, a
+   * picked location with a student who's there, or the campus.
+   */
+  private showPlace(): void {
+    const { store } = this.player;
+    if (this.store.constellationOpen) {
+      store.setBackground(null);
+      store.setPortrait(null);
       return;
     }
-    const data: DialogueData = { storyKey, returnTo: 'School', returnData: { played } satisfies SchoolData };
-    this.scene.start('Dialogue', data);
+    const location = this.store.location;
+    store.setBackground(location ? SCHOOL.locations[location].background : CAMPUS_BACKGROUND);
+    // the stage holds one character: the first student here
+    const student = location ? this.studentsAt(location)[0] : undefined;
+    store.setPortrait(student ? { character: student } : null);
+  }
+  // #endregion
+
+  // #region Scenes
+
+  /**
+   * Plays a scene's story over the current place, then applies what it does.
+   * Without a story, applies it straight away.
+   */
+  private async play(played: PlayedScene): Promise<void> {
+    const storyKey = sceneStory(SCHOOL, played);
+    if (storyKey) {
+      if (this.store.constellationOpen) this.store.setConstellationOpen(false);
+      this.store.setNotice(null);
+      this.showPlace();
+      await this.player.play(storyKey);
+      this.player.reset();
+      this.showPlace();
+    }
+    this.finish(played);
   }
 
   /** Applies what a scene does and shows it. */

@@ -26,6 +26,8 @@ export type Effect =
 
 export type LocationDef = {
   name: string;
+  /** Shown on the stage while the player is there: a file in images/backgrounds/, named as in `#bg`. */
+  background: string;
   /** When it's open. Always, if left out. */
   open?: Condition;
 };

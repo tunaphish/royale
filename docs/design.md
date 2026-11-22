@@ -263,6 +263,7 @@ The pieces that make up each royale. Royale runs are built from these; the schoo
 ## School Sim (slice)
 
 - **Scope:** 3 students (Eji, Rena, the witch), one week, 6 locations, 3 social stats, about 4 stars per student.
+- **One screen:** the school uses the same screen as stories (and, later, battle): the stage on top shows where you are, the message box below holds the map grid, actions, results and Friday, with the week's status along its bottom. No modals. Scenes play in place, over the location; the constellation is drawn on the stage.
 - **Opening:** the game starts on Saturday, after an orientation royale told as a cutscene, so the first weekend has history to react to.
 - **The week**
 	- Sat–Thu, two slots a day: **Morning** and **Afternoon**. 12 actions.
