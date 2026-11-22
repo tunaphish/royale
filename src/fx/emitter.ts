@@ -7,6 +7,12 @@ export interface FxParticle extends Phaser.GameObjects.Particles.Particle {
   fxSeed: number;
   fxAngle: number;
   fxSpin: number;
+  /** Starting scale, for `endSize`. */
+  fxSize: number;
+  /** Sideways push, for `wind`. */
+  fxWind: number;
+  /** -1 or 1: which way `sway` starts. */
+  fxSwayDir: number;
 }
 
 const toOp = (range: Range) => (typeof range === 'number' ? range : { min: range[0], max: range[1] });
@@ -28,6 +34,53 @@ function emitZone(area: Area, origin: { x: number; y: number }, stage: { width: 
   return source && ({ type: 'random', source } as unknown as Phaser.Types.GameObjects.Particles.EmitZoneData);
 }
 
+/** Scale, shrinking or growing to `endSize` over the particle's life. */
+function sizeOps(layer: ParticleLayerDef): Phaser.Types.GameObjects.Particles.ParticleEmitterConfig {
+  const size = layer.size ?? 1;
+  const end = layer.endSize ?? 1;
+  if (end === 1) return { scale: toOp(size) };
+  return {
+    // Only `scale` is set, so Phaser copies scaleX into scaleY.
+    scale: {
+      onEmit: (p?: Phaser.GameObjects.Particles.Particle) => {
+        const particle = p as FxParticle;
+        particle.fxSize = pick(size);
+        return particle.fxSize;
+      },
+      onUpdate: (p: Phaser.GameObjects.Particles.Particle, _k: string, t: number) =>
+        (p as FxParticle).fxSize * (1 + (end - 1) * t),
+    },
+  };
+}
+
+/**
+ * Wind and sway, as sideways acceleration. Sway accelerates as ∓D·ω²·cos(ωt)
+ * from rest, so velocity is ∓D·ω·sin(ωt) and the particle drifts up to 2·D to
+ * one side and back, never off its path for good.
+ */
+function windOps(layer: ParticleLayerDef): Phaser.Types.GameObjects.Particles.ParticleEmitterConfig {
+  const { wind, sway } = layer;
+  if (wind === undefined && !sway) return {};
+  const omega = sway ? sway.speed * Math.PI * 2 : 0;
+  const swayAccel = sway ? sway.distance * omega * omega : 0;
+  return {
+    accelerationX: {
+      onEmit: (p?: Phaser.GameObjects.Particles.Particle) => {
+        const particle = p as FxParticle;
+        particle.fxWind = pick(wind ?? 0);
+        particle.fxSwayDir = Math.random() < 0.5 ? -1 : 1;
+        return particle.fxWind;
+      },
+      onUpdate: (p: Phaser.GameObjects.Particles.Particle, _k: string, t: number) => {
+        const particle = p as FxParticle;
+        if (!sway) return particle.fxWind;
+        const seconds = (t * particle.life) / 1000;
+        return particle.fxWind - swayAccel * particle.fxSwayDir * Math.cos(omega * seconds);
+      },
+    },
+  };
+}
+
 export interface EmitterContext {
   /** Where the emitter sits. `stage` areas are measured from here so they always cover the stage. */
   origin: { x: number; y: number };
@@ -47,12 +100,13 @@ export function toEmitterConfig(layer: ParticleLayerDef, ctx: EmitterContext): P
   const zone = emitZone(layer.area ?? 'point', ctx.origin, ctx.stage);
 
   const config: Phaser.Types.GameObjects.Particles.ParticleEmitterConfig = {
+    ...sizeOps(layer),
+    ...windOps(layer),
     emitting: false,
     lifespan: toOp(layer.lifespan),
     speedX: toOp(layer.velocity?.x ?? 0),
     speedY: toOp(layer.velocity?.y ?? 0),
     gravityY: layer.gravity ?? 0,
-    scale: toOp(layer.size ?? 1),
     alpha: { onEmit: () => fade(0), onUpdate: (_p: unknown, _k: string, t: number) => fade(t) },
     tint: { onEmit: () => colorInt(pickColor(layer.colors)) },
     rotate: {

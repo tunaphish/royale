@@ -40,6 +40,9 @@ const RANGES: Record<string, [number, number, number]> = {
   intensity: [0, 0.05, 0.001],
   circle: [1, 300, 1],
   weight: [0.1, 10, 0.1],
+  endSize: [0, 4, 0.05],
+  wind: [-300, 300, 1],
+  distance: [0, 120, 1],
 };
 
 const rangeFor = (key: string, value: number): [number, number, number] =>
@@ -61,6 +64,9 @@ const PARTICLE_OPTIONAL: Partial<ParticleLayerDef> = {
   velocity: { x: [-20, 20], y: [-40, -10] },
   gravity: 0,
   size: 1,
+  endSize: 0.3,
+  wind: [-10, 10],
+  sway: { distance: 12, speed: 0.6 },
   angle: [0, 360],
   spin: [-90, 90],
   fade: 'in-out',

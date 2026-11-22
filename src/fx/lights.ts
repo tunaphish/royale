@@ -1,5 +1,5 @@
 import { channels, colorInt } from './random';
-import type { Flicker, LightingMood, MoodLight } from './types';
+import type { Flicker, LightingMood, LightMotion, MoodLight } from './types';
 
 /** Lights that use normal maps. A shader constant: changing it recompiles every lit material. */
 export const POINT_SLOTS = 8;
@@ -20,6 +20,8 @@ export interface LightCandidate {
   b: number;
   /** Wants a point slot. Map lights never get one. */
   point: boolean;
+  /** Between the background and the characters: only rims characters. See `MoodLight.behind`. */
+  behind: boolean;
   /** Mood and scene lights: always get a slot before particles do. */
   pinned: boolean;
   priority: number;
@@ -29,7 +31,7 @@ export interface LightCandidate {
 
 export const newCandidate = (): LightCandidate => ({
   x: 0, y: 0, z: 0, radius: 1, intensity: 0, r: 0, g: 0, b: 0,
-  point: false, pinned: false, priority: 1, inSlot: false,
+  point: false, behind: false, pinned: false, priority: 1, inSlot: false,
 });
 
 /** Grows as needed and is reused every frame. */
@@ -41,6 +43,7 @@ export class CandidatePool {
     if (this.count === this.items.length) this.items.push(newCandidate());
     const candidate = this.items[this.count++];
     candidate.pinned = false;
+    candidate.behind = false;
     candidate.priority = 1;
     candidate.inSlot = false;
     return candidate;
@@ -88,6 +91,8 @@ export interface PointUniforms {
   color: number[];
   radius: number[];
   intensity: number[];
+  /** 1 for lights behind the characters, else 0. */
+  behind: number[];
 }
 
 export const newPointUniforms = (): PointUniforms => ({
@@ -95,6 +100,7 @@ export const newPointUniforms = (): PointUniforms => ({
   color: new Array(POINT_SLOTS * 3).fill(0),
   radius: new Array(POINT_SLOTS).fill(1),
   intensity: new Array(POINT_SLOTS).fill(0),
+  behind: new Array(POINT_SLOTS).fill(0),
 });
 
 /** Writes the slotted lights into `out`; unused slots get no intensity. */
@@ -112,6 +118,7 @@ export function packPointUniforms(pool: CandidatePool, out: PointUniforms): void
     out.color[slot * 3 + 2] = c.b;
     out.radius[slot] = Math.max(c.radius, 1);
     out.intensity[slot] = c.intensity;
+    out.behind[slot] = c.behind ? 1 : 0;
     slot++;
   }
 }
@@ -125,15 +132,49 @@ export function flickerAt(flicker: Flicker | undefined, time: number, seed: numb
   return 1 - flicker.amount * wave;
 }
 
-/** Writes a mood light into a candidate. `width`/`height` are the stage size. */
+/**
+ * Moves a light already placed at its `at` (in `out.x`/`out.y`, pixels) by its
+ * motion at `time` (seconds), and scales `out.intensity` for fades.
+ */
+export function applyMotion(motion: LightMotion, width: number, height: number, time: number, out: LightCandidate): void {
+  const ms = time * 1000;
+  if (motion.kind === 'swing') {
+    const px = motion.pivot[0] * width;
+    const py = motion.pivot[1] * height;
+    const dx = out.x - px;
+    const dy = out.y - py;
+    const period = Math.max(motion.period, 1);
+    const angle = (motion.angle * Math.PI / 180) * Math.sin((ms / period) * Math.PI * 2);
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    out.x = px + dx * cos - dy * sin;
+    out.y = py + dx * sin + dy * cos;
+    return;
+  }
+  const travel = Math.max(motion.time, 1);
+  const cycle = travel + Math.max(motion.gap ?? 0, 0);
+  const local = (((ms + (motion.delay ?? 0)) % cycle) + cycle) % cycle;
+  if (local >= travel) {
+    out.intensity = 0;
+    return;
+  }
+  const t = local / travel;
+  out.x += (motion.to[0] * width - out.x) * t;
+  out.y += (motion.to[1] * height - out.y) * t;
+  out.intensity *= Math.sin(Math.PI * t);
+}
+
+/** Writes a mood light into a candidate. `width`/`height` are the stage size, `time` is in seconds. */
 export function moodLightCandidate(light: MoodLight, width: number, height: number, time: number, seed: number, out: LightCandidate): void {
   out.x = light.at[0] * width;
   out.y = light.at[1] * height;
   out.radius = light.radius;
   out.z = light.height * light.radius;
   out.intensity = light.intensity * flickerAt(light.flicker, time, seed);
+  if (light.motion) applyMotion(light.motion, width, height, time, out);
   channels(colorInt(light.color), out);
   out.point = true;
+  out.behind = light.behind ?? false;
   out.pinned = true;
 }
 
@@ -153,7 +194,8 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /**
  * The mood `t` of the way from `a` to `b`. Lights pair up by index; a light with
- * no partner fades in or out. Steps switch halfway, since they can't blend.
+ * no partner fades in or out. Steps, `behind` and motion switch halfway, since they can't blend.
+ * The result has no `fx`: `FxSystem` starts a mood's FX when the fade begins.
  * Allocates, but only while a fade is running.
  */
 export function moodBetween(a: LightingMood, b: LightingMood, t: number): LightingMood {
@@ -169,6 +211,8 @@ export function moodBetween(a: LightingMood, b: LightingMood, t: number): Lighti
       height: lerp(la.height, lb.height, t),
       at: [lerp(la.at[0], lb.at[0], t), lerp(la.at[1], lb.at[1], t)],
       flicker: t < 0.5 ? la.flicker : lb.flicker,
+      behind: t < 0.5 ? la.behind : lb.behind,
+      motion: t < 0.5 ? la.motion : lb.motion,
     });
   }
   const late = t >= 0.5;

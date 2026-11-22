@@ -4,7 +4,7 @@ import { toEmitterConfig, type FxParticle } from './emitter';
 import { channels, colorInt } from './random';
 import { flickerAt, type CandidatePool } from './lights';
 import { spriteKey } from './textures';
-import { DEPTH, type CameraLayerDef, type Duration, type FxDef, type ParticleLayerDef, type PlayOptions, type StopOptions } from './types';
+import { DEPTH, type CameraLayerDef, type Duration, type FxDef, type ParticleLayerDef, type PlayOptions, type StagePoint, type StopOptions } from './types';
 import type { FxSystem } from './FxSystem';
 
 interface EmitterLayer {
@@ -30,6 +30,8 @@ export class FxHandle {
   /** The FX's own light candidates are pushed here each frame. */
   private pool!: CandidatePool;
   private time = 0;
+  /** For FX played at a stage point: where that point is now. Emitters follow it. */
+  private anchor?: { x: number; y: number; at: StagePoint };
 
   constructor(private fx: FxSystem, readonly id: string, def: FxDef, options: PlayOptions) {
     this.done = new Promise((resolve) => (this.resolveDone = resolve));
@@ -37,14 +39,19 @@ export class FxHandle {
     const scene = fx.host;
     const { width, height } = fx.stage;
     const at = options.at ?? { x: width / 2, y: height / 2 };
-    const follow = 'follow' in at ? at.follow : undefined;
+    if ('stage' in at) this.anchor = { x: at.stage[0] * width, y: at.stage[1] * height, at: at.stage };
+    const follow = 'follow' in at ? at.follow : this.anchor;
     const origin = follow ? { x: follow.x, y: follow.y } : (at as { x: number; y: number });
 
     for (const layer of def.layers) {
       if (layer.kind === 'particles') this.addParticles(layer, origin, follow);
       else this.addCamera(layer);
     }
-    if (def.sfx) scene.sound.play(def.sfx);
+    if (def.sfx) {
+      // A missing sound mustn't break the FX (the lab plays half-typed keys while you type).
+      if (scene.cache.audio.exists(def.sfx)) scene.sound.play(def.sfx);
+      else console.warn(`FX "${id}": no sound "${def.sfx}" in src/assets/audio`);
+    }
 
     const warm = prewarmMs(def);
     for (const { emitter } of this.emitters) if (warm > 0) emitter.fastForward(warm);
@@ -54,12 +61,15 @@ export class FxHandle {
     }
   }
 
-  private addParticles(layer: ParticleLayerDef, origin: { x: number; y: number }, follow?: Phaser.GameObjects.GameObject & { x: number; y: number }) {
+  private addParticles(layer: ParticleLayerDef, origin: { x: number; y: number }, follow?: { x: number; y: number }) {
     const scene = this.fx.host;
     const { width, height } = this.fx.stage;
     // `stage` areas don't follow: they always cover the stage.
     const stageArea = layer.area === 'stage';
-    const at = stageArea ? { x: 0, y: 0 } : origin;
+    const following = !!follow && !stageArea;
+    // A following emitter spawns particles at the target's position but still draws them
+    // offset by its own, so it must sit at (0, 0) or the offset counts twice.
+    const at = stageArea || following ? { x: 0, y: 0 } : origin;
     const config = toEmitterConfig(layer, {
       origin: at,
       stage: { width, height },
@@ -67,7 +77,9 @@ export class FxHandle {
     });
     const emitter = scene.add.particles(at.x, at.y, spriteKey(layer.sprite), config);
     emitter.setDepth(DEPTH[layer.depth ?? 'front']);
-    if (follow && !stageArea) emitter.startFollow(follow);
+    // Phaser only runs acceleration ops when the starting acceleration is non-zero; wind and sway start at 0.
+    if (layer.wind !== undefined || layer.sway) emitter.acceleration = true;
+    if (following) emitter.startFollow(follow!);
     if ((layer.glow ?? 0) > 0 && this.fx.quality === 'high') {
       Phaser.Actions.AddEffectBloom(emitter, { threshold: 0.3, blurRadius: 2, blendAmount: layer.glow });
     }
@@ -142,8 +154,31 @@ export class FxHandle {
     }
   }
 
+  /**
+   * Keeps a stage-point FX at its point when the stage resizes (or gets its real
+   * size after the FX started, as in a story's first lines). Live particles move
+   * with it, so a prewarmed FX doesn't start with its particles in the old place.
+   */
+  private moveAnchor(): void {
+    const anchor = this.anchor!;
+    const { width, height } = this.fx.stage;
+    const dx = anchor.at[0] * width - anchor.x;
+    const dy = anchor.at[1] * height - anchor.y;
+    if (dx === 0 && dy === 0) return;
+    anchor.x += dx;
+    anchor.y += dy;
+    for (const { layer, emitter } of this.emitters) {
+      if (layer.area === 'stage') continue;
+      emitter.forEachAlive((p) => {
+        p.x += dx;
+        p.y += dy;
+      }, this);
+    }
+  }
+
   /** Called each frame: finishes the handle once it's stopped and empty. */
   tick(): void {
+    if (this.anchor) this.moveAnchor();
     if (this.finished || !this.stopped) return;
     if (this.emitters.every(({ emitter }) => emitter.getAliveParticleCount() === 0)) this.finish();
   }

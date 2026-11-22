@@ -7,13 +7,13 @@ import { Choice, DialogueStore, Line, TypingTarget } from './dialogueStore';
 import { parseMarkup, plainText } from '../ui/markup';
 import { createStory } from '../../assets/ink';
 import { bindGameFunctions } from './inkBindings';
-import { SFX } from '../../assets/manifest';
+import { MUSIC, SFX } from '../../assets/manifest';
 import { DEFAULT_VOICE, Voice, VOICES } from '../../data/voices';
 import GameSession from '../../plugins/GameSession';
 import { comparer, reaction } from 'mobx';
 import type { FxSystem } from '../../fx/FxSystem';
 import type { FxHandle } from '../../fx/FxHandle';
-import type { Duration } from '../../fx/types';
+import type { Duration, FxTarget, StagePoint } from '../../fx/types';
 import { FX } from '../../data/fx';
 import { LIGHTING } from '../../data/lighting';
 import { Stage } from '../../stage/Stage';
@@ -32,6 +32,8 @@ type DialogueData = { storyKey: string; crt?: string };
 const FADE_MS = 1000;
 /** Default fade for `#light`, in ms. */
 const LIGHT_FADE_MS = 500;
+/** How long `#ambience` loops take to fade in and out. */
+const AMBIENCE_FADE_MS = 1000;
 
 /** Typewriter speed: time per letter, plus a pause after punctuation that ends a phrase. */
 const LETTER_MS = 30;
@@ -97,7 +99,7 @@ const resolveVoice = (key: string | undefined): Voice | null =>
 
 /**
  * One thing the scene does, read from ink in script order.
- * Stage directions (`bg`, `enter`, `foreground`, `music`, `sfx`, `fx`, `light`) run straight away;
+ * Stage directions (`bg`, `enter`, `foreground`, `music`, `ambience`, `sfx`, `fx`, `light`) run straight away;
  * the rest block until the player advances or picks a choice, so they always
  * come last in a batch.
  */
@@ -105,10 +107,12 @@ type Command =
   | { kind: 'bg'; background: string }
   | { kind: 'enter'; character: string; emotion?: string }
   | { kind: 'foreground'; foreground: string | null; backlit: boolean }
-  | { kind: 'fx'; id: string; duration?: Duration; at?: string }
+  | { kind: 'fx'; id: string; duration?: Duration; at?: string | StagePoint }
   | { kind: 'fxStop'; id?: string }
   | { kind: 'light'; mood: string; fade: number }
   | { kind: 'music'; song: string }
+  | { kind: 'ambience'; sound: string; volume: number }
+  | { kind: 'ambienceStop'; sound?: string }
   | { kind: 'sfx'; sound: string }
   | { kind: 'line'; text: string; voice?: string }
   | { kind: 'display'; text: string; voice?: string }
@@ -164,6 +168,8 @@ const parseTag = (tag: string): Command | null => {
       return expects('#music <song>', 1)
         ? { kind: 'music', song: args[0] }
         : null;
+    case 'ambience':
+      return parseAmbienceTag(tag, args);
     case 'sfx':
       if (!expects('#sfx <sound>', 1)) return null;
       if (!(args[0] in SFX)) {
@@ -177,11 +183,37 @@ const parseTag = (tag: string): Command | null => {
   }
 };
 
-const FX_USAGE = '#fx <id> [ms|infinite] [at <character>], #fx <id> stop, or #fx stop';
+const AMBIENCE_USAGE = '#ambience <sound> [volume 0-1], #ambience <sound> stop, or #ambience stop';
+
+/**
+ * Looping background sounds that play alongside the music, several at once:
+ * `#ambience fire`, `#ambience wind 0.4` (starts it, or changes its volume),
+ * `#ambience fire stop`, `#ambience stop` (stops every one).
+ */
+const parseAmbienceTag = (tag: string, args: string[]): Command | null => {
+  const warn = (problem: string) => {
+    console.warn(`[Dialogue] #${tag}: ${problem}. Expects: ${AMBIENCE_USAGE}`);
+    return null;
+  };
+  const [sound, option, ...extra] = args;
+  if (!sound) return warn('missing sound');
+  if (extra.length > 0) return warn('too many words');
+  if (sound === 'stop') return option === undefined ? { kind: 'ambienceStop' } : warn('nothing can follow "stop"');
+  if (!(sound in SFX) && !(sound in MUSIC)) return warn(`no sound "${sound}" in src/assets/audio`);
+  if (option === 'stop') return { kind: 'ambienceStop', sound };
+  const volume = option === undefined ? 1 : Number(option);
+  if (!Number.isFinite(volume) || volume < 0 || volume > 1) return warn('volume must be a number from 0 to 1');
+  return { kind: 'ambience', sound, volume };
+};
+
+const FX_USAGE = '#fx <id> [ms|infinite] [at <character>|at <x> <y>], #fx <id> stop, or #fx stop';
+
+const isFraction = (word: string | undefined): boolean => word !== undefined && /^-?\d*\.?\d+$/.test(word);
 
 /**
  * `#fx heal-burst`, `#fx green-motes infinite`, `#fx heal-burst 800 at eji`,
- * `#fx green-motes stop`, `#fx stop` (stops every FX).
+ * `#fx campfire infinite at 0.5 0.95` (a point on the stage, as fractions of its size),
+ * `#fx green-motes stop`, `#fx stop` (stops every FX started with `#fx`).
  */
 const parseFxTag = (tag: string, args: string[]): Command | null => {
   const warn = (problem: string) => {
@@ -198,7 +230,13 @@ const parseFxTag = (tag: string, args: string[]): Command | null => {
   for (let i = 0; i < rest.length; i++) {
     const word = rest[i];
     if (word === 'at') {
-      if (!rest[i + 1]) return warn('"at" needs a character');
+      if (isFraction(rest[i + 1]) || isFraction(rest[i + 2])) {
+        if (!isFraction(rest[i + 1]) || !isFraction(rest[i + 2])) return warn('"at" needs a character, or x and y as fractions of the stage');
+        command.at = [Number(rest[i + 1]), Number(rest[i + 2])];
+        i += 2;
+        continue;
+      }
+      if (!rest[i + 1]) return warn('"at" needs a character, or x and y as fractions of the stage');
       command.at = rest[++i];
     } else if (word === 'infinite') {
       command.duration = 'infinite';
@@ -221,6 +259,8 @@ export class Dialogue extends Phaser.Scene {
 
   private story: Story;
   private music?: Phaser.Sound.BaseSound;
+  /** Loops started by `#ambience`, by sound key. */
+  private ambience = new Map<string, Phaser.Sound.WebAudioSound | Phaser.Sound.HTML5AudioSound>();
   private typingTimer?: Phaser.Time.TimerEvent;
   /** FX started by `#fx`, by ID, so `#fx <id> stop` can find them. */
   private runningFx = new Map<string, FxHandle[]>();
@@ -250,6 +290,7 @@ export class Dialogue extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.session.save();
       this.stopMusic();
+      this.stopAmbience(undefined, true);
     });
   }
 
@@ -375,6 +416,12 @@ export class Dialogue extends Phaser.Scene {
       case 'music':
         this.playSong(command.song);
         break;
+      case 'ambience':
+        this.playAmbience(command.sound, command.volume);
+        break;
+      case 'ambienceStop':
+        this.stopAmbience(command.sound);
+        break;
       case 'sfx':
         this.sound.play(command.sound);
         break;
@@ -398,6 +445,7 @@ export class Dialogue extends Phaser.Scene {
       case 'end':
         // the end of a story is an autosave checkpoint
         this.stopMusic();
+        this.stopAmbience();
         this.session.save();
         store.setLeaving();
         break;
@@ -405,20 +453,23 @@ export class Dialogue extends Phaser.Scene {
   }
 
   private playFx({ id, duration, at }: Command & { kind: 'fx' }): void {
-    let follow: Phaser.GameObjects.Image | undefined;
-    if (at) {
-      follow = this.stage.characterImage(at);
-      if (!follow) console.warn(`[Dialogue] #fx ${id} at ${at}: ${at} isn't on stage; playing in the middle`);
+    let target: FxTarget | undefined;
+    if (Array.isArray(at)) {
+      target = { stage: at };
+    } else if (at) {
+      const follow = this.stage.characterImage(at);
+      if (follow) target = { follow };
+      else console.warn(`[Dialogue] #fx ${id} at ${at}: ${at} isn't on stage; playing in the middle`);
     }
-    const handle = this.fx.play(id, { duration, at: follow ? { follow } : undefined });
+    const handle = this.fx.play(id, { duration, at: target });
     const handles = (this.runningFx.get(id) ?? []).filter((h) => !h.isFinished);
     this.runningFx.set(id, [...handles, handle]);
   }
 
-  /** Stops one FX by ID (every copy of it running), or all of them. */
+  /** Stops one FX by ID (every copy of it running), or all of them. FX that came with the mood keep going. */
   private stopFx(id?: string): void {
     if (!id) {
-      this.fx.stopAll();
+      this.runningFx.forEach((handles) => handles.forEach((handle) => handle.stop()));
       this.runningFx.clear();
       return;
     }
@@ -506,6 +557,39 @@ export class Dialogue extends Phaser.Scene {
     }
     this.music = this.sound.add(songKey, { loop: true });
     this.music.play();
+  }
+
+  /** Starts a looping ambience sound, fading in. If it's already playing, fades to the new volume. */
+  private playAmbience(key: string, volume: number): void {
+    if (!this.cache.audio.exists(key)) {
+      console.warn(`[Dialogue] no sound loaded with key: ${key}`);
+      return;
+    }
+    let sound = this.ambience.get(key);
+    if (!sound) {
+      sound = this.sound.add(key, { loop: true, volume: 0 }) as Phaser.Sound.WebAudioSound;
+      sound.play();
+      this.ambience.set(key, sound);
+    }
+    this.tweens.killTweensOf(sound);
+    this.tweens.add({ targets: sound, volume, duration: AMBIENCE_FADE_MS });
+  }
+
+  /** Fades out one ambience sound, or every one. `immediate` cuts them off (leaving the scene). */
+  private stopAmbience(key?: string, immediate = false): void {
+    const keys = key ? [key] : [...this.ambience.keys()];
+    keys.forEach((k) => {
+      const sound = this.ambience.get(k);
+      if (!sound) return;
+      this.ambience.delete(k);
+      this.tweens.killTweensOf(sound);
+      const destroy = () => {
+        sound.stop();
+        sound.destroy();
+      };
+      if (immediate) destroy();
+      else this.tweens.add({ targets: sound, volume: 0, duration: AMBIENCE_FADE_MS, onComplete: destroy });
+    });
   }
 
   private stopMusic(): void {

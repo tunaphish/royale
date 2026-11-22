@@ -1,12 +1,4 @@
-// Line conventions read by the Dialogue scene:
-//   text                 -> a line in the message box
-//   text #display        -> large text over the stage
-//   text #voice <key|none> -> blip voice for this line (default: player in the box, the #enter character on stage)
-// Text markup: <frenzy>shaking</frenzy>  <span class="red big">styled</span>  <b>  <i>
-// Stage directions are tags:
-//   #bg <background>   #enter <character> [emotion]
-//   #foreground <key|none> [backlit]   #music <song>   #sfx <sound>
-//   #fx <id> [ms|infinite] [at <character>]   #fx <id> stop   #fx stop   #light <mood> [fade ms]
+// How to write stories (lines, tags, effects, game state): src/assets/scripts/AUTHORING.md
 
 INCLUDE game.ink
 
@@ -14,7 +6,7 @@ INCLUDE game.ink
 
 === start ===
 #bg supermarket
-#enter rena-sprite
+#enter rena
 #light moonlight 0
 // the souls they saved, drifting around them for the rest of the scene
 #fx green-motes
@@ -31,9 +23,9 @@ Did it change anything? Huh Eji? #display
 
 === fight ===
 #music knight
-#enter rena-sprite
+#enter rena
 #light ember 1500
-#fx heal-burst at rena-sprite
+#fx heal-burst at rena
 It changed me.
 #foreground layers/sakura backlit
 > ... the wind is howling

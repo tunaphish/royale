@@ -39,6 +39,8 @@ uniform vec3 uLightPos[POINT_SLOTS];
 uniform vec3 uLightColor[POINT_SLOTS];
 uniform float uLightRadius[POINT_SLOTS];
 uniform float uLightIntensity[POINT_SLOTS];
+// 1 for lights between the background and the characters (see MoodLight.behind).
+uniform float uLightBehind[POINT_SLOTS];
 
 uniform vec2 uStageSize;
 // The light map stores light / uMapGain, so it can hold more than 1.
@@ -75,6 +77,13 @@ vec3 mapLight (vec2 screen) {
   // Render textures are stored bottom-up.
   uv.y = 1.0 - uv.y;
   return texture2D(uLightMap, uv).rgb * uMapGain;
+}
+
+// Alpha of the art at a texel (texture pixels, y up); 0 outside it.
+float alphaAt (vec2 texel) {
+  vec2 uv = texel / uTexSize;
+  if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) return 0.0;
+  return texture2D(uTexture, uv).a;
 }
 
 float attenuation (float dist, float radius) {

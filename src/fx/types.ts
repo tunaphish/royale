@@ -36,6 +36,14 @@ export interface Flicker {
   speed: number;
 }
 
+/** Side-to-side drift of a particle. Each particle starts drifting left or right at random. */
+export interface Sway {
+  /** How far it drifts from its path, in pixels. */
+  distance: number;
+  /** Sways per second. */
+  speed: number;
+}
+
 /**
  * How a particle lights its surroundings.
  * - `map`: soft colored light added to the light map. Any number is cheap; ignores normal maps.
@@ -91,6 +99,12 @@ export interface ParticleLayerDef {
   angle?: Range;
   /** Degrees per second. */
   spin?: Range;
+  /** Size at the end of its life, as a multiple of its starting size: 0 shrinks to nothing, 2 doubles. Default 1. */
+  endSize?: number;
+  /** Sideways push, pixels per second². Positive is right. Random per particle when a range. */
+  wind?: Range;
+  /** Side-to-side drift, like embers in warm air. */
+  sway?: Sway;
   /** Default `'in-out'`. */
   fade?: 'in-out' | 'in' | 'out' | 'none';
   colors: ColorChoice[];
@@ -123,6 +137,20 @@ export interface FxDef {
   sfx?: string;
 }
 
+/** A point on the stage as fractions of its size: `[0.5, 0.5]` is the middle, `[0.5, 1]` the bottom middle. */
+export type StagePoint = [x: number, y: number];
+
+/**
+ * A mood light that moves. Positions are stage fractions, times are ms.
+ * - `swing`: hangs from `pivot` and swings like a pendulum. `at` is where it rests (straight below
+ *   the pivot, usually); it swings `angle` degrees either side, one full swing every `period`.
+ * - `pass`: travels from `at` to `to` over `time`, fading in and out on the way, then waits `gap`
+ *   and goes again. Street lights going overhead. `delay` shifts its timing, to stagger several.
+ */
+export type LightMotion =
+  | { kind: 'swing'; pivot: StagePoint; angle: number; period: number }
+  | { kind: 'pass'; to: StagePoint; time: number; gap?: number; delay?: number };
+
 /** A light that's part of a mood, placed as a fraction of the stage (`[0.5, 0.5]` is the middle). */
 export interface MoodLight {
   color: Color;
@@ -131,8 +159,23 @@ export interface MoodLight {
   radius: number;
   /** Height above the art, as a fraction of the radius. */
   height: number;
-  at: [x: number, y: number];
+  at: StagePoint;
   flicker?: Flicker;
+  /**
+   * Sits between the background and the characters, like the moon behind someone:
+   * it lights the background as usual, but on characters and anything in front of
+   * them it only lights the edges that face it (a rim). Needs a point slot; a
+   * behind light that doesn't get one lights everything like a normal light.
+   */
+  behind?: boolean;
+  motion?: LightMotion;
+}
+
+/** An FX a mood brings with it, e.g. the fire of a campfire. Plays forever while the mood is on. */
+export interface MoodFx {
+  id: string;
+  /** Default: the middle of the stage. */
+  at?: StagePoint;
 }
 
 /** The base light of a scene. `flat` (white ambient, no lights, no steps) shows art as drawn. */
@@ -143,10 +186,21 @@ export interface LightingMood {
   bands: number;
   /** 0 is a hard edge between steps, 1 a smooth ramp. */
   bandSoftness: number;
+  /**
+   * FX that come with the mood: started (forever) when the mood is set, stopped when
+   * another mood replaces it. Setting the same mood again leaves them running.
+   */
+  fx?: MoodFx[];
 }
 
-/** Where to play an FX: a point, or following a game object. */
-export type FxTarget = { x: number; y: number } | { follow: Phaser.GameObjects.GameObject & { x: number; y: number } };
+/**
+ * Where to play an FX: a point in stage pixels, following a game object, or a
+ * stage point (fractions) that stays put in proportion when the stage resizes.
+ */
+export type FxTarget =
+  | { x: number; y: number }
+  | { follow: Phaser.GameObjects.GameObject & { x: number; y: number } }
+  | { stage: StagePoint };
 
 export interface PlayOptions {
   /** Default: the middle of the stage. */

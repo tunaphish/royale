@@ -58,6 +58,9 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
   host: Phaser.Scene;
 
   private mood: LightingMood = LIGHTING.flat;
+  /** The mood whose FX are playing (the target of a fade), and those FX. */
+  private moodTarget: LightingMood = LIGHTING.flat;
+  private moodFx: FxHandle[] = [];
   private fade?: { from: LightingMood; to: LightingMood; start: number; time: number };
 
   /** Last frame's numbers, for the FX lab. */
@@ -79,6 +82,8 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
     this.quality = settings?.fxQuality ?? 'high';
     this.reducedMotion = settings?.reducedMotion ?? false;
     this.mood = LIGHTING.flat;
+    this.moodTarget = LIGHTING.flat;
+    this.moodFx = [];
     this.fade = undefined;
   }
 
@@ -114,7 +119,7 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
     return handle;
   }
 
-  /** Stops every running FX. */
+  /** Stops every running FX, the mood's included. */
   stopAll(options?: { immediate?: boolean }): void {
     for (const handle of this.handles) handle.stop(options);
   }
@@ -123,6 +128,7 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
   setMood(mood: string | LightingMood, options: { fade?: number } = {}): void {
     const target = typeof mood === 'string' ? LIGHTING[mood] : mood;
     if (!target) throw new Error(`Unknown lighting mood "${mood}". Add it to src/data/lighting.ts.`);
+    this.startMoodFx(target);
     const fade = options.fade ?? 0;
     if (fade <= 0) {
       this.mood = target;
@@ -130,6 +136,15 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
     } else {
       this.fade = { from: this.currentMood, to: target, start: this.host.time.now, time: fade };
     }
+  }
+
+  /** Stops the old mood's FX and starts the new one's. The same mood again keeps them running. */
+  private startMoodFx(target: LightingMood): void {
+    if (target === this.moodTarget) return;
+    this.moodTarget = target;
+    for (const handle of this.moodFx) handle.stop();
+    this.moodFx = (target.fx ?? []).map(({ id, at }) =>
+      this.play(id, { at: { stage: at ?? [0.5, 0.5] }, duration: 'infinite' }));
   }
 
   /** The mood being drawn right now (mid-fade, a blend). */
@@ -203,6 +218,7 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
     setUniform('uLightColor[0]', this.points.color);
     setUniform('uLightRadius[0]', this.points.radius);
     setUniform('uLightIntensity[0]', this.points.intensity);
+    setUniform('uLightBehind[0]', this.points.behind);
     setUniform('uStageSize', this.stageSize);
     setUniform('uMapGain', MAP_GAIN);
   }
@@ -267,6 +283,8 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
   private shutdown(): void {
     for (const handle of this.handles) handle.stop({ immediate: true });
     this.handles = [];
+    this.moodFx = [];
+    this.moodTarget = LIGHTING.flat;
     for (const material of this.materials) material.destroy();
     this.materials = [];
     this.sceneLights = [];

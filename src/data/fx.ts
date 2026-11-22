@@ -78,4 +78,68 @@ export const FX: Record<string, FxDef> = {
       { kind: 'flash', time: 150, color: '#ffffff' },
     ],
   },
+
+  /**
+   * A campfire, played at the bottom of the stage: flames, embers drifting up
+   * past the character, and smoke behind them. The `campfire` mood brings it and
+   * owns the fire's main light; the flames and embers only add a little glow.
+   */
+  campfire: {
+    duration: 'infinite',
+    prewarm: 2500,
+    layers: [
+      {
+        kind: 'particles',
+        sprite: 'builtin:orb',
+        depth: 'behind',
+        area: { rect: [70, 10] },
+        rate: 1.5,
+        lifespan: [3000, 5000],
+        velocity: { x: [-6, 6], y: [-45, -25] },
+        sway: { distance: 14, speed: 0.25 },
+        wind: [0, 6],
+        size: [2, 3],
+        endSize: 2.2,
+        fade: 'in-out',
+        blend: 'normal',
+        colors: ['#262833', '#1d1f29'],
+        maxAlive: 14,
+      },
+      {
+        kind: 'particles',
+        sprite: 'builtin:orb',
+        depth: 'front',
+        area: { rect: [50, 6] },
+        rate: 30,
+        lifespan: [350, 700],
+        velocity: { x: [-8, 8], y: [-130, -80] },
+        size: [0.8, 1.3],
+        endSize: 0.1,
+        fade: 'none',
+        blend: 'normal',
+        colors: [{ color: '#ff9a2e', weight: 3 }, { color: '#ff5a1a', weight: 2 }, '#ffe58a'],
+        glow: 0.35,
+        maxAlive: 30,
+        light: { mode: 'map', radius: 60, strength: 0.1, flicker: { amount: 0.3, speed: 5 } },
+      },
+      {
+        kind: 'particles',
+        sprite: 'builtin:square',
+        depth: 'top',
+        area: { rect: [90, 12] },
+        rate: 7,
+        lifespan: [2200, 4200],
+        velocity: { x: [-10, 10], y: [-95, -45] },
+        sway: { distance: 10, speed: 0.7 },
+        wind: [-4, 10],
+        size: [0.7, 1.1],
+        endSize: 0.5,
+        fade: 'out',
+        colors: [{ color: '#ffb347', weight: 3 }, { color: '#ff6a1f', weight: 2 }, '#fff1b0'],
+        glow: 0.6,
+        maxAlive: 40,
+        light: { mode: 'map', radius: 28, strength: 0.4 },
+      },
+    ],
+  },
 };

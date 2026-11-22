@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { BACKLIT_FRAG } from './shaders/backlit';
 import { FRONT_FRAG } from './shaders/front';
 import type { FxSystem } from './FxSystem';
+import { DEPTH } from './types';
 
 export interface BacklitSettings {
   /** Direct light on the side we see, on top of ambient. */
@@ -18,6 +19,16 @@ export interface BacklitSettings {
 
 export const DEFAULT_BACKLIT: BacklitSettings = { fill: 0.12, translucency: 0.9, rim: 1.5, rimWidth: 1, depth: 120 };
 
+/** Front material: the rim that lights behind the characters (`MoodLight.behind`) put on its edges. */
+export interface RimSettings {
+  /** Brightness. */
+  rim: number;
+  /** Thickness, in art pixels. */
+  rimWidth: number;
+}
+
+export const DEFAULT_RIM: RimSettings = { rim: 1, rimWidth: 1 };
+
 export interface LitOptions {
   /** `'front'` (default) or `'backlit'`. */
   material?: 'front' | 'backlit';
@@ -27,6 +38,8 @@ export interface LitOptions {
   pixelSize?: number;
   gridOffset?: [number, number];
   backlit?: Partial<BacklitSettings>;
+  /** Front only. */
+  rim?: Partial<RimSettings>;
 }
 
 /**
@@ -41,6 +54,7 @@ export class LitMaterial {
   pixelSize: number | undefined;
   gridOffset: [number, number];
   backlit: BacklitSettings;
+  rim: RimSettings;
   /** Draw with the normal map. Off lights the art as if flat, to compare. */
   useNormalMap = true;
   visible = true;
@@ -59,6 +73,7 @@ export class LitMaterial {
     this.pixelSize = options.pixelSize;
     this.gridOffset = options.gridOffset ?? [0, 0];
     this.backlit = { ...DEFAULT_BACKLIT, ...options.backlit };
+    this.rim = { ...DEFAULT_RIM, ...options.rim };
     this.texSize = [source.frame.width, source.frame.height];
 
     const textures = this.kind === 'front'
@@ -114,6 +129,10 @@ export class LitMaterial {
     setUniform('uAlpha', this.source.alpha);
     if (this.kind === 'front') {
       setUniform('uUseNormalMap', this.normalMap && this.useNormalMap ? 1 : 0);
+      // Lights behind the characters only rim layers at their depth or in front.
+      setUniform('uInFront', this.source.depth >= DEPTH.characters ? 1 : 0);
+      setUniform('uRim', this.rim.rim);
+      setUniform('uRimWidth', this.rim.rimWidth);
     } else {
       const b = this.backlit;
       setUniform('uFill', b.fill);

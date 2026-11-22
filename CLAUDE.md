@@ -60,6 +60,7 @@ Dev-only URL params (ignored in production builds):
 
 ### Ink
 
+- **Writers' guide:** `src/assets/scripts/AUTHORING.md` explains lines, tags, effects and game state for story writers. Keep it in step when adding or changing tags, moods, FX, text effects or ink functions.
 - **Adding a story:** put it in `src/assets/scripts/stories/<key>.ink`. Boot compiles every story once and fails loudly on compile errors.
 - Every story starts with `INCLUDE game.ink`.
 - **Lines:**
@@ -74,8 +75,9 @@ Dev-only URL params (ignored in production builds):
   - New effects: write a component in `scenes/ui/effects/` and add it to `TAGS` in `RichText.tsx`. A plain effect wraps its children; `perLetter: true` gets each letter instead (like `Frenzy`), and should use `groupWords` so words don't break across lines.
   - Never write an empty tag like `<i></i>`: `<>` is glue in ink. `#` and `//` can't appear inside tags either.
 - **Tags are for stage directions (visuals and sound):** `#bg <key>`, `#enter <character> [emotion]`, `#foreground <key|none> [backlit]`, `#music <song>` (loops, replaces the current song), `#sfx <sound>` (plays once).
+  - `#ambience <sound> [volume 0-1]` loops a sound alongside the music, fading in over 1s; several can play at once. The same sound again changes its volume. `#ambience <sound> stop` fades one out, `#ambience stop` all of them. They stop at the end of the story.
   - `#foreground` takes a file in `images/foregrounds/`, any image key (`layers/sakura`) or a URL. `backlit` lights it from behind.
-  - `#fx <id>` plays an FX from `data/fx.ts` with its own duration. Add `<ms>` or `infinite` to override it, and `at <character>` to follow the character on stage. `#fx <id> stop` stops it (live particles finish); `#fx stop` stops every FX. Looping FX keep going across lines, like `#music`.
+  - `#fx <id>` plays an FX from `data/fx.ts` with its own duration. Add `<ms>` or `infinite` to override it, and `at <character>` to follow the character on stage, or `at <x> <y>` for a point on the stage as fractions of its size (`at 0.5 0.95`). `#fx <id> stop` stops it (live particles finish); `#fx stop` stops every FX started with `#fx` (a mood's own FX keep going). Looping FX keep going across lines, like `#music`.
   - `#light <mood> [fade ms]` changes the lighting mood (`data/lighting.ts`), fading over 500ms by default. Stories start `flat`.
   - To add a tag in `Dialogue.tsx`: add a `Command` kind, parse it in `parseTag` (which warns on wrong arguments), and run it in `runCommand`.
 - **External functions are for game state:** `stat`, `flag`, `set_flag`, `relationship`, `add_relationship`.
@@ -91,6 +93,11 @@ Dev-only URL params (ignored in production builds):
 - **Light from FX:** a particle layer's `light` is `map` (soft colored light in the low-res light map: cheap, any number, no normal map) or `point` (uses normal maps; only `POINT_SLOTS` exist, given to the brightest, and the rest fall back to `map`).
 - **Lit art:** `this.fx.lit(image, { material })` draws an image through the `front` (default) or `backlit` shader. A `<texture>_n` image next to the art is used as its normal map. The image stays the source of position, size and alpha; move or tween the image, not the material.
 - **Moods** live in `data/lighting.ts`: ambient color, lights placed as fractions of the stage, and light steps. `this.fx.setMood(id, { fade })`. `flat` is every scene's default and shows art as drawn.
+  - A mood light with `behind: true` sits between the background and the characters (a moon behind someone): it lights the background as usual, but only rims the edges of characters and anything in front of them. The rim's strength and width are `rim` on the front material.
+  - A mood light's `motion` moves it: `swing` (a pendulum from a pivot) or `pass` (from `at` to `to`, fading in and out, then a gap; street lights going overhead). Times are ms. Motion is worked out from time each frame and allocates nothing.
+  - A mood's `fx` are FX that come with it (the `campfire` mood brings its fire), played forever at a stage point. Another mood stops them; the same mood again leaves them running.
+  - In the FX lab, "as written" shows the picked mood exactly as `data/lighting.ts` has it, FX included. Otherwise the panel shows a mood as a pointer-following main light and a rim light, and only the rim light has `behind` and motion controls.
+- **Particle movement:** besides velocity and gravity, a layer can have `wind` (sideways push), `sway` (drifting side to side, like embers) and `endSize` (size at the end of its life, as a multiple of the start).
 - **The stage is the main camera's view.** Story scenes point the camera at the stage's box (`Stage.setRectFromElement`), so FX and lights use stage coordinates.
 - **Budgets for phones:** `POINT_SLOTS` (8), `PARTICLE_BUDGET` (300), `ART_PIXEL` (light map texel size). The `fxQuality` and `reducedMotion` settings halve particles and drop bloom, and skip shake and flash.
 - **Per frame, allocate nothing** in FX and lighting code: pooled light candidates, uniform arrays allocated once. Garbage collection on phones shows up as stutter.

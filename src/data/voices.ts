@@ -25,4 +25,8 @@ export const VOICES: Record<string, Voice> = {
   player: {
     sounds: ['female_standard_1', 'female_standard_2', 'female_standard_3', 'female_standard_4'],
   },
+  witch: {
+    sounds: ['female_standard_1', 'female_standard_2', 'female_standard_3', 'female_standard_4'],
+    pitch: -300,
+  },
 };

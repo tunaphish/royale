@@ -45,6 +45,12 @@
   flex-direction: column;
 }
 
+/* the tap-to-continue area: fills the panel, so it's tappable even with no message
+   (e.g. a #display line right after a choice clears the message box) */
+.actorMessage {
+  flex: 1;
+}
+
 .dialogueOptions {
   display: flex;
   flex-direction: column;

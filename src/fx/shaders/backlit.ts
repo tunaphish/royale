@@ -15,12 +15,6 @@ uniform float uRimWidth;
 // How far behind the layer the lights are, in screen pixels.
 uniform float uDepth;
 
-float alphaAt (vec2 texel) {
-  vec2 uv = texel / uTexSize;
-  if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) return 0.0;
-  return texture2D(uTexture, uv).a;
-}
-
 void main () {
   vec4 albedo = texture2D(uTexture, outTexCoord);
   if (albedo.a <= 0.0) {

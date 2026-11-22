@@ -4,11 +4,19 @@ import { LIGHTING_HEADER } from './lighting';
  * Art lit from the front, the default: characters, backgrounds. Point lights
  * use the normal map; the light map adds flat colored light on top.
  * Light is worked out once per art pixel and split into steps.
+ *
+ * Lights behind the characters (uLightBehind) light layers behind them as usual;
+ * on layers in front of them (uInFront) they only add a rim on edges facing the light.
  */
 export const FRONT_FRAG = `${LIGHTING_HEADER}
 uniform sampler2D uNormal;
 // 0 lights the art as if it were flat.
 uniform float uUseNormalMap;
+// 1 when this layer is at or in front of the characters' depth.
+uniform float uInFront;
+// Rim from lights behind: brightness, and thickness in art pixels.
+uniform float uRim;
+uniform float uRimWidth;
 
 void main () {
   vec4 albedo = texture2D(uTexture, outTexCoord);
@@ -33,17 +41,26 @@ void main () {
 
   vec2 screen = toScreen(cell);
   vec3 light = uAmbient + band3(mapLight(screen));
+  vec3 rim = vec3(0.0);
+  float alphaHere = alphaAt(cell);
   for (int i = 0; i < POINT_SLOTS; i++) {
     if (uLightIntensity[i] <= 0.0) continue;
     vec3 toLight = uLightPos[i] - vec3(screen, 0.0);
     // Screen y points down; normal maps point up.
     toLight.y = -toLight.y;
     float dist = length(toLight);
+    if (uLightBehind[i] > 0.5 && uInFront > 0.5) {
+      // An edge faces the light when the art runs out in the light's direction.
+      vec2 toward = toLight.xy / max(length(toLight.xy), 0.0001);
+      float edge = clamp(alphaHere - alphaAt(cell + toward * uRimWidth * uPixelSize), 0.0, 1.0);
+      rim += uLightColor[i] * band(edge * attenuation(dist, uLightRadius[i]) * uLightIntensity[i] * uRim);
+      continue;
+    }
     float diffuse = max(dot(normal, toLight / max(dist, 0.0001)), 0.0);
     light += uLightColor[i] * band(diffuse * attenuation(dist, uLightRadius[i]) * uLightIntensity[i]);
   }
 
   // albedo is premultiplied, so this keeps transparency intact.
-  gl_FragColor = vec4(albedo.rgb * light, albedo.a) * uAlpha;
+  gl_FragColor = vec4(albedo.rgb * light + rim * albedo.a, albedo.a) * uAlpha;
 }
 `;

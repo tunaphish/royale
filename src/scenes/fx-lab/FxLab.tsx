@@ -13,7 +13,7 @@ import { FxLabView } from './FxLabView';
 import { fxEntrySource } from './toSource';
 import { addCrt, removeCrt, type CrtFilter } from '../../fx/crt';
 
-const SPRITE_KEY = 'characters/rena-sprite';
+const SPRITE_KEY = 'characters/rena';
 const FOREGROUND_KEY = 'layers/sakura';
 /** The foreground is drawn this much larger than the portrait so parallax never shows its edges. */
 const FOREGROUND_OVERSCAN = 1.08;
@@ -77,6 +77,7 @@ export class FxLab extends Phaser.Scene {
   create(): void {
     const { width, height } = this.scale;
 
+    if (!this.textures.exists(SPRITE_KEY)) console.warn(`[FxLab] no image "${SPRITE_KEY}" in src/assets/images; update SPRITE_KEY`);
     const sprite = this.add.image(width / 2, height / 2, SPRITE_KEY).setDepth(DEPTH.characters);
     const scale = Math.min(width / sprite.width, height / sprite.height);
     sprite.setScale(scale);
@@ -117,8 +118,13 @@ export class FxLab extends Phaser.Scene {
       // The petals share the portrait's art-pixel size on screen.
       petals.pixelSize = (this.store.grid.size * scale) / (this.foreground.displayWidth / this.foreground.width);
 
-      this.fx.setMood(settingsToMood(s));
-      this.syncKey(key, s.key);
+      if (this.store.exactMood) {
+        this.fx.setMood(this.store.preset);
+        this.syncKey(key, { ...s.key, on: false });
+      } else {
+        this.fx.setMood(settingsToMood(s));
+        this.syncKey(key, s.key);
+      }
 
       // Light2D mode.
       sprite.setLighting(s.lit && !pixelMode);

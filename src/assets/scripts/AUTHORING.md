@@ -1,0 +1,191 @@
+# Writing stories
+
+How to write a story for the game in [ink](https://github.com/inkle/ink/blob/master/Documentation/WritingWithInk.md).
+This page covers what the game adds on top of plain ink: how lines show up,
+stage directions, text effects and game state.
+
+## Setting up a story
+
+- One story per file: `src/assets/scripts/stories/<key>.ink`. The file name is the story's key.
+- Start every story with `INCLUDE game.ink`.
+- Nothing else to register. The game finds the file and compiles it when it starts;
+  a compile error stops the game with the error message.
+- Every story plays from the top. The player's place in a story isn't saved,
+  only game state (stats, flags, relationships, see below).
+
+**Testing:** run `npm run dev` and open
+`http://localhost:5173/royale/?scene=Dialogue&storyKey=<key>` to jump straight into a story.
+Mistakes in tags (unknown names, wrong arguments, missing images or sounds) show
+as warnings in the browser console, and the line still plays.
+
+## Lines
+
+| You write | It shows as |
+| --- | --- |
+| `Plain text` | A line in the message box at the bottom. The player is speaking. |
+| `Text #display` | Large text over the stage. The character on stage is speaking. |
+| `* [Choice]` | A choice button, as in normal ink. |
+
+- Lines type out one letter at a time, pausing briefly after `.` `,` `!` `?`.
+  The first tap finishes the line, the next tap continues.
+- The message box and `#display` text both stay on screen, so the two can show
+  different information at the same time.
+- `#display` on a line by itself applies to the next line of text.
+
+### Voices
+
+Typing plays little blips, like speech.
+
+- Message box lines use the player's voice.
+- `#display` lines use the voice of the character on stage (the last `#enter`).
+- `#voice <key>` gives one line a different voice; `#voice none` makes it silent.
+- Voices are defined in `src/data/voices.ts`. A character without one gets the default voice.
+
+```ink
+Who's there?
+It's only me. #display
+... #voice none
+```
+
+## Text effects
+
+Lines and choices can use HTML-like tags:
+
+| Markup | Effect |
+| --- | --- |
+| `<b>bold</b>`, `<i>italic</i>` | Bold, italic |
+| `<span class="red">text</span>` | A style. Several at once: `class="red big"` |
+| `<frenzy>text</frenzy>` | Each letter shakes |
+
+Styles available now: `red`, `big`. New styles and effects are added in code
+(`src/scenes/ui/textStyles.module.css` and `src/scenes/ui/RichText.tsx`).
+
+Things ink won't allow inside text:
+
+- **No empty tags** like `<i></i>`: ink reads `<>` as glue.
+- **No `#` or `//` inside a tag**: ink reads them as a tag and a comment.
+
+## Stage directions
+
+Tags set the scene. They take effect as soon as the story reaches them and stay
+until something changes them, across lines and choices.
+
+### Picture
+
+| Tag | What it does |
+| --- | --- |
+| `#bg <key>` | Background, from `images/backgrounds/`: `#bg supermarket` |
+| `#enter <character> [emotion]` | Puts a character on stage, from `images/characters/`. `#enter eji angry` shows `eji-angry.png`. |
+| `#foreground <key> [backlit]` | An image over everything, e.g. leaves: `#foreground layers/sakura`. `backlit` lights it from behind. |
+| `#foreground none` | Removes the foreground. |
+
+### Sound
+
+| Tag | What it does |
+| --- | --- |
+| `#music <song>` | Loops a song from `audio/music/`, replacing the current one. |
+| `#sfx <sound>` | Plays a sound from `audio/sfx/` once. |
+| `#ambience <sound> [volume]` | Loops a background sound (fire, wind, rain) alongside the music, fading in. Volume is 0 to 1, default 1. Several can play at once; the same sound again changes its volume. |
+| `#ambience <sound> stop` | Fades that sound out. |
+| `#ambience stop` | Fades out every ambience sound. |
+
+Music and ambience stop when the story ends.
+
+### Lighting
+
+`#light <mood> [fade ms]` changes the lighting, fading over 500 ms unless you
+give a time. Stories start with `flat`, which shows the art exactly as drawn.
+
+| Mood | Feel |
+| --- | --- |
+| `flat` | No lighting, art as drawn |
+| `soft` | Gentle warm light |
+| `ember` | Dark red, warm light from the front |
+| `candle` | Dim, flickering candlelight |
+| `moonlight` | Cool blue night |
+| `neon` | Pink and cyan |
+| `night` | Almost dark, for scenes lit by effects |
+| `campfire` | Night by a fire: fire at the bottom lights the character, the moon behind them outlines them in blue. Brings its own fire, embers and smoke. |
+| `lamp-swing` | A lamp swinging overhead |
+| `night-drive` | Passenger seat at night: street lights pass overhead |
+
+Some moods bring their own effects (like the campfire's fire). Those stay while
+the mood is on and stop when the mood changes. The full list, with the exact
+settings, is in `src/data/lighting.ts`.
+
+### Effects
+
+| Tag | What it does |
+| --- | --- |
+| `#fx <id>` | Plays an effect for its usual length. |
+| `#fx <id> <ms>` / `#fx <id> infinite` | Plays it for that long, or until stopped. |
+| `#fx <id> at <character>` | Plays it on the character on stage, following them. |
+| `#fx <id> at <x> <y>` | Plays it at a spot on the stage, as fractions of its size: `at 0.5 0.95` is bottom middle. |
+| `#fx <id> stop` | Stops it; particles already in the air finish. |
+| `#fx stop` | Stops every effect started with `#fx`. Effects that came with the mood keep going. |
+
+Options combine: `#fx heal-burst 800 at eji`.
+
+| Effect | What it is |
+| --- | --- |
+| `green-motes` | Green and gold sparkles drifting up, forever |
+| `heal-burst` | A quick upward burst of light |
+| `impact` | A screen shake and white flash |
+| `campfire` | Flames, embers and smoke, forever. The `campfire` mood already brings one. |
+
+Effects are defined in `src/data/fx.ts` and tuned in the FX lab (`?scene=FxLab`).
+
+## Game state
+
+`game.ink` gives every story functions that read and change the game, so
+choices can matter beyond one story:
+
+| Function | Returns / does |
+| --- | --- |
+| `stat("perception")` | A number, 0 if never set |
+| `flag("knows_timeline")` | true or false |
+| `~ set_flag("knows_timeline", true)` | Sets a flag |
+| `relationship("ava")` | A number, 0 if never set |
+| `~ add_relationship("ava", 1)` | Changes a relationship |
+
+```ink
+{ flag("knows_timeline"):
+    You already know how this ends.
+- else:
+    ~ set_flag("knows_timeline", true)
+    So that's how it ends.
+}
+```
+
+- Values only one story needs can be plain ink variables (`VAR`); they reset each time the story plays.
+- Values the rest of the game needs go through these functions; they're saved.
+- In Inky, these functions return 0 or false and change nothing, so stories still preview there.
+
+## Example
+
+```ink
+INCLUDE game.ink
+
+-> camp
+
+=== camp ===
+#bg forest // not drawn yet: any background in images/backgrounds/
+#enter rena
+#light campfire 1500
+#ambience fire 0.6
+The fire crackles.
+You're still awake? #display
+* [I can't sleep] -> talk
+* [Just keeping watch] -> watch
+
+=== talk ===
+~ add_relationship("rena", 1)
+Me neither. #display
+-> END
+
+=== watch ===
+#fx stop
+#light night 2000
+Suit yourself. #display
+-> END
+```

@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { observer } from 'mobx-react-lite';
 import type { FxLab } from './FxLab';
-import { PRESETS } from './fxLabStore';
+import { PRESETS, RIM_AT } from './fxLabStore';
+import type { LightMotion } from '../../fx/types';
 import { ColorRow, Slider, Toggle } from './controls';
 import { FxEditor } from './FxEditor';
 import type { CrtSettings } from '../../fx/crt';
@@ -28,9 +29,60 @@ const LightControls = observer(({ scene, light, title }: { scene: FxLab; light: 
             onChange={(v) => store.setLight(light, 'radius', v)} />
           <Slider label="height" value={settings.height} min={0} max={1} step={0.01}
             onChange={(v) => store.setLight(light, 'height', v)} />
+          {light === 'rim' && <RimPlacement scene={scene} />}
         </>
       )}
     </section>
+  );
+});
+
+/** The rim light's place, whether it's behind the characters, and how it moves. */
+const RimPlacement = observer(({ scene }: { scene: FxLab }) => {
+  const { store } = scene;
+  const rim = store.settings.rim;
+  const at = rim.at ?? RIM_AT;
+  const motion = rim.motion;
+  const point = (name: string, value: [number, number], set: (i: number, v: number) => void) => (
+    <>
+      <Slider label={`${name} x`} value={value[0]} min={-0.5} max={1.5} step={0.01} onChange={(v) => set(0, v)} />
+      <Slider label={`${name} y`} value={value[1]} min={-0.5} max={1.5} step={0.01} onChange={(v) => set(1, v)} />
+    </>
+  );
+  const field = (label: string, path: (string | number)[], value: number, min: number, max: number, step: number) => (
+    <Slider label={label} value={value} min={min} max={max} step={step} onChange={(v) => store.setRimMotionField(path, v)} />
+  );
+  const kinds: (LightMotion['kind'] | null)[] = [null, 'swing', 'pass'];
+  return (
+    <>
+      <div className={styles.buttons}>
+        <Toggle on={!!rim.behind} onClick={() => store.setLight('rim', 'behind', !rim.behind)}>behind characters</Toggle>
+      </div>
+      {point('at', at, (i, v) => store.setLight('rim', 'at', i === 0 ? [v, at[1]] : [at[0], v]))}
+      <div className={styles.subTitle}>
+        <span>motion</span>
+        <span className={styles.buttons}>
+          {kinds.map((kind) => (
+            <Toggle key={kind ?? 'none'} on={(motion?.kind ?? null) === kind} onClick={() => store.setRimMotion(kind)}>
+              {kind ?? 'none'}
+            </Toggle>
+          ))}
+        </span>
+      </div>
+      {motion?.kind === 'swing' && (
+        <>
+          {point('pivot', motion.pivot, (i, v) => store.setRimMotionField(['pivot', i], v))}
+          {field('angle', ['angle'], motion.angle, 0, 90, 1)}
+          {field('period ms', ['period'], motion.period, 200, 10000, 50)}
+        </>
+      )}
+      {motion?.kind === 'pass' && (
+        <>
+          {point('to', motion.to, (i, v) => store.setRimMotionField(['to', i], v))}
+          {field('time ms', ['time'], motion.time, 100, 5000, 50)}
+          {field('gap ms', ['gap'], motion.gap ?? 0, 0, 5000, 50)}
+        </>
+      )}
+    </>
   );
 });
 
@@ -156,6 +208,17 @@ const LightingPanel = observer(({ scene }: { scene: FxLab }) => {
           </Toggle>
         ))}
       </div>
+
+      <div className={styles.buttons}>
+        <Toggle on={store.exactMood} onClick={() => store.setExactMood(!store.exactMood)}>
+          as written: {store.preset}
+        </Toggle>
+      </div>
+      {store.exactMood && (
+        <div className={styles.hint}>
+          shows {store.preset} exactly as data/lighting.ts has it, FX included. The sliders below don't apply.
+        </div>
+      )}
 
       <div className={styles.label}>mode</div>
       <div className={styles.buttons}>
