@@ -2,7 +2,7 @@ import * as React from 'react';
 import { observer } from 'mobx-react-lite';
 import { FX } from '../../data/fx';
 import { builtinNames } from '../../fx/textures';
-import type { ColorChoice, LayerDef, LightLayerDef, LightMotion, ParticleLayerDef } from '../../fx/types';
+import type { ColorChoice, LayerDef, LightLayerDef, LightMotion, ParticleLayerDef, PatternLayerDef } from '../../fx/types';
 import type { FxLab } from './FxLab';
 import type { DraftPath } from './fxLabStore';
 import { ColorRow, Slider, Small, Toggle } from './controls';
@@ -54,13 +54,17 @@ const RANGES: Record<string, [number, number, number]> = {
   bandSoftness: [0, 1, 0.05],
   wind: [-300, 300, 1],
   distance: [0, 120, 1],
+  // pattern layers
+  'pattern.intensity': [0, 4, 0.05],
+  scale: [0.1, 4, 0.05],
+  'pattern.speed': [0, 2, 0.01],
 };
 
 const rangeFor = (key: string, value: number, layerKind?: string): [number, number, number] =>
   RANGES[`${layerKind}.${key}`] ?? RANGES[key] ?? [Math.min(0, value * 2), Math.max(1, Math.abs(value) * 3), 0.01];
 
 /** Fields that are a point on the stage (fractions), not a [min, max] range. */
-const POINTS = new Set(['offset', 'pivot', 'to']);
+const POINTS = new Set(['offset', 'pivot', 'to', 'reach']);
 
 /** Starting values when a light's motion is switched to another kind. */
 const NEW_MOTION: Record<LightMotion['kind'], LightMotion> = {
@@ -76,6 +80,15 @@ const LIGHT_OPTIONAL: Partial<LightLayerDef> = {
   motion: NEW_MOTION.swing,
   bands: 2,
   bandSoftness: 0,
+  fade: 500,
+};
+
+/** Fields a pattern layer can gain, with starting values. */
+const PATTERN_OPTIONAL: Partial<PatternLayerDef> = {
+  scale: 1,
+  invert: true,
+  offset: [0, 0],
+  sway: { reach: [0.01, 0.005], speed: 0.15 },
   fade: 500,
 };
 
@@ -116,6 +129,7 @@ const NEW_LAYERS: Record<string, LayerDef> = {
   flash: { kind: 'flash', time: 150, color: '#ffffff' },
   vignette: { kind: 'vignette', strength: 0.5, radius: 0.5, color: '#000000' },
   light: { kind: 'light', color: '#ffd29a', intensity: 1.2, radius: 400, height: 0.2 },
+  pattern: { kind: 'pattern', texture: 'textures/canopy', color: '#fff0c2', intensity: 1 },
 };
 
 /** Extra fields nested objects can gain. */
@@ -329,10 +343,12 @@ const SpriteField = observer(({ scene, path, value }: { scene: FxLab; path: Draf
 const LayerEditor = observer(({ scene, index, layer }: { scene: FxLab; index: number; layer: LayerDef }) => {
   const { store } = scene;
   const path: DraftPath = ['layers', index];
-  const optional = layer.kind === 'particles' ? PARTICLE_OPTIONAL : layer.kind === 'light' ? LIGHT_OPTIONAL : {};
+  const optional = layer.kind === 'particles' ? PARTICLE_OPTIONAL
+    : layer.kind === 'light' ? LIGHT_OPTIONAL
+    : layer.kind === 'pattern' ? PATTERN_OPTIONAL : {};
   const addable = Object.entries(optional).filter(([key]) => !(key in layer));
   // fields every layer of its kind must have can't be removed
-  const required = new Set(['kind', 'sprite', 'lifespan', 'colors', 'time', 'intensity', 'color', 'strength', 'radius']);
+  const required = new Set(['kind', 'sprite', 'lifespan', 'colors', 'time', 'intensity', 'color', 'strength', 'radius', 'texture']);
   if (layer.kind === 'light') required.add('height');
   return (
     <section className={styles.group}>

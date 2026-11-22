@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import type { CandidatePool } from './lights';
 import { BLOB_KEY, BLOB_SIZE } from './textures';
+import type { StampPool } from './patterns';
 
 /** Light map values are stored divided by this, so overlapping lights can add up past 1. */
 export const MAP_GAIN = 2;
@@ -34,8 +35,13 @@ export class LightMap {
     this.texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
   }
 
-  /** Redraws the map from every candidate without a point slot. */
-  draw(pool: CandidatePool): void {
+  /** Stamp settings for patterns, reused so drawing allocates nothing. */
+  private readonly patternStamp = {
+    originX: 0, originY: 0, scaleX: 1, scaleY: 1, tint: 0xffffff, alpha: 1, blendMode: Phaser.BlendModes.ADD,
+  };
+
+  /** Redraws the map from every candidate without a point slot, and every pattern copy. */
+  draw(pool: CandidatePool, stamps: StampPool): void {
     const { texture, scale } = this;
     // Opaque black, not transparent: Phaser's ADD is (ONE, DST_ALPHA), so on a
     // transparent target each stamp would dim what's under it instead of adding.
@@ -52,6 +58,17 @@ export class LightMap {
         blendMode: Phaser.BlendModes.ADD,
       });
       stamped++;
+    }
+    const config = this.patternStamp;
+    for (let i = 0; i < stamps.count; i++) {
+      const stamp = stamps.items[i];
+      if (stamp.intensity <= 0) continue;
+      const source = texture.manager.get(stamp.key).getSourceImage();
+      config.scaleX = (stamp.width * scale) / source.width;
+      config.scaleY = (stamp.height * scale) / source.height;
+      config.tint = stamp.tint;
+      config.alpha = Math.min(stamp.intensity / MAP_GAIN, 1);
+      texture.stamp(stamp.key, undefined, stamp.x * scale, stamp.y * scale, config);
     }
     // A cleared map still needs rendering, or last frame's light stays.
     texture.render();

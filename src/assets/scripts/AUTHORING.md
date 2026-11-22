@@ -130,6 +130,7 @@ give a time. Stories start with `flat`, which shows the art exactly as drawn.
 | Mood | Use it for |
 | --- | --- |
 | `flat` | No lighting: art exactly as drawn. Every story starts here. |
+| `forest-day` | Daytime under trees: green shade, brightened by sunlight FX like `dappled-light`. |
 | `dim` | A dim room, an overcast day: everything readable, nothing bright. |
 | `firelit` | Indoors at night, lit by fire or candles: warm, deep shadows. |
 | `night` | Outdoors at night: cool blue. Add the moon, a campfire, street lights. |
@@ -178,6 +179,8 @@ Options combine: `#fx heal-burst 800 at eji`.
 | `heal-burst` | A quick upward burst of light, e.g. healing. |
 | `impact` | Screen hit: a short shake and white flash. |
 | `campfire` | A campfire with its own glow, flames, embers drifting up past the character, and smoke behind them. Play it `at bottom`. |
+| `falling-leaves` | Leaves drifting down and tumbling over the whole stage, some far behind the character, a few close in front. Runs until stopped. |
+| `dappled-light` | Sunlight through a leaf canopy: patches of sun over everything on stage, swaying a little in the wind, and a soft warm light from the upper left. Use with `#light forest-day`. |
 <!-- end generated -->
 
 Effects are defined in `src/data/fx.ts` and tuned in the FX lab (`?scene=FxLab`). These tables are written from the comments there by `npm run docs`; edit those, not the tables.

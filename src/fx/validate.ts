@@ -40,6 +40,12 @@ export function checkFxData(textures: Phaser.Textures.TextureManager): void {
         const motion = layer.motion;
         if (motion?.kind === 'swing' && motion.period <= 0) problems.push(`${where}: swing period must be > 0`);
         if (motion?.kind === 'pass' && motion.time <= 0) problems.push(`${where}: pass time must be > 0`);
+      } else if (layer.kind === 'pattern') {
+        if (!textures.exists(layer.texture)) problems.push(`${where}: no image "${layer.texture}" (put it in src/assets/images/)`);
+        color(where, layer.color);
+        if (layer.intensity < 0) problems.push(`${where}: intensity can't be negative`);
+        if (layer.scale !== undefined && layer.scale <= 0) problems.push(`${where}: scale must be > 0`);
+        if (layer.sway && layer.sway.speed < 0) problems.push(`${where}: sway speed can't be negative`);
       } else if (layer.kind === 'flash') {
         color(where, layer.color);
       } else if (layer.kind === 'vignette' && layer.color) {

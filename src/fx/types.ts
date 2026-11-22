@@ -125,7 +125,7 @@ export type CameraLayerDef =
   | { kind: 'flash'; time: number; color: Color }
   | { kind: 'vignette'; strength: number; radius: number; color?: Color };
 
-export type LayerDef = ParticleLayerDef | CameraLayerDef | LightLayerDef;
+export type LayerDef = ParticleLayerDef | CameraLayerDef | LightLayerDef | PatternLayerDef;
 
 export interface FxDef {
   /** Default duration. `play` can override it. */
@@ -186,6 +186,40 @@ export interface LightLayerDef extends PointLightDef {
   bandSoftness?: number;
   /** Fade in when the FX starts and out when it stops, in ms. Default 500. */
   fade?: number;
+}
+
+/**
+ * Light shaped by an image over the whole stage: sun through a leaf canopy,
+ * light through a window. The texture's brightness is the light: white is full,
+ * black and transparent are none. It repeats to fill the stage, ignores where the
+ * FX is played, goes into the light map (no point slot, no normal maps) and takes
+ * the mood's light steps. It fades in when the FX starts and out when it stops.
+ */
+export interface PatternLayerDef {
+  kind: 'pattern';
+  /** An image key, e.g. `'textures/canopy'`. Tileable images don't show seams where they repeat. */
+  texture: string;
+  color: Color;
+  /** Brightness where the texture is white. */
+  intensity: number;
+  /** Width of one copy of the texture, as a fraction of the stage's width. Default 1. */
+  scale?: number;
+  /** Swap light and dark: for textures drawn as shadows on white. */
+  invert?: boolean;
+  /** Shifts the texture, as fractions of one copy: picks which part lands where. */
+  offset?: StagePoint;
+  /** Back and forth in the wind. Off with reduced motion. */
+  sway?: PatternSway;
+  /** Fade in when the FX starts and out when it stops, in ms. Default 500. */
+  fade?: number;
+}
+
+/** A pattern drifting back and forth, like leaves moving in the wind. */
+export interface PatternSway {
+  /** How far either way, as fractions of the stage `[x, y]`. Keep it small: `[0.01, 0.005]`. */
+  reach: StagePoint;
+  /** Sways per second. */
+  speed: number;
 }
 
 /**

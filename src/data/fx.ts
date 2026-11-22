@@ -222,4 +222,72 @@ export const FX: Record<string, FxDef> = {
       },
     ],
   },
+
+  /**
+   * Leaves drifting down and tumbling over the whole stage, some far behind the
+   * character, a few close in front. Runs until stopped.
+   */
+  'falling-leaves': {
+    duration: 'infinite',
+    prewarm: 6000,
+    layers: [
+      {
+        kind: 'particles',
+        sprite: 'builtin:leaf',
+        depth: 'behind',
+        area: 'stage',
+        rate: 2,
+        lifespan: [5000, 8000],
+        velocity: { x: [-5, 5], y: [18, 32] },
+        wind: [2, 8],
+        sway: { distance: 16, speed: 0.35 },
+        angle: [0, 360],
+        spin: [-90, 90],
+        size: [1, 1.4],
+        fade: 'in-out',
+        blend: 'normal',
+        colors: [{ color: '#5f7a3a', weight: 3 }, '#7d8a3c', '#9a7432'],
+        maxAlive: 20,
+      },
+      {
+        kind: 'particles',
+        sprite: 'builtin:leaf',
+        depth: 'top',
+        area: 'stage',
+        rate: 0.8,
+        lifespan: [4000, 6500],
+        velocity: { x: [-8, 8], y: [35, 60] },
+        wind: [4, 14],
+        sway: { distance: 26, speed: 0.45 },
+        angle: [0, 360],
+        spin: [-160, 160],
+        size: [1.8, 2.4],
+        fade: 'in-out',
+        blend: 'normal',
+        colors: [{ color: '#8fb84a', weight: 2 }, '#b5d06a', '#d1b44a', '#d98a3a'],
+        maxAlive: 8,
+      },
+    ],
+  },
+
+  /**
+   * Sunlight through a leaf canopy: patches of sun over everything on stage,
+   * swaying a little in the wind, and a soft warm light from the upper left.
+   * Use with `#light forest-day`.
+   */
+  'dappled-light': {
+    duration: 'infinite',
+    layers: [
+      {
+        kind: 'pattern', texture: 'textures/canopy', color: '#fff0c2', intensity: 1, scale: 1.2,
+        sway: { reach: [0.008, 0.004], speed: 0.15 }, fade: 1500,
+      },
+      // the same canopy, bigger and slower, so edges shimmer instead of the whole sheet sliding
+      {
+        kind: 'pattern', texture: 'textures/canopy', color: '#fff0c2', intensity: 0.35, scale: 1.9, offset: [0.37, 0.21],
+        sway: { reach: [0.012, 0.003], speed: 0.08 }, fade: 1500,
+      },
+      { kind: 'light', color: '#fff0c2', intensity: 0.6, radius: 700, height: 0.5, offset: [-0.35, -0.5], fade: 1500 },
+    ],
+  },
 };

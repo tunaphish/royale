@@ -3,9 +3,10 @@ import { resolveDuration, prewarmMs } from './duration';
 import { toEmitterConfig, type FxParticle } from './emitter';
 import { channels, colorInt } from './random';
 import { applyMotion, flickerAt, pointLightCandidate, type CandidatePool } from './lights';
-import { spriteKey } from './textures';
+import { ensurePatternTexture, spriteKey } from './textures';
+import { patternTile, type StampPool } from './patterns';
 import {
-  DEPTH, type CameraLayerDef, type Duration, type FollowTarget, type FxDef, type FxTarget, type LightLayerDef, type ParticleLayerDef,
+  DEPTH, type CameraLayerDef, type Duration, type FollowTarget, type FxDef, type FxTarget, type LightLayerDef, type ParticleLayerDef, type PatternLayerDef,
   type PlayOptions, type StagePoint, type StopOptions,
 } from './types';
 import type { FxSystem } from './FxSystem';
@@ -16,6 +17,17 @@ export const LIGHT_FADE_MS = 500;
 interface LightLayer {
   layer: LightLayerDef;
   /** Keeps flickers out of sync. */
+  seed: number;
+}
+
+interface PatternLayer {
+  layer: PatternLayerDef;
+  /** The prepared texture (see `ensurePatternTexture`). */
+  key: string;
+  /** Texture height / width. */
+  aspect: number;
+  tint: number;
+  /** Keeps sways out of step. */
   seed: number;
 }
 
@@ -37,6 +49,9 @@ export class FxHandle {
   private readonly emitters: EmitterLayer[] = [];
   private readonly vignettes: Phaser.Filters.Vignette[] = [];
   private readonly lights: LightLayer[] = [];
+  private readonly patterns: PatternLayer[] = [];
+  /** Reused each frame by `collectPatterns`. */
+  private readonly tile = { x: 0, y: 0, width: 1, height: 1 };
   /** Where the FX is now: the followed object (or its spot), or the stage-point anchor. */
   private position: { x: number; y: number };
   /** Scene time (ms) when it started and stopped, for light fades. */
@@ -77,6 +92,7 @@ export class FxHandle {
     for (const layer of def.layers) {
       if (layer.kind === 'particles') this.addParticles(layer, origin, follow);
       else if (layer.kind === 'light') this.lights.push({ layer, seed: Math.random() * 1000 });
+      else if (layer.kind === 'pattern') this.addPattern(layer);
       else this.addCamera(layer);
     }
     if (def.sfx) {
@@ -134,6 +150,20 @@ export class FxHandle {
       };
     }
     this.emitters.push(entry);
+  }
+
+  private addPattern(layer: PatternLayerDef) {
+    const textures = this.fx.host.textures;
+    // A missing texture mustn't break the FX (the lab plays half-typed keys while you type).
+    if (!textures.exists(layer.texture)) {
+      console.warn(`FX "${this.id}": no image "${layer.texture}" in src/assets/images`);
+      return;
+    }
+    const key = ensurePatternTexture(textures, layer.texture, layer.invert ?? false);
+    const source = textures.get(key).getSourceImage();
+    this.patterns.push({
+      layer, key, aspect: source.height / Math.max(source.width, 1), tint: colorInt(layer.color), seed: Math.random() * 1000,
+    });
   }
 
   private addCamera(layer: CameraLayerDef) {
@@ -203,8 +233,35 @@ export class FxHandle {
     }
   }
 
-  /** 0 to 1: a light layer fading in after the start, and out after a stop. */
-  private lightFade(layer: LightLayerDef, now: number): number {
+  /**
+   * Pushes this FX's pattern copies into `stamps`: enough to cover the stage.
+   * Called by `FxSystem` every frame. `width`/`height` are the stage's.
+   */
+  collectPatterns(stamps: StampPool, timeSeconds: number, width: number, height: number): void {
+    if (this.finished || this.patterns.length === 0) return;
+    const now = this.fx.host.time.now;
+    const tile = this.tile;
+    for (const pattern of this.patterns) {
+      const fade = this.lightFade(pattern.layer, now);
+      if (fade <= 0) continue;
+      patternTile(pattern.layer, pattern.aspect, width, height, timeSeconds, pattern.seed, this.fx.reducedMotion, tile);
+      for (let y = tile.y; y < height; y += tile.height) {
+        for (let x = tile.x; x < width; x += tile.width) {
+          const stamp = stamps.next();
+          stamp.key = pattern.key;
+          stamp.x = x;
+          stamp.y = y;
+          stamp.width = tile.width;
+          stamp.height = tile.height;
+          stamp.tint = pattern.tint;
+          stamp.intensity = pattern.layer.intensity * fade;
+        }
+      }
+    }
+  }
+
+  /** 0 to 1: a light or pattern layer fading in after the start, and out after a stop. */
+  private lightFade(layer: { fade?: number }, now: number): number {
     const time = layer.fade ?? LIGHT_FADE_MS;
     if (time <= 0) return this.stopped ? 0 : 1;
     const fadeIn = Math.min((now - this.startedAt) / time, 1);
@@ -275,7 +332,8 @@ export class FxHandle {
     if (this.onObject) this.moveOnObject();
     if (this.finished || !this.stopped) return;
     const now = this.fx.host.time.now;
-    const lightsOut = this.lights.every(({ layer }) => this.lightFade(layer, now) <= 0);
+    const lightsOut = this.lights.every(({ layer }) => this.lightFade(layer, now) <= 0)
+      && this.patterns.every(({ layer }) => this.lightFade(layer, now) <= 0);
     if (lightsOut && this.emitters.every(({ emitter }) => emitter.getAliveParticleCount() === 0)) this.finish();
   }
 

@@ -15,6 +15,8 @@ import type { LightingMood } from '../fx/types';
 export const LIGHTING: Record<string, LightingMood> = {
   /** No lighting: art exactly as drawn. Every story starts here. */
   flat: { ambient: '#ffffff', bands: 0, bandSoftness: 0 },
+  /** Daytime under trees: green shade, brightened by sunlight FX like `dappled-light`. */
+  'forest-day': { ambient: '#7c8a68', bands: 3, bandSoftness: 0.1 },
   /** A dim room, an overcast day: everything readable, nothing bright. */
   dim: { ambient: '#5a5868', bands: 3, bandSoftness: 0.15 },
   /** Indoors at night, lit by fire or candles: warm, deep shadows. */

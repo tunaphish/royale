@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { patternLight, patternTextureKey } from './patterns';
 
 /**
  * Sprites made in code, so simple FX need no art. Use them as `'builtin:<name>'`.
@@ -8,6 +9,8 @@ const BUILTINS = {
   cross: drawCross,
   square: drawSquare,
   orb: drawOrb,
+  /** A small leaf, lying sideways with its stem on the left. Tint it any color. */
+  leaf: drawLeaf,
   /** Smooth falloff used for the light map. Not pixel art: the light map is low-res anyway. */
   blob: drawBlob,
 } as const;
@@ -97,6 +100,27 @@ function drawOrb(textures: Phaser.Textures.TextureManager, key: string) {
   texture.refresh();
 }
 
+function drawLeaf(textures: Phaser.Textures.TextureManager, key: string) {
+  const { texture, ctx } = canvas(textures, key, 10, true);
+  // Rows 2 to 6 of a 10x10 grid, so it spins around its middle. The texture is
+  // white for tinting, so shading is grey: lit top half, midrib, shaded bottom half.
+  const rows = [
+    '   ####   ',
+    ' ######## ',
+    '=---------',
+    ' ,,,,,,,, ',
+    '   ,,,,   ',
+  ];
+  const shade: Record<string, number> = { '#': 255, '-': 185, '=': 160, ',': 215 };
+  rows.forEach((row, y) => [...row].forEach((ch, x) => {
+    if (!(ch in shade)) return;
+    const v = shade[ch];
+    ctx.fillStyle = `rgb(${v},${v},${v})`;
+    ctx.fillRect(x * PIXEL, (y + 2) * PIXEL, PIXEL, PIXEL);
+  }));
+  texture.refresh();
+}
+
 function drawBlob(textures: Phaser.Textures.TextureManager, key: string) {
   const texture = textures.createCanvas(key, BLOB_SIZE, BLOB_SIZE)!;
   const ctx = texture.getContext();
@@ -115,4 +139,30 @@ function drawBlob(textures: Phaser.Textures.TextureManager, key: string) {
   }
   ctx.putImageData(image, 0, 0);
   texture.refresh();
+}
+
+/**
+ * A greyscale, opaque copy of a pattern texture, made once per game: brightness
+ * (times alpha) as light, inverted if asked. Smooth-filtered, since the light map
+ * samples it down. Returns its key.
+ */
+export function ensurePatternTexture(textures: Phaser.Textures.TextureManager, texture: string, invert: boolean): string {
+  const key = patternTextureKey(texture, invert);
+  if (textures.exists(key)) return key;
+  const source = textures.get(texture).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+  const { width, height } = source;
+  const canvasTexture = textures.createCanvas(key, width, height)!;
+  const ctx = canvasTexture.getContext();
+  ctx.drawImage(source, 0, 0);
+  const image = ctx.getImageData(0, 0, width, height);
+  const data = image.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const v = Math.round(patternLight(data[i], data[i + 1], data[i + 2], data[i + 3], invert) * 255);
+    data[i] = data[i + 1] = data[i + 2] = v;
+    data[i + 3] = 255;
+  }
+  ctx.putImageData(image, 0, 0);
+  canvasTexture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+  canvasTexture.refresh();
+  return key;
 }

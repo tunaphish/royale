@@ -9,6 +9,7 @@ import {
   newPointUniforms, packPointUniforms, POINT_SLOTS,
 } from './lights';
 import { channels, colorInt } from './random';
+import { StampPool } from './patterns';
 import { ensureBuiltinTextures } from './textures';
 import { DEPTH, type FxDef, type FxQuality, type LightingMood, type PlayOptions, type PointLightDef } from './types';
 import type GameSession from '../plugins/GameSession';
@@ -35,7 +36,7 @@ export interface SceneLight extends PointLightDef {
  * up the first time something is lit.
  *
  * Each frame, after the scene's `update`:
- *   1. gather every light: scene lights, FX light layers, lit particles
+ *   1. gather every light: scene lights, FX light layers, lit particles, pattern layers
  *   2. give the best ones point slots; the rest go into the light map
  *   3. pack the shared uniforms that every lit material reads
  */
@@ -50,6 +51,7 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
   private sceneLights: SceneLight[] = [];
   private lightMap?: LightMap;
   private readonly pool = new CandidatePool();
+  private readonly stamps = new StampPool();
   private readonly points = newPointUniforms();
   private readonly ambient = [1, 1, 1];
   private readonly stageSize = [1, 1];
@@ -250,10 +252,13 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
       if (light.on) pointLightCandidate(light, light.x, light.y, seconds, 100 + i * 17.3, pool.next());
     });
     for (const handle of this.handles) handle.collectLights(pool, seconds, width, height);
+    const stamps = this.stamps;
+    stamps.reset();
+    for (const handle of this.handles) handle.collectPatterns(stamps, seconds, width, height);
 
     // 2. Assign.
     this.stats.pointLights = assignSlots(pool, POINT_SLOTS);
-    this.lightMap?.draw(pool);
+    this.lightMap?.draw(pool, stamps);
     this.stats.mapLights = this.lightMap?.lastCount ?? 0;
 
     // 3. Pack.
