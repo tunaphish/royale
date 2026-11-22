@@ -13,6 +13,8 @@ const BUILTINS = {
   leaf: drawLeaf,
   /** A long soft shaft of light, standing upright, fading at both ends. For god rays: tilt it with `angle`. */
   ray: drawRay,
+  /** A thin raindrop streak, standing upright, brightest at the bottom. Tilt it with `angle` to match its fall. */
+  drop: drawDrop,
   /** Smooth falloff used for the light map. Not pixel art: the light map is low-res anyway. */
   blob: drawBlob,
 } as const;
@@ -160,6 +162,27 @@ function drawRay(textures: Phaser.Textures.TextureManager, key: string) {
       // Soft all the way across and never fully opaque, so crossing rays glow instead of blowing out.
       const across = 0.7 * Math.max(0, 1 - Math.abs(x - c) / c) ** 2;
       const i = (y * RAY_WIDTH + x) * 4;
+      image.data[i] = image.data[i + 1] = image.data[i + 2] = 255;
+      image.data[i + 3] = Math.round(across * along * 255);
+    }
+  }
+  ctx.putImageData(image, 0, 0);
+  texture.refresh();
+}
+
+const DROP_WIDTH = 4;
+const DROP_LENGTH = 40;
+
+function drawDrop(textures: Phaser.Textures.TextureManager, key: string) {
+  const texture = textures.createCanvas(key, DROP_WIDTH, DROP_LENGTH)!;
+  const ctx = texture.getContext();
+  const image = ctx.createImageData(DROP_WIDTH, DROP_LENGTH);
+  for (let y = 0; y < DROP_LENGTH; y++) {
+    // A faint tail up top, the drop itself at the bottom.
+    const along = 0.2 + 0.8 * (y / (DROP_LENGTH - 1)) ** 0.8;
+    for (let x = 0; x < DROP_WIDTH; x++) {
+      const across = x === 1 || x === 2 ? 1 : 0.25;
+      const i = (y * DROP_WIDTH + x) * 4;
       image.data[i] = image.data[i + 1] = image.data[i + 2] = 255;
       image.data[i + 3] = Math.round(across * along * 255);
     }

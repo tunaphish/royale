@@ -372,4 +372,61 @@ export const FX: Record<string, FxDef> = {
       },
     ],
   },
+
+  /**
+   * Steady rain over the whole stage: fine drops far behind the character, bigger
+   * faster ones in front, and splashes along the ground. Play it `at bottom` so
+   * the splashes land on the ground. Pairs with `#light rainy`.
+   */
+  rain: {
+    duration: 'infinite',
+    prewarm: 1500,
+    layers: [
+      {
+        kind: 'particles',
+        sprite: 'builtin:drop',
+        depth: 'behind',
+        area: 'stage',
+        rate: 150,
+        lifespan: [450, 750],
+        velocity: { x: [100, 115], y: [580, 680] },
+        angle: -10,
+        size: [0.9, 1.1],
+        fade: 'in-out',
+        blend: 'normal',
+        colors: ['#a9b8cc', '#93a4ba'],
+        maxAlive: 100,
+      },
+      {
+        kind: 'particles',
+        sprite: 'builtin:drop',
+        depth: 'front',
+        area: 'stage',
+        rate: 55,
+        lifespan: [300, 500],
+        velocity: { x: [160, 185], y: [950, 1100] },
+        angle: -10,
+        size: [1.6, 2],
+        fade: 'in-out',
+        blend: 'normal',
+        colors: ['#d2dceb', '#bccadd'],
+        maxAlive: 30,
+      },
+      {
+        kind: 'particles',
+        sprite: 'builtin:square',
+        depth: 'top',
+        area: { rect: [480, 12] },
+        rate: 45,
+        lifespan: [180, 320],
+        velocity: { x: [-35, 35], y: [-70, -30] },
+        gravity: 400,
+        size: [0.5, 0.7],
+        fade: 'out',
+        blend: 'normal',
+        colors: ['#d2dceb', '#a9b8cc'],
+        maxAlive: 30,
+      },
+    ],
+  },
 };
