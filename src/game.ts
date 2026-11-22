@@ -20,12 +20,6 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   scene: Scenes,
-  physics: {
-    default: 'arcade',
-    arcade: {
-      debug: true,
-    },
-  },
   parent: 'game',
   backgroundColor: '#000000',
   dom: {

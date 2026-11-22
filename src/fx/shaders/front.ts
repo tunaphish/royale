@@ -15,8 +15,8 @@ uniform float uUseNormalMap;
 // 1 when this layer is at or in front of the characters' depth.
 uniform float uInFront;
 // Rim from lights behind: brightness, and thickness in art pixels.
-uniform float uRim;
-uniform float uRimWidth;
+const float RIM = 1.0;
+const float RIM_WIDTH = 1.0;
 
 void main () {
   vec4 albedo = texture2D(uTexture, outTexCoord);
@@ -52,8 +52,8 @@ void main () {
     if (uLightBehind[i] > 0.5 && uInFront > 0.5) {
       // An edge faces the light when the art runs out in the light's direction.
       vec2 toward = toLight.xy / max(length(toLight.xy), 0.0001);
-      float edge = clamp(alphaHere - alphaAt(cell + toward * uRimWidth * uPixelSize), 0.0, 1.0);
-      rim += uLightColor[i] * bandWith(edge * attenuation(dist, uLightRadius[i]) * uLightIntensity[i] * uRim, uLightBands[i], uLightBandSoftness[i]);
+      float edge = clamp(alphaHere - alphaAt(cell + toward * RIM_WIDTH * uPixelSize), 0.0, 1.0);
+      rim += uLightColor[i] * bandWith(edge * attenuation(dist, uLightRadius[i]) * uLightIntensity[i] * RIM, uLightBands[i], uLightBandSoftness[i]);
       continue;
     }
     float diffuse = max(dot(normal, toLight / max(dist, 0.0001)), 0.0);

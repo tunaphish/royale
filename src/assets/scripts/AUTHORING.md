@@ -90,7 +90,7 @@ Two words remove things, always the same way:
 | `#bg none` | Removes the background. |
 | `#enter <character> [emotion]` | Puts a character on stage, from `images/characters/`. `#enter eji angry` shows `eji-angry.png`. |
 | `#enter none` | The character leaves the stage. |
-| `#foreground <key> [backlit]` | An image over everything, e.g. leaves: `#foreground layers/sakura`. `backlit` lights it from behind. |
+| `#foreground <key> [backlit]` | An image over everything, e.g. leaves: `#foreground layers/sakura`. `backlit` lights it from behind. It can also be a web address, written with escaped slashes: `#foreground https:\/\/example.com/leaves.png`. |
 | `#foreground none` | Removes the foreground. |
 
 ### Sound

@@ -15,10 +15,10 @@ export type Typing = { target: TypingTarget; revealed: number; length: number };
 export type Portrait = { character: string; emotion?: string };
 
 export class DialogueStore {
-  // the script sets the stage with #bg / #enter; only the foreground has a default
+  // the script sets the whole stage with #bg / #enter / #foreground
   background: string | null = null;
   portrait: Portrait | null = null;
-  foreground: string | null = 'https://raw.githubusercontent.com/oscicen/oscicen.github.io/master/img/depth-3.png';
+  foreground: string | null = null;
   /** Draw the foreground lit from behind (`#foreground <key> backlit`). */
   foregroundBacklit = false;
 

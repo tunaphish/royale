@@ -211,14 +211,13 @@ export type FollowTarget = Phaser.GameObjects.GameObject & {
 };
 
 /**
- * Where to play an FX: a point in stage pixels, following a game object, or a
- * stage point (fractions) that stays put in proportion when the stage resizes.
+ * Where to play an FX: following a game object, or a stage point (fractions)
+ * that stays put in proportion when the stage resizes.
  * When following an image, `point` picks a spot on it as fractions of its size
  * (x across, y down), e.g. `[0.5, 0.45]` for a portrait's chest. Default: the
  * object's own position (for portraits, the bottom middle).
  */
 export type FxTarget =
-  | { x: number; y: number }
   | { follow: FollowTarget; point?: StagePoint }
   | { stage: StagePoint };
 

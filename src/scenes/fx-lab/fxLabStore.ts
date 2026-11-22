@@ -19,13 +19,9 @@ export interface LightingSettings {
   lit: boolean;
   followPointer: boolean;
   ambient: string;
-  /** Normal-map contact shadows on the sprite itself. */
-  selfShadow: boolean;
-  /** Softness of self-shadows. Lower is sharper but more jagged. */
-  penumbra: number;
-  /** Pixel mode: number of light steps (0 = smooth). */
+  /** Number of light steps (0 = smooth). */
   bands: number;
-  /** Pixel mode: 0 is a hard edge between steps, 1 a smooth ramp. */
+  /** 0 is a hard edge between steps, 1 a smooth ramp. */
   bandSoftness: number;
   key: LightSettings;
 }
@@ -36,8 +32,6 @@ const DEFAULT_KEY: LightSettings = { on: true, color: '#ffffff', intensity: 1, r
 export const moodToSettings = (mood: LightingMood, current?: LightingSettings): LightingSettings => ({
   lit: current?.lit ?? true,
   followPointer: current?.followPointer ?? true,
-  selfShadow: current?.selfShadow ?? true,
-  penumbra: current?.penumbra ?? 0.5,
   ambient: mood.ambient,
   bands: mood.bands,
   bandSoftness: mood.bandSoftness,
@@ -55,9 +49,6 @@ export const settingsToMood = (s: LightingSettings): LightingMood => ({
 export const PRESETS = LIGHTING;
 
 const copy = (settings: LightingSettings): LightingSettings => clone(settings);
-
-/** How the art is lit: Phaser's smooth Light2D, or the pixel-snapped banded shader. */
-export type LightingMode = 'pixel' | 'phaser';
 
 /** The art's pixel grid. Depends on the sprite, not the mood, so presets leave it alone. */
 export interface PixelGrid {
@@ -99,7 +90,6 @@ const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 
 export class FxLabStore {
   settings: LightingSettings = moodToSettings(LIGHTING.firelit);
-  mode: LightingMode = 'pixel';
   grid: PixelGrid = { size: 6, offsetX: 0, offsetY: 0 };
   /** Off lights the art as if it were flat, to compare with and without the normal map. */
   normalMap = true;
@@ -220,10 +210,6 @@ export class FxLabStore {
 
   setLight<K extends keyof LightSettings>(field: K, value: LightSettings[K]) {
     this.settings.key[field] = value;
-  }
-
-  setMode(mode: LightingMode) {
-    this.mode = mode;
   }
 
   setGrid<K extends keyof PixelGrid>(field: K, value: PixelGrid[K]) {

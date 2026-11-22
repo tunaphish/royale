@@ -24,7 +24,6 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   key: 'FxLab',
 };
 
-const hex = (color: string): number => parseInt(color.slice(1), 16);
 
 /** Pause between replays of a one-shot FX. */
 const REPLAY_GAP_MS = 700;
@@ -41,7 +40,7 @@ type FxLabData = { fx?: string; mood?: string };
  *   FX too: tune them here as light layers. FX play from the middle of the stage.
  * - lighting tab: moods (the scene's darkness) from data/lighting.ts and the
  *   materials' settings. A test light follows the pointer; turn it off to see
- *   only the FX's lights. "smooth (phaser)" compares with Phaser's Light2D.
+ *   only the FX's lights.
  *
  * L toggles the light map.
  */
@@ -103,16 +102,10 @@ export class FxLab extends Phaser.Scene {
     this.input.on('pointermove', moveKey);
     this.input.on('pointerdown', moveKey);
 
-    // Phaser's Light2D, for the comparison mode only.
-    this.lights.enable();
-    const phaserKey = this.lights.addLight(key.x, key.y);
-    this.events.on(Phaser.Scenes.Events.UPDATE, () => phaserKey.setPosition(key.x, key.y));
-
     const stopSync = autorun(() => {
       const s = this.store.settings;
-      const pixelMode = this.store.mode === 'pixel';
-      this.syncMaterial(portrait, sprite, pixelMode && s.lit);
-      this.syncMaterial(petals, this.foreground, this.store.foreground.on && pixelMode && s.lit);
+      this.syncMaterial(portrait, sprite, s.lit);
+      this.syncMaterial(petals, this.foreground, this.store.foreground.on && s.lit);
       portrait.useNormalMap = this.store.normalMap;
       portrait.pixelSize = this.store.grid.size;
       portrait.gridOffset = [this.store.grid.offsetX, this.store.grid.offsetY];
@@ -121,16 +114,6 @@ export class FxLab extends Phaser.Scene {
 
       this.fx.setMood(settingsToMood(s));
       this.syncKey(key, s.key);
-
-      // Light2D mode.
-      sprite.setLighting(s.lit && !pixelMode);
-      const spriteTexture = this.textures.get(SPRITE_KEY);
-      if (this.store.normalMap && portrait.normalMap) {
-        spriteTexture.setDataSource(this.textures.get(portrait.normalMap).getSourceImage() as HTMLImageElement);
-      } else spriteTexture.dataSource.length = 0;
-      sprite.setSelfShadow(s.selfShadow, s.penumbra);
-      this.lights.setAmbientColor(hex(s.ambient));
-      phaserKey.setColor(hex(s.key.color)).setIntensity(s.key.on ? s.key.intensity : 0).setRadius(s.key.radius).setZNormal(s.key.height);
     });
     const stopForegroundSync = autorun(() => {
       const fg = this.store.foreground;
@@ -174,7 +157,7 @@ export class FxLab extends Phaser.Scene {
     this.reactOverlay.create(<FxLabView scene={this} />, this);
   }
 
-  /** Shows an image through its lit material, or plain (unlit or Light2D). */
+  /** Shows an image through its lit material, or plain (unlit). */
   private syncMaterial(material: LitMaterial, image: Phaser.GameObjects.Image, lit: boolean) {
     material.visible = lit;
     image.setVisible(!lit);

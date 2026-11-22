@@ -162,12 +162,6 @@ const LightingPanel = observer(({ scene }: { scene: FxLab }) => {
         A mood is only the darkness: ambient color and light steps. Lights are FX (fx tab).
       </div>
 
-      <div className={styles.label}>mode</div>
-      <div className={styles.buttons}>
-        <Toggle on={store.mode === 'pixel'} onClick={() => store.setMode('pixel')}>pixel</Toggle>
-        <Toggle on={store.mode === 'phaser'} onClick={() => store.setMode('phaser')}>smooth (phaser)</Toggle>
-      </div>
-
       <div className={styles.label}>show</div>
       <div className={styles.buttons}>
         <Toggle on={settings.lit} onClick={() => store.set('lit', !settings.lit)}>lighting</Toggle>
@@ -175,21 +169,11 @@ const LightingPanel = observer(({ scene }: { scene: FxLab }) => {
         <Toggle on={settings.followPointer} onClick={() => store.set('followPointer', !settings.followPointer)}>
           follow pointer
         </Toggle>
-        {store.mode === 'phaser' && (
-          <Toggle on={settings.selfShadow} onClick={() => store.set('selfShadow', !settings.selfShadow)}>
-            self-shadow
-          </Toggle>
-        )}
       </div>
-
-      {store.mode === 'phaser' && settings.selfShadow && (
-        <Slider label="softness" value={settings.penumbra} min={0} max={1} step={0.05}
-          onChange={(v) => store.set('penumbra', v)} />
-      )}
 
       <ColorRow label="ambient" value={settings.ambient} onChange={(v) => store.set('ambient', v)} />
 
-      {store.mode === 'pixel' && <PixelControls scene={scene} />}
+      <PixelControls scene={scene} />
 
       <LightControls scene={scene} />
       <ForegroundControls scene={scene} />

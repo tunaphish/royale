@@ -5,7 +5,7 @@ import { channels, colorInt } from './random';
 import { applyMotion, flickerAt, pointLightCandidate, type CandidatePool } from './lights';
 import { spriteKey } from './textures';
 import {
-  DEPTH, type CameraLayerDef, type Duration, type FollowTarget, type FxDef, type LightLayerDef, type ParticleLayerDef,
+  DEPTH, type CameraLayerDef, type Duration, type FollowTarget, type FxDef, type FxTarget, type LightLayerDef, type ParticleLayerDef,
   type PlayOptions, type StagePoint, type StopOptions,
 } from './types';
 import type { FxSystem } from './FxSystem';
@@ -37,10 +37,13 @@ export class FxHandle {
   private readonly emitters: EmitterLayer[] = [];
   private readonly vignettes: Phaser.Filters.Vignette[] = [];
   private readonly lights: LightLayer[] = [];
-  /** Where the FX is now: a fixed point, the followed object, or the stage-point anchor. */
+  /** Where the FX is now: the followed object (or its spot), or the stage-point anchor. */
   private position: { x: number; y: number };
   /** Scene time (ms) when it started and stopped, for light fades. */
   private startedAt: number;
+  /** The stage size `stage`-area layers were last fitted to. */
+  private stageWidth: number;
+  private stageHeight: number;
   private stoppedAt = 0;
   private stopTimer?: Phaser.Time.TimerEvent;
   private stopped = false;
@@ -58,16 +61,18 @@ export class FxHandle {
     this.duration = resolveDuration(def, options.duration);
     const scene = fx.host;
     const { width, height } = fx.stage;
-    const at = options.at ?? { x: width / 2, y: height / 2 };
+    const at: FxTarget = options.at ?? { stage: [0.5, 0.5] };
     if ('stage' in at) this.anchor = { x: at.stage[0] * width, y: at.stage[1] * height, at: at.stage };
     if ('follow' in at && at.point) {
       this.onObject = { target: at.follow, point: at.point, x: 0, y: 0 };
       this.moveOnObject();
     }
-    const follow = 'follow' in at ? (this.onObject ?? at.follow) : this.anchor;
-    const origin = follow ? { x: follow.x, y: follow.y } : (at as { x: number; y: number });
-    this.position = follow ?? origin;
+    const follow = 'follow' in at ? (this.onObject ?? at.follow) : this.anchor!;
+    const origin = { x: follow.x, y: follow.y };
+    this.position = follow;
     this.startedAt = scene.time.now;
+    this.stageWidth = width;
+    this.stageHeight = height;
 
     for (const layer of def.layers) {
       if (layer.kind === 'particles') this.addParticles(layer, origin, follow);
@@ -240,7 +245,32 @@ export class FxHandle {
   }
 
   /** Called each frame: finishes the handle once it's stopped and empty. */
+  /**
+   * Refits `stage`-area layers when the stage changes size, e.g. when a story's
+   * first lines play before the stage has its real size. Their spawn area is
+   * resized, and live particles are scaled into it, so prewarmed ones stay spread
+   * over the stage instead of where the old, bigger area put them.
+   */
+  private fitStage(): void {
+    const { width, height } = this.fx.stage;
+    if (width === this.stageWidth && height === this.stageHeight) return;
+    const sx = width / Math.max(this.stageWidth, 1);
+    const sy = height / Math.max(this.stageHeight, 1);
+    this.stageWidth = width;
+    this.stageHeight = height;
+    for (const { layer, emitter } of this.emitters) {
+      if (layer.area !== 'stage') continue;
+      const area = emitter.emitZones[0] as unknown as { source?: Phaser.Geom.Rectangle } | undefined;
+      area?.source?.setSize(width, height);
+      emitter.forEachAlive((p) => {
+        p.x *= sx;
+        p.y *= sy;
+      }, this);
+    }
+  }
+
   tick(): void {
+    this.fitStage();
     if (this.anchor) this.moveAnchor();
     if (this.onObject) this.moveOnObject();
     if (this.finished || !this.stopped) return;
