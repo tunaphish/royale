@@ -353,7 +353,7 @@ const Profile = observer(({ school, student }: Props & { student: string }) => {
 
 const TEXT_SPEEDS = [{ name: 'Slow', value: 0.5 }, { name: 'Normal', value: 1 }, { name: 'Fast', value: 2 }];
 
-/** Volume, text speed and FX settings. Changes apply straight away and are saved. */
+/** Volume, text speed, FX and CRT settings. Changes apply straight away and are saved. */
 const SettingsPanel = observer(({ school }: Props) => {
   const settings = school.session.settings;
   const update = (changes: Parameters<School['updateSettings']>[0]) => school.updateSettings(changes);
@@ -385,6 +385,12 @@ const SettingsPanel = observer(({ school }: Props) => {
         options={[{ name: 'On', value: false }, { name: 'Off', value: true }]}
         value={settings.reducedMotion}
         onPick={(reducedMotion) => update({ reducedMotion })}
+      />
+      <SettingChoices
+        label="CRT screen"
+        options={[{ name: 'On', value: true }, { name: 'Off', value: false }]}
+        value={settings.crt}
+        onPick={(crt) => update({ crt })}
       />
     </div>
   );

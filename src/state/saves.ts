@@ -63,8 +63,10 @@ export type Settings = {
   fxQuality: 'high' | 'low';
   /** Skips screen shake and flashes. */
   reducedMotion: boolean;
+  /** Shows story screens through an old CRT TV filter (`fx/crt.ts`). */
+  crt: boolean;
 };
-const DEFAULT_SETTINGS: Settings = { volume: 1, textSpeed: 1, fxQuality: 'high', reducedMotion: false };
+const DEFAULT_SETTINGS: Settings = { volume: 1, textSpeed: 1, fxQuality: 'high', reducedMotion: false, crt: false };
 
 const KEYS = {
   settings: 'royale:settings',

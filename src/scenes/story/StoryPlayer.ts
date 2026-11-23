@@ -5,6 +5,7 @@ import { createStory } from '../../assets/ink';
 import { SFX } from '../../assets/manifest';
 import { DEFAULT_VOICE, Voice, VOICES } from '../../data/voices';
 import type { FxSystem } from '../../fx/FxSystem';
+import { addCrt, removeCrt, type CrtFilter } from '../../fx/crt';
 import type { FxHandle } from '../../fx/FxHandle';
 import type { FxTarget } from '../../fx/types';
 import { CHARACTER_PARTS, parseTag, type StageCommand } from '../../model/storyTags';
@@ -107,13 +108,29 @@ export class StoryPlayer {
   constructor(private scene: StoryHost, readonly stage: Stage, store = new StoryStore()) {
     this.store = store;
     this.warnMissingVoiceSounds();
-    const stops = this.syncStage();
+    const stops = [...this.syncStage(), this.syncCrt()];
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       stops.forEach((stop) => stop());
       this.typingTimer?.remove();
       this.stopMusic();
       this.stopAmbience(undefined, true);
     });
+  }
+
+  /** Puts the CRT filter on the stage's camera while the `crt` setting is on, following changes to it. */
+  private syncCrt(): () => void {
+    let filter: CrtFilter | undefined;
+    return reaction(
+      () => this.scene.session.settings.crt,
+      (on) => {
+        if (on && !filter) filter = addCrt(this.scene);
+        if (!on && filter) {
+          removeCrt(filter);
+          filter = undefined;
+        }
+      },
+      { fireImmediately: true },
+    );
   }
 
   get playing(): boolean {

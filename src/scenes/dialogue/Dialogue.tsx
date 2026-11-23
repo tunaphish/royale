@@ -5,7 +5,6 @@ import ReactOverlay from '../../plugins/ReactOverlay';
 import GameSession from '../../plugins/GameSession';
 import type { FxSystem } from '../../fx/FxSystem';
 import { Stage } from '../../stage/Stage';
-import { addCrt } from '../../fx/crt';
 import { StoryPlayer } from '../story/StoryPlayer';
 import { DialogueView } from './DialogueView';
 
@@ -15,8 +14,7 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   key: 'Dialogue',
 };
 
-/** `crt` (any value, e.g. `?scene=Dialogue&storyKey=final-battle&crt`) tests the CRT TV filter over the stage. */
-export type DialogueData = { storyKey: string; crt?: string };
+export type DialogueData = { storyKey: string };
 
 /** How long the stage takes to fade in and out, matching the UI's fade. */
 const FADE_MS = 1000;
@@ -34,7 +32,6 @@ export class Dialogue extends Phaser.Scene {
   readonly leaving = observable.box(false);
 
   private storyKey: string;
-  private crt = false;
 
   constructor() {
     super(sceneConfig);
@@ -45,7 +42,6 @@ export class Dialogue extends Phaser.Scene {
       throw new Error('[Dialogue] started without a storyKey');
     }
     this.storyKey = data.storyKey;
-    this.crt = data.crt !== undefined;
     this.leaving.set(false);
 
     // leaving the scene is an autosave checkpoint, for anything ink changed
@@ -54,7 +50,6 @@ export class Dialogue extends Phaser.Scene {
 
   create(): void {
     this.player = new StoryPlayer(this, new Stage(this, this.fx));
-    if (this.crt) addCrt(this);
     this.cameras.main.fadeIn(FADE_MS);
 
     // the UI fades out over the same time, then calls leave()
