@@ -34,6 +34,12 @@ export type LocationDef = {
    * as `#light` and `#fx` would set them. Flat, with no FX, if left out.
    */
   lighting?: LocationLighting;
+  /**
+   * An image over the place that frames the character (trees, a doorway), as
+   * `#foreground` takes it: a file in images/foregrounds/ or any image key
+   * (`layers/forest-foreground`). None, if left out.
+   */
+  foreground?: string;
   /** When it's open. Always, if left out. */
   open?: Condition;
 };

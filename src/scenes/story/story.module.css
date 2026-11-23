@@ -16,7 +16,7 @@
   position: relative;
   flex: 1;
   /* space around the stage; the Phaser camera follows the box, so the art shrinks with it */
-  margin: 16px;
+  /* margin: 16px; */
   overflow: hidden;
   /* see-through: Phaser draws the stage underneath (Dialogue.stage) */
   background-color: transparent;

@@ -197,19 +197,22 @@ export class School extends Phaser.Scene {
 
   /**
    * Sets the stage for where the player is: the constellation's empty sky, a
-   * picked location with a student who's there, or nothing when no location
-   * is picked (the map, day events).
+   * picked location (its background, foreground and lighting) with a student
+   * who's there, or nothing when no location is picked (the map, day events).
    */
   private showPlace(): void {
     const { store } = this.player;
     if (this.store.constellationOpen) {
       store.setBackground(null);
       store.setPortrait(null);
+      store.setForeground(null);
       this.showLighting(null);
       return;
     }
     const location = this.store.location;
-    store.setBackground(location ? SCHOOL.locations[location].background : null);
+    const place = location ? SCHOOL.locations[location] : undefined;
+    store.setBackground(place?.background ?? null);
+    store.setForeground(place?.foreground ?? null);
     // the stage holds one character: the first student here
     const student = location ? this.studentsAt(location)[0] : undefined;
     store.setPortrait(student ? { character: student } : null);

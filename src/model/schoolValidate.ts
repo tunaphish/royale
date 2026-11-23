@@ -9,7 +9,7 @@ import { LIGHTING } from '../data/lighting';
  * Checks what TypeScript can't in the school's data: every ID it mentions
  * (students, locations, stars, items, stories, moods, FX) exists, and numbers make
  * sense. Returns one line per problem. Boot throws if there are any.
- * `imageKeys` are the images that exist (`backgrounds/forest`), for backgrounds.
+ * `imageKeys` are the images that exist (`backgrounds/forest`), for backgrounds and foregrounds.
  */
 export const checkSchoolData = (data: SchoolData, storyKeys: readonly string[], imageKeys: readonly string[]): string[] => {
   const problems: string[] = [];
@@ -103,6 +103,12 @@ export const checkSchoolData = (data: SchoolData, storyKeys: readonly string[], 
     condition(`location "${id}"`, location.open, false);
     if (!imageKeys.includes(`backgrounds/${location.background}`)) {
       problems.push(`location "${id}": no background "${location.background}" (put it in src/assets/images/backgrounds/)`);
+    }
+    if (location.foreground) {
+      const key = location.foreground;
+      if (!imageKeys.includes(`foregrounds/${key}`) && !imageKeys.includes(key)) {
+        problems.push(`location "${id}": no foreground "${key}" (in images/foregrounds/, or any image key)`);
+      }
     }
     if (location.lighting) {
       exists(`location "${id}"`, 'mood', location.lighting.mood, LIGHTING);

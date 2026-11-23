@@ -10,7 +10,12 @@ export const LOCATIONS: Record<string, LocationDef> = {
   // sun through tall windows, dust in the air
   classroom: { name: 'Classroom', background: 'classroom', lighting: { mood: 'dim', fx: ['god-rays'] } },
   // a yard under the trees
-  training: { name: 'Training grounds', background: 'pikrepo', lighting: { mood: 'forest-day', fx: ['dappled-light'] } },
+  training: {
+    name: 'Training grounds',
+    background: 'forest',
+    foreground: 'layers/forest-foreground',
+    lighting: { mood: 'forest-day', fx: ['dappled-light'] },
+  },
   // deep stacks, read by candle
   library: { name: 'Library', background: 'library', lighting: { mood: 'dim', fx: ['candlelight'] } },
   // warm, from the kitchen fires

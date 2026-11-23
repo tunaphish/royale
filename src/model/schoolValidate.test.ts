@@ -57,6 +57,19 @@ describe('checkSchoolData', () => {
     ]);
   });
 
+  it('finds a foreground image that does not exist', () => {
+    const data = valid();
+    data.locations.cafeteria.foreground = 'layers/vines';
+    expect(checkSchoolData(data, ['rena-1', 'rain'], ['backgrounds/bg', 'layers/vines'])).toEqual([]);
+    data.locations.cafeteria.foreground = 'curtains';
+    expect(checkSchoolData(data, ['rena-1', 'rain'], ['backgrounds/bg', 'foregrounds/curtains'])).toEqual([]);
+
+    data.locations.cafeteria.foreground = 'layers/vine';
+    expect(checkSchoolData(data, ['rena-1', 'rain'], ['backgrounds/bg'])).toEqual([
+      'location "cafeteria": no foreground "layers/vine" (in images/foregrounds/, or any image key)',
+    ]);
+  });
+
   it('finds stars that need themselves', () => {
     const data = valid();
     data.stars['rena-2'] = { student: 'rena', name: 'Two', hint: '', scene: 'rena-1', when: when.star('rena-1') };

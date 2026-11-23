@@ -38,10 +38,11 @@ interface Layer {
  * The scene's React UI decides where the stage is and reports it with `setRect`.
  *
  * Layout matches what React used to draw:
- * - background: full width, bottom-aligned
+ * - background: covers the stage whatever its shape, bottom-aligned, so a tall
+ *   image loses its top and a wide one its sides, and the ground stays in view
  * - portrait: fits the stage, bottom-centered, never upscaled past its own size
  * - foreground: covers the stage
- * Portrait and foreground extend past the stage edges so parallax never shows a gap.
+ * Each layer extends past the stage edges by its parallax, so parallax never shows a gap.
  */
 export class Stage {
   private rect: StageRect = { x: 0, y: 0, width: 1, height: 1 };
@@ -203,7 +204,9 @@ export class Stage {
     const { width, height } = this.rect;
     if (this.background) {
       const { image } = this.background;
-      image.setOrigin(0.5, 1).setScale(width / image.width);
+      const pad = PARALLAX.background * 2;
+      const cover = Math.max((width + pad) / image.width, (height + pad) / image.height);
+      image.setOrigin(0.5, 1).setScale(cover);
     }
     if (this.portrait) {
       const { image } = this.portrait;
@@ -223,7 +226,7 @@ export class Stage {
   private place(): void {
     const { width, height } = this.rect;
     const { x, y } = this.offset;
-    this.background?.image.setPosition(width / 2, height);
+    this.background?.image.setPosition(width / 2 - x * PARALLAX.background, height + PARALLAX.background - y * PARALLAX.background);
     this.portrait?.image.setPosition(width / 2 - x * PARALLAX.portrait, height + PARALLAX.portrait - y * PARALLAX.portrait);
     this.foreground?.image.setPosition(width / 2 - x * PARALLAX.foreground, height / 2 - y * PARALLAX.foreground);
   }

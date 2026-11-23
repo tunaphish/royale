@@ -39,7 +39,8 @@ export const MUSIC = byKey(
 );
 
 export const IMAGES = byKey(
-  import.meta.glob<string>('./images/**/*.{png,jpg,jpeg,webp}', { eager: true, query: '?url', import: 'default' }),
+  // both cases: art is often exported as .PNG
+  import.meta.glob<string>('./images/**/*.{png,jpg,jpeg,webp,PNG,JPG,JPEG,WEBP}', { eager: true, query: '?url', import: 'default' }),
   './images/',
 );
 
