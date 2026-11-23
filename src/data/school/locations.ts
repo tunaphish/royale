@@ -8,13 +8,13 @@ import { when } from '../../model/conditions';
  */
 export const LOCATIONS: Record<string, LocationDef> = {
   // sun through tall windows, dust in the air
-  classroom: { name: 'Classroom', background: 'background', lighting: { mood: 'dim', fx: ['god-rays'] } },
+  classroom: { name: 'Classroom', background: 'classroom', lighting: { mood: 'dim', fx: ['god-rays'] } },
   // a yard under the trees
   training: { name: 'Training grounds', background: 'pikrepo', lighting: { mood: 'forest-day', fx: ['dappled-light'] } },
   // deep stacks, read by candle
-  library: { name: 'Library', background: 'background', lighting: { mood: 'dim', fx: ['candlelight'] } },
+  library: { name: 'Library', background: 'library', lighting: { mood: 'dim', fx: ['candlelight'] } },
   // warm, from the kitchen fires
-  cafeteria: { name: 'Cafeteria', background: 'supermarket', lighting: { mood: 'dim', fx: ['warm-light'] } },
+  cafeteria: { name: 'Cafeteria', background: 'cafeteria', lighting: { mood: 'dim', fx: ['warm-light'] } },
   // a weekend afternoon, the sun low behind whoever you meet
   town: { name: 'Town', background: 'pikrepo', open: when.weekend(), lighting: { mood: 'dim', fx: ['god-rays-behind'] } },
   // a quiet room, soft light from the window
