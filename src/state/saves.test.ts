@@ -22,7 +22,7 @@ describe('save migrations', () => {
       seenEnemies: [],
       stats: { nerve: 2 },
       flags: { met_witch: true },
-      relationships: { witch: 3, eji: -14 },
+      relationships: { witch: 3, thief: -14 },
     };
     storage.set('royale:save:main', JSON.stringify({ version: 2, savedAt: 0, state: v2 }));
 
@@ -38,7 +38,7 @@ describe('save migrations', () => {
       flags: { met_witch: true },
       students: {
         witch: { disposition: 3, moods: [] },
-        eji: { disposition: -10, moods: [] },
+        thief: { disposition: -10, moods: [] },
       },
       calendar: { time: 0, lostSlots: [], seed: expect.any(Number) },
       stars: [],

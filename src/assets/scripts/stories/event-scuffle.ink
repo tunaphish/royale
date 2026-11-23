@@ -3,7 +3,7 @@
 
 INCLUDE game.ink
 
-#enter eji
-Eji shoulders past you in the hall, hard.
+#enter thief
+The thief shoulders past you in the hall, hard.
 Watch where you walk. #display
 -> END

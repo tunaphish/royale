@@ -28,10 +28,10 @@ describe('game.ink bindings', () => {
 
   it('sets and reads moods', () => {
     const { state, text } = play(`
-~ set_mood("eji", "furious", 3)
-{ mood("eji", "furious"): yes | no } { mood("eji", "grateful"): yes | no }
+~ set_mood("thief", "furious", 3)
+{ mood("thief", "furious"): yes | no } { mood("thief", "grateful"): yes | no }
 `);
-    expect(state.hasMood('eji', 'furious')).toBe(true);
+    expect(state.hasMood('thief', 'furious')).toBe(true);
     expect(text).toBe('yes no');
   });
 

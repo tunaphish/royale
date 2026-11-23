@@ -11,8 +11,8 @@ describe('GameState', () => {
     state.addDisposition('rena', 4);
     state.addDisposition('rena', 20);
     expect(state.disposition('rena')).toBe(10);
-    state.addDisposition('eji', -30);
-    expect(state.disposition('eji')).toBe(-10);
+    state.addDisposition('thief', -30);
+    expect(state.disposition('thief')).toBe(-10);
   });
 
   it('expires moods after their slots', () => {
@@ -40,8 +40,8 @@ describe('GameState', () => {
     state.lightStar('rena-first-meeting');
     expect(state.stars).toEqual(['rena-first-meeting']);
 
-    state.addHistory('eji', 'humiliated');
-    expect(state.hasHistory('eji', 'humiliated')).toBe(true);
+    state.addHistory('thief', 'humiliated');
+    expect(state.hasHistory('thief', 'humiliated')).toBe(true);
     expect(state.hasHistory('rena', 'humiliated')).toBe(false);
 
     state.learnIntel('match-rules');

@@ -47,7 +47,7 @@ Dev-only URL params (ignored in production builds):
 - To use a plugin in a scene, declare the field (`session: GameSession;`). Phaser fills it in before `init`.
 - One-off sounds use `this.sound.play(key)`. Only music uses `this.sound.add`, and it must be destroyed on the scene's `shutdown` event, because Phaser's sound manager is global.
 - **Assets are found automatically:** drop a file in the right `src/assets/` folder; there's no list to update. Boot loads everything up front.
-  - Audio keys are the file name (`attack`, `knight`). Image keys are the path under `images/` without extension (`backgrounds/supermarket`, `characters/eji-angry`).
+  - Audio keys are the file name (`attack`, `knight`). Image keys are the path under `images/` without extension (`backgrounds/supermarket`, `characters/thief`).
   - In React, get image URLs with `imageUrl(key)` or import the file directly. Never hard-code `/royale/...` paths: built files have hashed names.
   - Two files with the same key (e.g. `heal.mp3` and `heal.wav`) throw when the game starts.
 

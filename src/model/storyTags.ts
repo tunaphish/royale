@@ -52,7 +52,7 @@ export type StageCommand =
  * check build this from the asset manifest and `data/`.
  */
 export interface TagAssets {
-  /** An image key, e.g. `backgrounds/forest`, `characters/eji-angry`. */
+  /** An image key, e.g. `backgrounds/forest`, `characters/thief`. */
   image(key: string): boolean;
   /** A key in `audio/sfx`. */
   sound(key: string): boolean;
@@ -88,7 +88,7 @@ export const TAG_NAMES = Object.keys(USAGE);
 
 const isNumber = (word: string | undefined): boolean => word !== undefined && /^-?\d*\.?\d+$/.test(word);
 
-/** Reads one tag (without its `#`), e.g. `enter eji angry`. */
+/** Reads one tag (without its `#`), e.g. `enter thief angry`. */
 export function parseTag(tag: string, assets: TagAssets): TagResult {
   const [name, ...args] = tag.trim().split(/\s+/);
   const problem = (text: string): TagResult => ({ problem: `#${tag}: ${text}. Expects: ${USAGE[name]}` });

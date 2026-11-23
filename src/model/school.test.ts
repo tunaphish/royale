@@ -32,12 +32,12 @@ const DATA: SchoolData = {
       schedule: { sat: { morning: 'cafeteria', afternoon: [{ location: 'library', weight: 1 }, { location: null, weight: 1 }] } },
       gifts: { loved: ['pie'], hated: ['onion'] },
     },
-    eji: { name: 'Eji', schedule: { sat: { morning: 'cafeteria' } }, gifts: { loved: [], hated: [] } },
+    thief: { name: 'The Thief', schedule: { sat: { morning: 'cafeteria' } }, gifts: { loved: [], hated: [] } },
   },
   stars: {
     'rena-1': { student: 'rena', name: 'First words', hint: '', scene: 'rena-1' },
     'rena-2': { student: 'rena', name: 'Study date', hint: '', scene: 'rena-2', location: 'library', when: when.star('rena-1') },
-    'eji-1': { student: 'eji', name: 'Grudge', hint: '', scene: 'eji-1', auto: true, when: when.history('humiliated') },
+    'thief-1': { student: 'thief', name: 'Grudge', hint: '', scene: 'thief-1', auto: true, when: when.history('humiliated') },
   },
   events: {
     rain: { name: 'Rain', scene: 'rain' },
@@ -51,8 +51,8 @@ const fresh = () => new GameState(newGameState());
 describe('schedules', () => {
   it('places students by their schedule, off campus where it says nothing', () => {
     expect(studentLocation(DATA.students.rena, 'rena', timeOf(1, 'sat', 'morning'), 1)).toBe('cafeteria');
-    expect(studentLocation(DATA.students.eji, 'eji', timeOf(1, 'sat', 'afternoon'), 1)).toBeNull();
-    expect(studentLocations(DATA.students, 0, 1)).toEqual({ rena: 'cafeteria', eji: 'cafeteria' });
+    expect(studentLocation(DATA.students.thief, 'thief', timeOf(1, 'sat', 'afternoon'), 1)).toBeNull();
+    expect(studentLocations(DATA.students, 0, 1)).toEqual({ rena: 'cafeteria', thief: 'cafeteria' });
   });
 
   it('picks weighted entries the same way every time for a seed', () => {
@@ -89,11 +89,11 @@ describe('openLocations', () => {
 });
 
 describe('optionsAt', () => {
-  const where = { rena: 'cafeteria', eji: 'cafeteria' };
+  const where = { rena: 'cafeteria', thief: 'cafeteria' };
 
   it('offers student activities once per student who qualifies', () => {
     const state = fresh();
-    state.addDisposition('eji', -3);
+    state.addDisposition('thief', -3);
     expect(optionsAt(DATA, 'cafeteria', state, where)).toEqual([
       { kind: 'star', star: 'rena-1', student: 'rena' },
       { kind: 'activity', activity: 'hangout', student: 'rena' },
@@ -109,7 +109,7 @@ describe('optionsAt', () => {
     ]);
     expect(optionsAt(DATA, 'cafeteria', state, where)).toEqual([
       { kind: 'activity', activity: 'hangout', student: 'rena' },
-      { kind: 'activity', activity: 'hangout', student: 'eji' },
+      { kind: 'activity', activity: 'hangout', student: 'thief' },
     ]);
   });
 });
@@ -127,10 +127,10 @@ describe('stars', () => {
   it('finds auto stars that are ready, and not elsewhere', () => {
     const state = fresh();
     expect(readyAutoStar(DATA, state)).toBeUndefined();
-    state.addHistory('eji', 'humiliated');
-    expect(readyAutoStar(DATA, state)).toBe('eji-1');
-    expect(optionsAt(DATA, 'cafeteria', state, { eji: 'cafeteria' })).not.toContainEqual(
-      expect.objectContaining({ star: 'eji-1' }),
+    state.addHistory('thief', 'humiliated');
+    expect(readyAutoStar(DATA, state)).toBe('thief-1');
+    expect(optionsAt(DATA, 'cafeteria', state, { thief: 'cafeteria' })).not.toContainEqual(
+      expect.objectContaining({ star: 'thief-1' }),
     );
   });
 });
@@ -222,10 +222,10 @@ describe('applyEffects', () => {
 
   it('names intel after the student involved', () => {
     const state = fresh();
-    expect(applyEffects(state, [{ kind: 'intel', intel: 'deck', ofStudent: true }], 'eji')).toEqual([
-      { kind: 'intel', intel: 'deck:eji' },
+    expect(applyEffects(state, [{ kind: 'intel', intel: 'deck', ofStudent: true }], 'thief')).toEqual([
+      { kind: 'intel', intel: 'deck:thief' },
     ]);
-    expect(state.knowsIntel('deck:eji')).toBe(true);
+    expect(state.knowsIntel('deck:thief')).toBe(true);
   });
 
   it('does not report intel already known', () => {
@@ -263,7 +263,7 @@ describe('scenes', () => {
     expect(sceneStory(DATA, { kind: 'event', event: 'rain' })).toBe('rain');
     expect(sceneStory(DATA, { kind: 'activity', activity: 'study' })).toBeUndefined();
     expect(usesSlot(DATA, { kind: 'star', star: 'rena-1' })).toBe(true);
-    expect(usesSlot(DATA, { kind: 'star', star: 'eji-1' })).toBe(false);
+    expect(usesSlot(DATA, { kind: 'star', star: 'thief-1' })).toBe(false);
     expect(usesSlot(DATA, { kind: 'event', event: 'rain' })).toBe(false);
     expect(usesSlot(DATA, { kind: 'activity', activity: 'study' })).toBe(true);
   });
@@ -290,8 +290,8 @@ describe('scenes', () => {
 
   it('applies an activity for its student', () => {
     const state = fresh();
-    expect(finishScene(DATA, state, { kind: 'activity', activity: 'hangout', student: 'eji' })).toEqual([
-      { kind: 'disposition', student: 'eji', amount: 1, bandBefore: 'neutral', bandAfter: 'neutral' },
+    expect(finishScene(DATA, state, { kind: 'activity', activity: 'hangout', student: 'thief' })).toEqual([
+      { kind: 'disposition', student: 'thief', amount: 1, bandBefore: 'neutral', bandAfter: 'neutral' },
     ]);
   });
 });

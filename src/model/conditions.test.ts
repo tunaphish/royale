@@ -26,8 +26,8 @@ describe('check', () => {
     expect(check(when.band('warm'), ctx)).toBe(true);
     expect(check(when.band('close'), ctx)).toBe(false);
     expect(check(when.bandAtMost('neutral'), ctx)).toBe(false);
-    expect(check(when.band('warm', 'eji'), ctx)).toBe(false);
-    expect(check(when.bandAtMost('neutral', 'eji'), ctx)).toBe(true);
+    expect(check(when.band('warm', 'thief'), ctx)).toBe(false);
+    expect(check(when.bandAtMost('neutral', 'thief'), ctx)).toBe(true);
   });
 
   it('fails student conditions when no student is involved', () => {
@@ -36,15 +36,15 @@ describe('check', () => {
 
   it('reads moods, stars, history, flags, intel and gold', () => {
     const ctx = context((s) => {
-      s.setMood('eji', 'furious', 2);
-      s.lightStar('eji-1');
-      s.addHistory('eji', 'humiliated');
+      s.setMood('thief', 'furious', 2);
+      s.lightStar('thief-1');
+      s.addHistory('thief', 'humiliated');
       s.setFlag('met', true);
       s.learnIntel('rules');
       s.addGold(10);
-    }, { student: 'eji' });
+    }, { student: 'thief' });
     expect(check(when.mood('furious'), ctx)).toBe(true);
-    expect(check(when.star('eji-1'), ctx)).toBe(true);
+    expect(check(when.star('thief-1'), ctx)).toBe(true);
     expect(check(when.history('humiliated'), ctx)).toBe(true);
     expect(check(when.history('spared'), ctx)).toBe(false);
     expect(check(when.flag('met'), ctx)).toBe(true);
@@ -52,7 +52,7 @@ describe('check', () => {
     expect(check(when.flag('other', false), ctx)).toBe(true);
     expect(check(when.intel('rules'), ctx)).toBe(true);
     expect(check(when.studentIntel('deck'), ctx)).toBe(false);
-    (ctx.state as GameState).learnIntel('deck:eji');
+    (ctx.state as GameState).learnIntel('deck:thief');
     expect(check(when.studentIntel('deck'), ctx)).toBe(true);
     expect(check(when.gold(10), ctx)).toBe(true);
     expect(check(when.gold(11), ctx)).toBe(false);

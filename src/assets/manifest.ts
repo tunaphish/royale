@@ -5,7 +5,7 @@
  * Keys:
  * - Audio (sfx, music): the file name without extension, e.g. `attack`, `knight`.
  * - Images: the path under images/ without extension, e.g. `backgrounds/supermarket`,
- *   `characters/eji-angry`, `ui/icons/attack`.
+ *   `characters/thief`, `ui/icons/attack`.
  * - Ink stories: the file name in scripts/stories/ without extension, e.g. `final-battle`.
  * - Ink includes: the file name in scripts/, e.g. `game.ink`.
  */

@@ -8,40 +8,40 @@ import { when } from '../../model/conditions';
  * Placeholder stars and scenes, four per student.
  */
 export const STARS: Record<string, StarDef> = {
-  // Eji
-  'eji-sizing-up': {
-    student: 'eji',
+  // The thief
+  'thief-sizing-up': {
+    student: 'thief',
     name: 'Sizing up',
-    hint: 'Eji trains every morning.',
+    hint: 'The thief trains every morning.',
     location: 'training',
     when: when.slot('morning'),
-    scene: 'eji-sizing-up',
+    scene: 'thief-sizing-up',
     effects: [{ kind: 'disposition', amount: 1 }],
   },
-  'eji-rematch': {
-    student: 'eji',
+  'thief-rematch': {
+    student: 'thief',
     name: 'Rematch',
-    hint: 'Eji only respects nerve. (Nerve rank 2)',
+    hint: 'The thief only respects nerve. (Nerve rank 2)',
     location: 'training',
-    when: when.all(when.star('eji-sizing-up'), when.rank('nerve', 2)),
-    scene: 'eji-rematch',
+    when: when.all(when.star('thief-sizing-up'), when.rank('nerve', 2)),
+    scene: 'thief-rematch',
     effects: [{ kind: 'disposition', amount: 2 }],
   },
-  'eji-scars': {
-    student: 'eji',
+  'thief-scars': {
+    student: 'thief',
     name: 'Scars',
-    hint: 'Get on warmer terms with Eji.',
-    when: when.all(when.star('eji-rematch'), when.band('warm')),
-    scene: 'eji-scars',
+    hint: 'Get on warmer terms with the thief.',
+    when: when.all(when.star('thief-rematch'), when.band('warm')),
+    scene: 'thief-scars',
     effects: [{ kind: 'disposition', amount: 1 }],
   },
-  'eji-grudge': {
-    student: 'eji',
+  'thief-grudge': {
+    student: 'thief',
     name: 'Grudge',
     hint: 'Something has to happen between you in the royale.',
     when: when.history('humiliated'),
     auto: true,
-    scene: 'eji-grudge',
+    scene: 'thief-grudge',
     effects: [{ kind: 'mood', mood: 'furious', slots: 4 }],
   },
 
@@ -113,6 +113,77 @@ export const STARS: Record<string, StarDef> = {
     hint: 'Do the witch a favor in the royale.',
     when: when.all(when.star('witch-cold-fire'), when.history('aided')),
     scene: 'witch-debt',
+    effects: [{ kind: 'disposition', amount: 2 }],
+  },
+
+  // The knight
+  'knight-vigil': {
+    student: 'knight',
+    name: 'Vigil',
+    hint: 'The knight drills alone in the mornings.',
+    location: 'training',
+    when: when.slot('morning'),
+    scene: 'knight-vigil',
+    effects: [{ kind: 'disposition', amount: 1 }],
+  },
+  'knight-the-oath': {
+    student: 'knight',
+    name: 'The oath',
+    hint: 'The knight values courtesy. (Charm rank 2)',
+    when: when.all(when.star('knight-vigil'), when.rank('charm', 2)),
+    scene: 'knight-the-oath',
+    effects: [{ kind: 'disposition', amount: 1 }],
+  },
+  'knight-confession': {
+    student: 'knight',
+    name: 'Confession',
+    hint: 'Get on warmer terms with the knight.',
+    when: when.all(when.star('knight-the-oath'), when.band('warm')),
+    scene: 'knight-confession',
+    effects: [{ kind: 'disposition', amount: 2 }],
+  },
+  'knight-honor': {
+    student: 'knight',
+    name: 'Honor',
+    hint: 'Show the knight mercy in the royale.',
+    when: when.all(when.star('knight-vigil'), when.history('spared')),
+    scene: 'knight-honor',
+    effects: [{ kind: 'disposition', amount: 2 }],
+  },
+
+  // The mage
+  'mage-spilled-ink': {
+    student: 'mage',
+    name: 'Spilled ink',
+    hint: 'The mage studies in the library after class.',
+    location: 'library',
+    when: when.slot('afternoon'),
+    scene: 'mage-spilled-ink',
+    effects: [{ kind: 'disposition', amount: 1 }],
+  },
+  'mage-study-group': {
+    student: 'mage',
+    name: 'Study group',
+    hint: 'The mage only shares notes with sharp minds. (Wit rank 2)',
+    when: when.all(when.star('mage-spilled-ink'), when.rank('wit', 2)),
+    scene: 'mage-study-group',
+    effects: [{ kind: 'disposition', amount: 1 }],
+  },
+  'mage-under-the-hat': {
+    student: 'mage',
+    name: 'Under the hat',
+    hint: 'Get on warmer terms with the mage, and find the mage in town on a weekend.',
+    location: 'town',
+    when: when.all(when.star('mage-study-group'), when.band('warm')),
+    scene: 'mage-under-the-hat',
+    effects: [{ kind: 'disposition', amount: 2 }],
+  },
+  'mage-backfire': {
+    student: 'mage',
+    name: 'Backfire',
+    hint: 'Help the mage out in the royale.',
+    when: when.all(when.star('mage-spilled-ink'), when.history('aided')),
+    scene: 'mage-backfire',
     effects: [{ kind: 'disposition', amount: 2 }],
   },
 };

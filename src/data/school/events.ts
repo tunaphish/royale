@@ -16,8 +16,8 @@ export const EVENTS: Record<string, EventDef> = {
     when: when.all(when.week(1), when.day('sat')),
     effects: [
       { kind: 'gold', amount: 10 },
-      { kind: 'history', student: 'eji', event: 'humiliated' },
-      { kind: 'disposition', student: 'eji', amount: -2 },
+      { kind: 'history', student: 'thief', event: 'humiliated' },
+      { kind: 'disposition', student: 'thief', amount: -2 },
     ],
   },
   'event-care-package': {
@@ -40,10 +40,10 @@ export const EVENTS: Record<string, EventDef> = {
   'event-scuffle': {
     name: 'Scuffle in the hall',
     scene: 'event-scuffle',
-    when: when.all(when.weekday(), when.bandAtMost('cold', 'eji')),
+    when: when.all(when.weekday(), when.bandAtMost('cold', 'thief')),
     effects: [
       { kind: 'stat', stat: 'nerve', points: 1 },
-      { kind: 'disposition', student: 'eji', amount: -1 },
+      { kind: 'disposition', student: 'thief', amount: -1 },
     ],
   },
 };

@@ -18,7 +18,7 @@ What was the <frenzy>point?</frenzy> #display
 Everyone's still dead #display
 Did it change the world? #display
 Or did it just feel good #display
-Did it change anything? Huh Eji? #display
+Did it change anything? Huh, Thief? #display
 * [Fight On] -> fight
 * [Give Up] -> giveup
 

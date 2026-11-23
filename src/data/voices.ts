@@ -3,7 +3,7 @@
  *
  * - Message box lines are the player speaking, so they use `player`.
  * - `#display` lines are the character on stage speaking (the last `#enter`),
- *   so they use that character's key, e.g. `eji`.
+ *   so they use that character's key, e.g. `thief`.
  * - A line can pick a voice with `#voice <key>`, or go silent with `#voice none`.
  * - Anyone without an entry here uses DEFAULT_VOICE.
  *
@@ -28,5 +28,18 @@ export const VOICES: Record<string, Voice> = {
   witch: {
     sounds: ['female_standard_1', 'female_standard_2', 'female_standard_3', 'female_standard_4'],
     pitch: -300,
+  },
+  // placeholder voices: the same files as the witch, told apart by pitch
+  thief: {
+    sounds: ['female_standard_1', 'female_standard_2', 'female_standard_3', 'female_standard_4'],
+    pitch: 100,
+  },
+  knight: {
+    sounds: ['female_standard_1', 'female_standard_2', 'female_standard_3', 'female_standard_4'],
+    pitch: -150,
+  },
+  mage: {
+    sounds: ['female_standard_1', 'female_standard_2', 'female_standard_3', 'female_standard_4'],
+    pitch: 250,
   },
 };

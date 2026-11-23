@@ -88,7 +88,7 @@ Two words remove things, always the same way:
 | --- | --- |
 | `#bg <key>` | Background, from `images/backgrounds/`: `#bg supermarket` |
 | `#bg none` | Removes the background. |
-| `#enter <character> [emotion]` | Puts a character on stage, from `images/characters/`. `#enter eji angry` shows `eji-angry.png`. |
+| `#enter <character> [emotion]` | Puts a character on stage, from `images/characters/`. `#enter thief angry` shows `thief-angry.png`. |
 | `#enter none` | The character leaves the stage. |
 | `#foreground <key> [backlit]` | An image over everything, e.g. leaves: `#foreground layers/sakura`. `backlit` lights it from behind. It can also be a web address, written with escaped slashes: `#foreground https:\/\/example.com/leaves.png`. |
 | `#foreground none` | Removes the foreground. |
@@ -154,7 +154,7 @@ Moods are defined in `src/data/lighting.ts`. This table is written from the comm
 | `#fx <id> stop` | Stops it; particles already in the air finish and lights fade out. |
 | `#fx stop` | Stops every effect, lights included. To keep the moon up, stop effects by name instead. |
 
-Options combine: `#fx heal-burst 800 at eji`.
+Options combine: `#fx heal-burst 800 at thief`.
 
 **Lights.** Each is placed to look right played without `at`.
 

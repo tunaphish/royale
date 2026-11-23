@@ -3,7 +3,7 @@ import { checkStory, findTags, parseTag, STAGE_SPOTS, type TagAssets } from './s
 
 /** A small, fixed world to check tags against. */
 const assets: TagAssets = {
-  image: (key) => ['backgrounds/forest', 'characters/rena', 'characters/eji', 'characters/eji-angry', 'layers/sakura'].includes(key),
+  image: (key) => ['backgrounds/forest', 'characters/rena', 'characters/thief', 'characters/thief-angry', 'layers/sakura'].includes(key),
   sound: (key) => ['fire', 'bomb'].includes(key),
   song: (key) => key === 'knight',
   fx: (id) => ['campfire', 'heal-burst', 'moonlight'].includes(id),
@@ -32,9 +32,9 @@ describe('parseTag: pictures', () => {
 
   it('enters a character, with an emotion, and clears the stage', () => {
     expect(command('enter rena')).toEqual({ kind: 'enter', portrait: { character: 'rena', emotion: undefined } });
-    expect(command('enter eji angry')).toEqual({ kind: 'enter', portrait: { character: 'eji', emotion: 'angry' } });
+    expect(command('enter thief angry')).toEqual({ kind: 'enter', portrait: { character: 'thief', emotion: 'angry' } });
     expect(command('enter none')).toEqual({ kind: 'enter', portrait: null });
-    expect(problem('enter eji sad')).toContain('no image "eji-sad"');
+    expect(problem('enter thief sad')).toContain('no image "thief-sad"');
     expect(problem('enter none angry')).toContain('nothing can follow "none"');
   });
 
