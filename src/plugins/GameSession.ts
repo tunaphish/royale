@@ -1,7 +1,8 @@
 import { Plugins } from 'phaser';
+import { observable, runInAction } from 'mobx';
 import { newGameState } from '../data/new-game';
 import { GameState } from '../state/gameState';
-import { localStorageStorage, SaveManager } from '../state/saves';
+import { localStorageStorage, SaveManager, type Settings } from '../state/saves';
 
 /** The slot used until there's a slot picker. */
 export const DEFAULT_SLOT = 'slot-1';
@@ -23,9 +24,14 @@ export const DEV_TEST_SLOT = 'dev-test';
  * Saves at checkpoints (a won battle, the end of a story, leaving a story)
  * and whenever the page is hidden, since phones can close a hidden page
  * without warning.
+ *
+ * Also holds the player's settings (shared by every slot), observable so the
+ * UI can show them. Change them with `updateSettings`, which saves them.
  */
 export default class GameSession extends Plugins.BasePlugin {
   readonly saves = new SaveManager(localStorageStorage);
+  /** Read-only outside `updateSettings`. FX read theirs when a scene starts. */
+  readonly settings: Settings = observable(this.saves.loadSettings());
   slotId = DEFAULT_SLOT;
   state: GameState;
 
@@ -43,6 +49,14 @@ export default class GameSession extends Plugins.BasePlugin {
     if (devTest) console.info(`[GameSession] dev test run: using save slot "${slot}", not your real save`);
 
     document.addEventListener('visibilitychange', this.onVisibilityChange);
+    this.game.sound.volume = this.settings.volume;
+  }
+
+  /** Changes settings, saves them, and applies the volume. Scenes apply the rest themselves. */
+  updateSettings(changes: Partial<Settings>): void {
+    runInAction(() => Object.assign(this.settings, changes));
+    this.saves.saveSettings({ ...this.settings });
+    this.game.sound.volume = this.settings.volume;
   }
 
   destroy(): void {

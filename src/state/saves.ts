@@ -55,7 +55,9 @@ export type SaveFile = { version: number; savedAt: number; state: GameStateData 
 export type SlotSummary = { id: string; name: string; savedAt: number };
 
 export type Settings = {
+  /** Master volume, 0 to 1. */
   volume: number;
+  /** How fast lines type out: 1 is normal, 2 twice as fast. */
   textSpeed: number;
   /** `'low'` halves particles and turns off bloom, for older phones. */
   fxQuality: 'high' | 'low';

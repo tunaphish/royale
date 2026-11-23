@@ -186,14 +186,14 @@
   color: yellow;
 }
 
-.constellationButton {
+.menuButton {
   padding: 0 8px;
   background: transparent;
   border: 1px solid currentColor;
   color: yellow !important;
 }
 
-.constellationButton:disabled {
+.menuButton:disabled {
   opacity: 0.3;
   cursor: default;
 }
@@ -262,4 +262,115 @@
 .picked {
   stroke: white;
   stroke-width: 0.01;
+}
+
+/* The menu: tabs along the top of the message box */
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--dust-gray);
+}
+
+.tab {
+  flex: 1;
+  padding: 8px 4px;
+  font-size: 17px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--dust-gray) !important;
+}
+
+.activeTab {
+  color: yellow !important;
+  border-bottom-color: yellow;
+}
+
+/* Students: a chip per student, then the picked one's profile */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px 0;
+}
+
+.chip,
+.segment {
+  padding: 4px 10px;
+  font-size: 16px;
+  background: transparent;
+  border: 1px solid var(--dust-gray);
+}
+
+.activeChip {
+  border-color: yellow;
+  background: #443;
+}
+
+.profile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px 0;
+  font-size: 18px;
+}
+
+.profileRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* disposition from -10 to 10, with a tick at 0 */
+.bar {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  background: #333;
+}
+
+.barMid {
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--dust-gray);
+}
+
+.barMark {
+  position: absolute;
+  top: -4px;
+  width: 6px;
+  height: 14px;
+  margin-left: -3px;
+  background: currentColor;
+}
+
+/* Settings */
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 10px 0;
+  font-size: 18px;
+}
+
+.settingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.slider {
+  flex: 1;
+  accent-color: yellow;
+}
+
+.segments {
+  display: flex;
+  gap: 4px;
 }

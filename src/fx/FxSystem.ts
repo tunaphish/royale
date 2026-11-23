@@ -77,7 +77,7 @@ export class FxSystem extends Phaser.Plugins.ScenePlugin {
   private onStart(): void {
     ensureBuiltinTextures(this.host.textures);
     const session = this.host.plugins.get('game-session') as GameSession | null;
-    const settings = session?.saves.loadSettings();
+    const settings = session?.settings;
     this.quality = settings?.fxQuality ?? 'high';
     this.reducedMotion = settings?.reducedMotion ?? false;
     this.mood = LIGHTING.flat;

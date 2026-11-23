@@ -7,14 +7,15 @@ import type { School } from './School';
 import { SCHOOL } from '../../data/school';
 import { INTEL } from '../../data/school/intel';
 import { imageUrl } from '../../assets/manifest';
-import { DAYS, DAY_NAMES, SLOTS, timeOf } from '../../model/calendar';
+import { calendarAt, DAYS, DAY_NAMES, SLOTS, timeOf } from '../../model/calendar';
 import { constellationLayout } from '../../model/constellation';
-import { dispositionBand } from '../../model/disposition';
+import { dispositionBand, DISPOSITION_MAX, DISPOSITION_MIN } from '../../model/disposition';
 import { ordinal, ROYALE_SIZE } from '../../model/royaleStub';
 import { starStatus } from '../../model/school';
 import { BAND_NAMES, intelName, studentName } from '../../model/schoolText';
 import { pointsToNextRank, rankOf, SOCIAL_STATS, SOCIAL_STAT_NAMES } from '../../model/socialStats';
 import { StageView, StoryBox } from '../story/StoryViews';
+import { MENU_TABS, type MenuTab } from './schoolStore';
 
 type Props = { school: School };
 
@@ -22,7 +23,7 @@ type Props = { school: School };
 export const SchoolView = observer(({ school }: Props): JSX.Element => (
   <motion.div className={story.container} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
     <StageView player={school.player}>
-      {school.store.constellationOpen && !school.player.playing && <ConstellationSky school={school} />}
+      {school.store.menu === 'constellation' && !school.player.playing && <ConstellationSky school={school} />}
     </StageView>
     <div className={`${story.menu} ${styles.box}`}>
       <div className={styles.boxContent}>
@@ -37,7 +38,7 @@ export const SchoolView = observer(({ school }: Props): JSX.Element => (
 const BoxContent = observer(({ school }: Props) => {
   const { store } = school;
   if (school.player.playing) return <StoryBox player={school.player} />;
-  if (store.constellationOpen) return <StarDetails school={school} />;
+  if (store.menu) return <Menu school={school} tab={store.menu} />;
   if (store.friday?.stage === 'briefing') return <Briefing school={school} />;
   if (store.friday?.stage === 'results') return <RoyaleResults school={school} />;
   if (store.result) return <Result school={school} />;
@@ -176,7 +177,7 @@ const RoyaleResults = observer(({ school }: Props) => {
   );
 });
 
-/** The day, the week's slots, gold, ELO, stats, and the way into the constellation. */
+/** The day, the week's slots, gold, ELO, stats, and the menu button. */
 const StatusStrip = observer(({ school }: Props) => {
   const { now, state } = school;
   const { time, lostSlots } = state.calendar;
@@ -206,11 +207,12 @@ const StatusStrip = observer(({ school }: Props) => {
           );
         })}
         <button
-          className={`${styles.constellationButton} ${school.store.constellationOpen ? styles.active : ''}`}
+          className={`${styles.menuButton} ${school.store.menu ? styles.active : ''}`}
           disabled={school.player.playing}
-          onClick={() => school.toggleConstellation()}
+          onClick={() => school.toggleMenu()}
+          aria-label="Menu"
         >
-          ★
+          ☰
         </button>
       </div>
     </div>
@@ -255,7 +257,7 @@ const ConstellationSky = observer(({ school }: Props) => {
   );
 });
 
-/** The picked star in the message box, and the way back. */
+/** The picked star in the message box. */
 const StarDetails = observer(({ school }: Props) => {
   const id = school.store.selectedStar;
   let lines = ['The constellation. Tap a star: bright ones are lit, outlined ones are ready to play.'];
@@ -266,12 +268,138 @@ const StarDetails = observer(({ school }: Props) => {
     lines = [`${status === 'dim' ? '???' : star.name}. ${studentName(SCHOOL, star.student)}: ${where}.`];
     if (status !== 'lit') lines.push(star.hint);
   }
+  return <Lines lines={lines} />;
+});
+
+// #region The menu
+
+const TAB_NAMES: Record<MenuTab, string> = { constellation: '★ Stars', students: 'Students', settings: 'Settings' };
+
+/** The menu in the message box: its tabs along the top, the open one, and the way back. */
+const Menu = observer(({ school, tab }: Props & { tab: MenuTab }) => (
+  <>
+    <div className={styles.tabs} role="tablist">
+      {MENU_TABS.map((id) => (
+        <button key={id} role="tab" aria-selected={id === tab} className={`${styles.tab} ${id === tab ? styles.activeTab : ''}`} onClick={() => school.openMenu(id)}>
+          {TAB_NAMES[id]}
+        </button>
+      ))}
+    </div>
+    {tab === 'constellation' && <StarDetails school={school} />}
+    {tab === 'students' && <StudentProfile school={school} />}
+    {tab === 'settings' && <SettingsPanel school={school} />}
+    <div className={styles.choices}>
+      <ChoiceButton onClick={() => school.openMenu(null)}>Back</ChoiceButton>
+    </div>
+  </>
+));
+
+/** Every student to pick from, then the picked one's disposition, moods, stars and history. */
+const StudentProfile = observer(({ school }: Props) => {
+  const { state } = school;
+  const id = school.store.selectedStudent;
   return (
     <>
-      <Lines lines={lines} />
-      <div className={styles.choices}>
-        <ChoiceButton onClick={() => school.toggleConstellation()}>Back</ChoiceButton>
+      <div className={styles.chips}>
+        {Object.entries(SCHOOL.students).map(([student, def]) => {
+          const band = dispositionBand(state.disposition(student));
+          return (
+            <button key={student} className={`${styles.chip} ${styles[band]} ${student === id ? styles.activeChip : ''}`} onClick={() => school.selectStudent(student)}>
+              {def.name}
+            </button>
+          );
+        })}
       </div>
+      {id && <Profile school={school} student={id} />}
     </>
   );
 });
+
+const Profile = observer(({ school, student }: Props & { student: string }) => {
+  const { state } = school;
+  const time = state.calendar.time;
+  const disposition = state.disposition(student);
+  const band = dispositionBand(disposition);
+  const moods = (state.students[student]?.moods ?? []).filter((m) => m.until > time);
+  const stars = Object.keys(SCHOOL.stars).filter((star) => SCHOOL.stars[star].student === student);
+  const lit = stars.filter((star) => state.stars.includes(star)).length;
+  const history = state.history.filter((entry) => entry.student === student).reverse();
+  const at = (disposition - DISPOSITION_MIN) / (DISPOSITION_MAX - DISPOSITION_MIN);
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  return (
+    <div className={styles.profile}>
+      <div className={styles.profileRow}>
+        <span className={styles[band]}>{BAND_NAMES[band]}</span>
+        <span className={styles.bar}>
+          <span className={styles.barMid} />
+          <span className={`${styles.barMark} ${styles[band]}`} style={{ left: `${at * 100}%` }} />
+        </span>
+        <span className={styles.note}>{disposition > 0 ? `+${disposition}` : disposition}</span>
+      </div>
+      <div className={styles.profileRow}>
+        <span>Stars: <b className={styles.starMark}>{lit}</b> of {stars.length} lit</span>
+      </div>
+      <div className={styles.profileRow}>
+        <span>{moods.length === 0 ? 'No particular mood.' : moods.map((m) => `${m.mood} (${plural(m.until - time, 'slot')})`).join(', ')}</span>
+      </div>
+      <div className={styles.dimLines}>
+        {history.length === 0
+          ? <div>Nothing between you yet.</div>
+          : history.map((entry, i) => <div key={i}>Wk {calendarAt(entry.time).week}: won&apos;t forget: {entry.event}</div>)}
+      </div>
+    </div>
+  );
+});
+
+const TEXT_SPEEDS = [{ name: 'Slow', value: 0.5 }, { name: 'Normal', value: 1 }, { name: 'Fast', value: 2 }];
+
+/** Volume, text speed and FX settings. Changes apply straight away and are saved. */
+const SettingsPanel = observer(({ school }: Props) => {
+  const settings = school.session.settings;
+  const update = (changes: Parameters<School['updateSettings']>[0]) => school.updateSettings(changes);
+  return (
+    <div className={styles.settings}>
+      <label className={styles.settingRow}>
+        <span>Volume</span>
+        <input
+          type="range" min={0} max={1} step={0.05} value={settings.volume}
+          className={styles.slider}
+          onChange={(e) => update({ volume: Number(e.target.value) })}
+        />
+        <span className={styles.note}>{Math.round(settings.volume * 100)}%</span>
+      </label>
+      <SettingChoices
+        label="Text speed"
+        options={TEXT_SPEEDS}
+        value={settings.textSpeed}
+        onPick={(textSpeed) => update({ textSpeed })}
+      />
+      <SettingChoices
+        label="Effects"
+        options={[{ name: 'High', value: 'high' as const }, { name: 'Low', value: 'low' as const }]}
+        value={settings.fxQuality}
+        onPick={(fxQuality) => update({ fxQuality })}
+      />
+      <SettingChoices
+        label="Shake & flash"
+        options={[{ name: 'On', value: false }, { name: 'Off', value: true }]}
+        value={settings.reducedMotion}
+        onPick={(reducedMotion) => update({ reducedMotion })}
+      />
+    </div>
+  );
+});
+
+const SettingChoices = <T,>({ label, options, value, onPick }: { label: string; options: { name: string; value: T }[]; value: T; onPick: (value: T) => void }) => (
+  <div className={styles.settingRow}>
+    <span>{label}</span>
+    <span className={styles.segments}>
+      {options.map((option) => (
+        <button key={option.name} className={`${styles.segment} ${option.value === value ? styles.activeChip : ''}`} onClick={() => onPick(option.value)}>
+          {option.name}
+        </button>
+      ))}
+    </span>
+  </div>
+);
+// #endregion

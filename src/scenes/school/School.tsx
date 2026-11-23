@@ -16,7 +16,8 @@ import {
 } from '../../model/school';
 import { describeChange, studentName } from '../../model/schoolText';
 import { StoryPlayer } from '../story/StoryPlayer';
-import { SchoolStore } from './schoolStore';
+import { SchoolStore, type MenuTab } from './schoolStore';
+import type { Settings } from '../../state/saves';
 import { SchoolView } from './SchoolView';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
@@ -180,11 +181,34 @@ export class School extends Phaser.Scene {
     this.arrive(calendarAt(next.time).dayStart ? 'all' : 'none');
   }
 
-  toggleConstellation(): void {
-    if (this.player.playing) return;
-    this.sound.play(this.store.constellationOpen ? 'menu-exit' : 'choice-select');
-    this.store.setConstellationOpen(!this.store.constellationOpen);
+  /** Opens the menu on the tab it was last left on, or closes it. */
+  toggleMenu(): void {
+    this.openMenu(this.store.menu ? null : this.store.lastTab);
+  }
+
+  /** Opens the menu on a tab, or closes it with null. Not during a story. */
+  openMenu(tab: MenuTab | null): void {
+    if (this.player.playing || tab === this.store.menu) return;
+    this.sound.play(tab ? 'choice-select' : 'menu-exit');
+    this.store.setMenu(tab);
+    if (tab === 'students' && !this.store.selectedStudent) {
+      this.store.selectStudent(Object.keys(SCHOOL.students)[0] ?? null);
+    }
     this.showPlace();
+  }
+
+  selectStudent(student: string): void {
+    this.sound.play('choice-hover');
+    this.store.selectStudent(student);
+    this.showPlace();
+  }
+
+  /** Changes and saves settings, and applies the FX ones to this scene straight away. */
+  updateSettings(changes: Partial<Settings>): void {
+    this.session.updateSettings(changes);
+    this.fx.quality = this.session.settings.fxQuality;
+    this.fx.reducedMotion = this.session.settings.reducedMotion;
+    this.sound.play('choice-hover');
   }
 
   selectStar(star: string | null): void {
@@ -196,15 +220,18 @@ export class School extends Phaser.Scene {
   // #region The stage
 
   /**
-   * Sets the stage for where the player is: the constellation's empty sky, a
-   * picked location (its background, foreground and lighting) with a student
-   * who's there, or nothing when no location is picked (the map, day events).
+   * Sets the stage for where the player is: with the menu open, an empty
+   * stage (under the constellation's sky, or with the student whose profile
+   * shows); otherwise a picked location (its background, foreground and
+   * lighting) with a student who's there, or nothing when no location is
+   * picked (the map, day events).
    */
   private showPlace(): void {
     const { store } = this.player;
-    if (this.store.constellationOpen) {
+    if (this.store.menu) {
+      const student = this.store.menu === 'students' ? this.store.selectedStudent : null;
       store.setBackground(null);
-      store.setPortrait(null);
+      store.setPortrait(student ? { character: student } : null);
       store.setForeground(null);
       this.showLighting(null);
       return;
@@ -246,7 +273,7 @@ export class School extends Phaser.Scene {
   private async play(played: PlayedScene): Promise<void> {
     const storyKey = sceneStory(SCHOOL, played);
     if (storyKey) {
-      if (this.store.constellationOpen) this.store.setConstellationOpen(false);
+      if (this.store.menu) this.store.setMenu(null);
       this.store.setNotice(null);
       this.showPlace();
       await this.player.play(storyKey);

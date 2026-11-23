@@ -23,7 +23,10 @@ const AMBIENCE_FADE_MS = 1000;
 /** How long the lights take to go back to `flat` after a story, in `reset`. */
 const RESET_FADE_MS = 500;
 
-/** Typewriter speed: time per letter, plus a pause after punctuation that ends a phrase. */
+/**
+ * Typewriter speed: time per letter, plus a pause after punctuation that ends
+ * a phrase, at normal text speed. The `textSpeed` setting divides both.
+ */
 export const LETTER_MS = 30;
 const PUNCTUATION_PAUSE_MS: Record<string, number> = {
   '.': 250, '!': 250, '?': 250, '…': 250,
@@ -31,11 +34,11 @@ const PUNCTUATION_PAUSE_MS: Record<string, number> = {
 };
 
 /** Delay before the next letter, once `revealed` letters show. Pauses only at the end of a run like `...`. */
-const letterDelay = (text: string, revealed: number): number => {
+const letterDelay = (text: string, revealed: number, speed: number): number => {
   const last = text[revealed - 1];
   const next = text[revealed];
   const endsRun = next === undefined || /\s/.test(next);
-  return LETTER_MS + (endsRun ? PUNCTUATION_PAUSE_MS[last] ?? 0 : 0);
+  return (LETTER_MS + (endsRun ? PUNCTUATION_PAUSE_MS[last] ?? 0 : 0)) / speed;
 };
 
 /** Parses a line's markup, warning about mistakes like an unclosed tag. */
@@ -333,9 +336,14 @@ export class StoryPlayer {
       }
       this.store.setRevealed(revealed);
       this.blip(text[revealed - 1]);
-      this.typingTimer = this.scene.time.delayedCall(letterDelay(text, revealed), typeNext);
+      this.typingTimer = this.scene.time.delayedCall(letterDelay(text, revealed, this.textSpeed), typeNext);
     };
-    this.typingTimer = this.scene.time.delayedCall(LETTER_MS, typeNext);
+    this.typingTimer = this.scene.time.delayedCall(LETTER_MS / this.textSpeed, typeNext);
+  }
+
+  /** The `textSpeed` setting, read per letter so a change applies straight away. */
+  private get textSpeed(): number {
+    return Math.max(0.1, this.scene.session.settings.textSpeed);
   }
 
   private finishTyping(): void {

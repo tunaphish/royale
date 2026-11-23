@@ -16,6 +16,10 @@ export type SlotResult = {
   usedSlot: boolean;
 };
 
+/** The menu's tabs, opened from the status strip. */
+export const MENU_TABS = ['constellation', 'students', 'settings'] as const;
+export type MenuTab = (typeof MENU_TABS)[number];
+
 export class SchoolStore {
   /** The location whose options show, if any. */
   location: string | null = null;
@@ -25,9 +29,14 @@ export class SchoolStore {
   notice: Change[] | null = null;
   /** Set once Thursday afternoon is over, until the next week starts. */
   friday: Friday | null = null;
-  /** The constellation view is open, with this star picked to read about. */
-  constellationOpen = false;
+  /** The open menu tab, over everything but a story; null when the menu is closed. */
+  menu: MenuTab | null = null;
+  /** The menu opens on the tab it was last left on. */
+  lastTab: MenuTab = 'constellation';
+  /** The constellation's star picked to read about. */
   selectedStar: string | null = null;
+  /** The student whose profile the students tab shows. */
+  selectedStudent: string | null = null;
 
   constructor() {
     makeAutoObservable(this);
@@ -56,9 +65,14 @@ export class SchoolStore {
     this.friday = friday;
   }
 
-  setConstellationOpen(open: boolean): void {
-    this.constellationOpen = open;
+  setMenu(tab: MenuTab | null): void {
+    this.menu = tab;
+    if (tab) this.lastTab = tab;
     this.selectedStar = null;
+  }
+
+  selectStudent(student: string | null): void {
+    this.selectedStudent = student;
   }
 
   selectStar(star: string | null): void {
