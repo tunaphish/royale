@@ -15,7 +15,12 @@ import { TAG_ASSETS } from '../story/tagAssets';
 type StartTarget = { scene: string; data: Record<string, string> };
 
 /** Where the game goes once loading finishes. */
-const DEFAULT_START: StartTarget = { scene: 'Dialogue', data: { storyKey: 'final-battle' } };
+const DEFAULT_START: StartTarget = { scene: 'MainMenu', data: {} };
+
+/** Data for scenes that need some, when `?scene=` gives none. */
+const SCENE_DEFAULTS: Record<string, Record<string, string>> = {
+  Dialogue: { storyKey: 'final-battle' },
+};
 
 /** URL params that aren't scene data. */
 const RESERVED_PARAMS = ['scene', 'newgame'];
@@ -23,7 +28,7 @@ const RESERVED_PARAMS = ['scene', 'newgame'];
 /**
  * Dev builds only: `?scene=Battle` jumps straight to a scene after loading.
  * Other params become the scene's data, e.g. `?scene=Dialogue&storyKey=final-battle`.
- * Without data, the default scene still gets its default data.
+ * Without data, a scene gets its `SCENE_DEFAULTS`.
  * Production builds always use DEFAULT_START.
  */
 const readStartTarget = (sceneKeys: string[]): StartTarget => {
@@ -40,8 +45,7 @@ const readStartTarget = (sceneKeys: string[]): StartTarget => {
 
   RESERVED_PARAMS.forEach((param) => params.delete(param));
   const data = Object.fromEntries(params);
-  const defaults = scene === DEFAULT_START.scene ? DEFAULT_START.data : {};
-  return { scene, data: { ...defaults, ...data } };
+  return { scene, data: { ...SCENE_DEFAULTS[scene], ...data } };
 };
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {

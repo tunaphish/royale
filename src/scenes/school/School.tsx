@@ -203,6 +203,15 @@ export class School extends Phaser.Scene {
     this.showPlace();
   }
 
+  /** Saves (on shutdown) and fades out to the main menu. */
+  quitToMenu(): void {
+    if (this.player.playing || this.store.leaving) return;
+    this.sound.play('menu-exit');
+    this.cameras.main.fadeOut(FADE_MS);
+    this.store.setLeaving(true);
+    this.time.delayedCall(FADE_MS, () => this.scene.start('MainMenu'));
+  }
+
   /** Changes and saves settings, and applies the FX ones to this scene straight away. */
   updateSettings(changes: Partial<Settings>): void {
     this.session.updateSettings(changes);

@@ -75,6 +75,10 @@ export class FxLab extends Phaser.Scene {
     }
   }
 
+  leave(): void {
+    this.scene.start('MainMenu');
+  }
+
   create(): void {
     const { width, height } = this.scale;
 

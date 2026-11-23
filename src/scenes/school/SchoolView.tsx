@@ -21,7 +21,7 @@ type Props = { school: School };
 
 /** The story screen's layout: the stage on top, the message box below, the week's status along its bottom. */
 export const SchoolView = observer(({ school }: Props): JSX.Element => (
-  <motion.div className={story.container} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+  <motion.div className={story.container} initial={{ opacity: 0 }} animate={{ opacity: school.store.leaving ? 0 : 1 }} transition={{ duration: 0.5 }}>
     <StageView player={school.player}>
       {school.store.menu === 'constellation' && !school.player.playing && <ConstellationSky school={school} />}
     </StageView>
@@ -392,6 +392,9 @@ const SettingsPanel = observer(({ school }: Props) => {
         value={settings.crt}
         onPick={(crt) => update({ crt })}
       />
+      <div className={styles.choices}>
+        <ChoiceButton onClick={() => school.quitToMenu()}>Save and quit to the main menu</ChoiceButton>
+      </div>
     </div>
   );
 });

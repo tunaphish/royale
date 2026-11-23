@@ -16,3 +16,23 @@
 .scriptButton:hover {
   color: yellow;
 }
+
+/* the title and the way back stay put; the stories scroll between them */
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.back {
+  padding: 12px 0 20px;
+  margin: 0;
+  border-top: 1px solid var(--dust-gray);
+  color: var(--dust-gray);
+}

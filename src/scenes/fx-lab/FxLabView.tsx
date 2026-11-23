@@ -108,7 +108,10 @@ export const FxLabView = observer(({ scene }: { scene: FxLab }) => {
           <Toggle on={store.tab === 'fx'} onClick={() => store.setTab('fx')}>fx</Toggle>
           <Toggle on={store.tab === 'lighting'} onClick={() => store.setTab('lighting')}>lighting</Toggle>
         </span>
-        <button className={styles.off} onClick={() => store.setPanelOpen(false)}>hide</button>
+        <span className={styles.buttons}>
+          <button className={styles.off} onClick={() => scene.leave()}>main menu</button>
+          <button className={styles.off} onClick={() => store.setPanelOpen(false)}>hide</button>
+        </span>
       </div>
       {store.tab === 'fx' ? <FxEditor scene={scene} /> : <LightingPanel scene={scene} />}
     </div>

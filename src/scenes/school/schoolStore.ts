@@ -37,6 +37,8 @@ export class SchoolStore {
   selectedStar: string | null = null;
   /** The student whose profile the students tab shows. */
   selectedStudent: string | null = null;
+  /** Fading out to the main menu. */
+  leaving = false;
 
   constructor() {
     makeAutoObservable(this);
@@ -69,6 +71,10 @@ export class SchoolStore {
     this.menu = tab;
     if (tab) this.lastTab = tab;
     this.selectedStar = null;
+  }
+
+  setLeaving(leaving: boolean): void {
+    this.leaving = leaving;
   }
 
   selectStudent(student: string | null): void {

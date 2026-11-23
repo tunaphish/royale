@@ -13,10 +13,12 @@ Dialogue is written in ink. Built with Vite and TypeScript.
 - `npm test` — Vitest, once (`npm run test:watch` to keep it running). Tests sit next to their module: `storyTags.test.ts`.
 - `npm run lint` — ESLint 9 (`eslint.config.mjs`: typescript-eslint and React hooks, no formatting rules), fixing what it can.
 
+The game starts at `MainMenu` (continue, new game, the story list, the FX lab). The story list, the FX lab and School's settings tab lead back to it.
+
 Dev-only URL params (ignored in production builds):
 
 - `?scene=Battle` — jump straight to a scene after loading. Other params become
-  the scene's data: `?scene=Dialogue&storyKey=final-battle`.
+  the scene's data: `?scene=Dialogue&storyKey=final-battle` (`SCENE_DEFAULTS` in `Boot.tsx` fills in data a scene needs).
 - `?newgame` — start a fresh game instead of loading the save. Works in any build.
 - `?scene=` runs load and save the `dev-test` slot (`DEV_TEST_SLOT` in `GameSession`), never the real save. `?scene=…&newgame` resets that slot.
 - `?scene=FxLab` — the FX lab, for tuning FX and lighting: `?scene=FxLab&fx=campfire&mood=night`.
@@ -149,4 +151,4 @@ scenes assign their fields in `init`/`create`, not in the constructor.
 - `Battle` and `GameOver` still create sounds with `this.sound.add` on every visit.
 - Battle doesn't use `Stage` or lighting yet; it's meant to adopt the story screen (stage on top, message box below) later.
 - Settings (`royale:settings`) live in `GameSession` (`session.settings`, changed with `updateSettings`). The only screen for them is School's settings tab.
-- Friday's royale is a stub (`model/royaleStub.ts`): it makes up a placement, ELO, gold and history so the school loop can be played. Nothing starts the School scene yet except `?scene=School`.
+- Friday's royale is a stub (`model/royaleStub.ts`): it makes up a placement, ELO, gold and history so the school loop can be played. The main menu's Continue and New game start the School scene.
