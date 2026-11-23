@@ -28,9 +28,17 @@ export type LocationDef = {
   name: string;
   /** Shown on the stage while the player is there: a file in images/backgrounds/, named as in `#bg`. */
   background: string;
+  /**
+   * The place's lighting while the player is there, and under the scenes that
+   * play there: a mood from data/lighting.ts and light FX from data/fx.ts,
+   * as `#light` and `#fx` would set them. Flat, with no FX, if left out.
+   */
+  lighting?: LocationLighting;
   /** When it's open. Always, if left out. */
   open?: Condition;
 };
+
+export type LocationLighting = { mood: string; fx?: string[] };
 
 export type ActivityDef = {
   name: string;

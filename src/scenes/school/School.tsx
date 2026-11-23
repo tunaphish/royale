@@ -3,6 +3,7 @@ import * as React from 'react';
 import ReactOverlay from '../../plugins/ReactOverlay';
 import GameSession from '../../plugins/GameSession';
 import type { FxSystem } from '../../fx/FxSystem';
+import type { FxHandle } from '../../fx/FxHandle';
 import { Stage } from '../../stage/Stage';
 import { SCHOOL } from '../../data/school';
 import { INTEL } from '../../data/school/intel';
@@ -26,6 +27,8 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
 };
 
 const FADE_MS = 500;
+/** How long the lights take to change between places. */
+const LIGHTING_FADE_MS = 500;
 
 /**
  * The school week, on the same screen as stories: the stage on top shows
@@ -49,12 +52,16 @@ export class School extends Phaser.Scene {
   store: SchoolStore;
   player: StoryPlayer;
 
+  /** The place the stage is lit for ('' for none) and the light FX it started. */
+  private lit: { place: string; fx: FxHandle[] } | null = null;
+
   constructor() {
     super(sceneConfig);
   }
 
   init(): void {
     this.store = new SchoolStore();
+    this.lit = null;
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.session.save());
   }
 
@@ -198,6 +205,7 @@ export class School extends Phaser.Scene {
     if (this.store.constellationOpen) {
       store.setBackground(null);
       store.setPortrait(null);
+      this.showLighting(null);
       return;
     }
     const location = this.store.location;
@@ -205,6 +213,24 @@ export class School extends Phaser.Scene {
     // the stage holds one character: the first student here
     const student = location ? this.studentsAt(location)[0] : undefined;
     store.setPortrait(student ? { character: student } : null);
+    this.showLighting(location);
+  }
+
+  /**
+   * Lights the stage for a place (its mood and light FX), unless it's already
+   * lit for it. No place, or a place without lighting, fades to `flat`.
+   */
+  private showLighting(location: string | null): void {
+    const place = location ?? '';
+    if (this.lit?.place === place) return;
+
+    this.lit?.fx.forEach((handle) => handle.stop());
+    const lighting = location ? SCHOOL.locations[location].lighting : undefined;
+    this.fx.setMood(lighting?.mood ?? 'flat', { fade: LIGHTING_FADE_MS });
+    this.lit = {
+      place,
+      fx: (lighting?.fx ?? []).map((id) => this.fx.play(id, { duration: 'infinite' })),
+    };
   }
   // #endregion
 
@@ -221,7 +247,9 @@ export class School extends Phaser.Scene {
       this.store.setNotice(null);
       this.showPlace();
       await this.player.play(storyKey);
+      // reset() stops every FX and fades to flat, the place's lights included
       this.player.reset();
+      this.lit = null;
       this.showPlace();
     }
     this.finish(played);

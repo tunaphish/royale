@@ -234,6 +234,9 @@ and the game plays it when the player picks the star or the event happens.
   or the event's effects apply (disposition, gold, lost time…). Those live in the data,
   so a scene doesn't have to change anything itself, but it can with the functions above.
 - `has_star(...)` is true from the next scene on: a star lights after its own scene ends.
+- A school scene starts in the lighting of the place it plays at (the classroom's sunbeams,
+  the library's candle…), so it doesn't need its own `#light` and `#fx`. It can still change
+  them; `#fx stop` turns the place's lights off too. The place is lit again when the scene ends.
 - To test one: `?scene=Dialogue&storyKey=rena-first-words`, or play it from the school with `?scene=School`.
 
 ## Example

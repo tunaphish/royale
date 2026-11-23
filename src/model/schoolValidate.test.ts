@@ -45,6 +45,18 @@ describe('checkSchoolData', () => {
     ]);
   });
 
+  it('finds lighting with a mood or FX that does not exist', () => {
+    const data = valid();
+    data.locations.cafeteria.lighting = { mood: 'dim', fx: ['candlelight'] };
+    expect(checkSchoolData(data, ['rena-1', 'rain'], ['backgrounds/bg'])).toEqual([]);
+
+    data.locations.cafeteria.lighting = { mood: 'murky', fx: ['candlelite'] };
+    expect(checkSchoolData(data, ['rena-1', 'rain'], ['backgrounds/bg'])).toEqual([
+      'location "cafeteria": no mood "murky"',
+      'location "cafeteria": no FX "candlelite"',
+    ]);
+  });
+
   it('finds stars that need themselves', () => {
     const data = valid();
     data.stars['rena-2'] = { student: 'rena', name: 'Two', hint: '', scene: 'rena-1', when: when.star('rena-1') };
