@@ -1,9 +1,6 @@
 import type { LocationDef } from '../../model/school';
 import { when } from '../../model/conditions';
 
-/** On the stage while no location is picked (the map, day events). A file in images/backgrounds/, like `#bg`. Placeholder art. */
-export const CAMPUS_BACKGROUND = 'forest';
-
 /**
  * Places on campus. Open in every slot unless `open` says otherwise.
  * Placeholder backgrounds. Lighting is daytime (school slots are mornings and

@@ -7,7 +7,6 @@ import type { FxHandle } from '../../fx/FxHandle';
 import { Stage } from '../../stage/Stage';
 import { SCHOOL } from '../../data/school';
 import { INTEL } from '../../data/school/intel';
-import { CAMPUS_BACKGROUND } from '../../data/school/locations';
 import { advance, calendarAt } from '../../model/calendar';
 import { seededRoll } from '../../model/random';
 import { applyRoyale, stubRoyale } from '../../model/royaleStub';
@@ -198,7 +197,8 @@ export class School extends Phaser.Scene {
 
   /**
    * Sets the stage for where the player is: the constellation's empty sky, a
-   * picked location with a student who's there, or the campus.
+   * picked location with a student who's there, or nothing when no location
+   * is picked (the map, day events).
    */
   private showPlace(): void {
     const { store } = this.player;
@@ -209,7 +209,7 @@ export class School extends Phaser.Scene {
       return;
     }
     const location = this.store.location;
-    store.setBackground(location ? SCHOOL.locations[location].background : CAMPUS_BACKGROUND);
+    store.setBackground(location ? SCHOOL.locations[location].background : null);
     // the stage holds one character: the first student here
     const student = location ? this.studentsAt(location)[0] : undefined;
     store.setPortrait(student ? { character: student } : null);
